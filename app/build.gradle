@@ -2,7 +2,7 @@ apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion 23
-    buildToolsVersion "23.0.1”
+    buildToolsVersion "23.0.1"
 
     signingConfigs {
         production {
@@ -35,17 +35,19 @@ android {
 
 repositories {
     mavenCentral()
+    maven { url "https://jitpack.io" }
 }
 
 dependencies {
-    compile 'com.afollestad:material-dialogs:0.7.9.1'
-    compile 'com.afollestad:material-cab:0.1.4'
+    compile 'com.afollestad.material-dialogs:core:0.8.0.0@aar'
+    compile 'com.afollestad.material-dialogs:commons:0.8.0.0@aar'
+    compile 'com.afollestad:material-cab:0.1.5'
 
     compile 'com.koushikdutta.ion:ion:2.1.6'
     compile 'com.github.chrisbanes.photoview:library:1.2.3'
 
-    compile 'com.android.support:appcompat-v7:23.0.1’
-    compile 'com.android.support:recyclerview-v7:23.0.1’
-    compile 'com.android.support:support-v13:23.0.1’
-    compile 'com.android.support:palette-v7:23.0.1’
+    compile 'com.android.support:appcompat-v7:23.0.1'
+    compile 'com.android.support:recyclerview-v7:23.0.1'
+    compile 'com.android.support:support-v13:23.0.1'
+    compile 'com.android.support:palette-v7:23.0.1'
 }
