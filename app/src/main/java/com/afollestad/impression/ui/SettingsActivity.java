@@ -23,8 +23,8 @@ import com.afollestad.impression.R;
 import com.afollestad.impression.ui.base.ThemedActivity;
 import com.afollestad.impression.utils.Utils;
 import com.afollestad.impression.views.ImpressionPreference;
-import com.afollestad.materialdialogs.ColorChooserDialog;
 import com.afollestad.materialdialogs.MaterialDialog;
+import com.afollestad.materialdialogs.color.ColorChooserDialog;
 
 /**
  * @author Aidan Follestad (afollestad)

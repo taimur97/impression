@@ -39,8 +39,12 @@ repositories {
 }
 
 dependencies {
-    compile 'com.afollestad.material-dialogs:core:0.8.0.1@aar'
-    compile 'com.afollestad.material-dialogs:commons:0.8.0.1@aar'
+    compile('com.afollestad.material-dialogs:core:0.8.1.0@aar') {
+        transitive = true
+    }
+    compile('com.afollestad.material-dialogs:commons:0.8.1.0@aar') {
+        transitive = true
+    }
     compile 'com.afollestad:material-cab:0.1.5'
 
     compile 'com.koushikdutta.ion:ion:2.1.6'

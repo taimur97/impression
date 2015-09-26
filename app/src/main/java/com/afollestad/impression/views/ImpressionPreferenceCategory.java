@@ -8,7 +8,7 @@ import android.view.View;
 import android.widget.TextView;
 
 import com.afollestad.impression.R;
-import com.afollestad.materialdialogs.ThemeSingleton;
+import com.afollestad.materialdialogs.internal.ThemeSingleton;
 
 public class ImpressionPreferenceCategory extends PreferenceCategory {
 

@@ -13,7 +13,7 @@ import android.support.v7.app.AppCompatActivity;
 
 import com.afollestad.impression.R;
 import com.afollestad.impression.views.CircleView;
-import com.afollestad.materialdialogs.ThemeSingleton;
+import com.afollestad.materialdialogs.internal.ThemeSingleton;
 
 /**
  * @author Aidan Follestad (afollestad)
