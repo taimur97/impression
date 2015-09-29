@@ -47,13 +47,13 @@ import com.afollestad.impression.api.AlbumEntry;
 import com.afollestad.impression.cab.MediaCab;
 import com.afollestad.impression.fragments.MediaFragment;
 import com.afollestad.impression.fragments.NavDrawerFragment;
-import com.afollestad.impression.fragments.dialog.FolderSelectorDialog;
 import com.afollestad.impression.providers.IncludedFolderProvider;
 import com.afollestad.impression.providers.SortMemoryProvider;
 import com.afollestad.impression.ui.base.ThemedActivity;
 import com.afollestad.impression.utils.Utils;
 import com.afollestad.impression.views.BreadCrumbLayout;
 import com.afollestad.materialdialogs.MaterialDialog;
+import com.afollestad.materialdialogs.folderselector.FolderChooserDialog;
 import com.afollestad.materialdialogs.internal.MDTintHelper;
 import com.afollestad.materialdialogs.internal.ThemeSingleton;
 
@@ -66,7 +66,7 @@ import java.util.Map;
  * @author Aidan Follestad (afollestad)
  */
 public class MainActivity extends ThemedActivity
-        implements FolderSelectorDialog.FolderCallback {
+        implements FolderChooserDialog.FolderCallback {
 
     public DrawerLayout mDrawerLayout;
     private ActionBarDrawerToggle mDrawerToggle;

@@ -28,7 +28,6 @@ import com.afollestad.impression.accounts.base.Account;
 import com.afollestad.impression.adapters.MediaAdapter;
 import com.afollestad.impression.adapters.NavDrawerAdapter;
 import com.afollestad.impression.api.AlbumEntry;
-import com.afollestad.impression.fragments.dialog.FolderSelectorDialog;
 import com.afollestad.impression.providers.AccountProvider;
 import com.afollestad.impression.providers.ExcludedFolderProvider;
 import com.afollestad.impression.providers.IncludedFolderProvider;
@@ -36,6 +35,7 @@ import com.afollestad.impression.ui.MainActivity;
 import com.afollestad.impression.ui.base.ThemedActivity;
 import com.afollestad.impression.utils.Utils;
 import com.afollestad.materialdialogs.MaterialDialog;
+import com.afollestad.materialdialogs.folderselector.FolderChooserDialog;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -289,7 +289,9 @@ public class NavDrawerFragment extends Fragment implements NavDrawerAdapter.Call
     @Override
     public void onEntrySelected(final int index, final NavDrawerAdapter.Entry entry, boolean longClick) {
         if (entry.isAdd()) {
-            new FolderSelectorDialog().show(getActivity());
+            new FolderChooserDialog.Builder((MainActivity) getActivity())
+                    .chooseButton(R.string.choose)
+                    .show();
         } else if (longClick) {
             if (entry.isIncluded()) {
                 new MaterialDialog.Builder(getActivity())
