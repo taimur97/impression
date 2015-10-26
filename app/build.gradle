@@ -17,7 +17,7 @@ android {
         applicationId "com.afollestad.impression"
         minSdkVersion 16
         targetSdkVersion 23
-        versionCode 63
+        versionCode 64
         versionName "0.7.3.11"
     }
     buildTypes {
@@ -39,10 +39,10 @@ repositories {
 }
 
 dependencies {
-    compile('com.afollestad.material-dialogs:core:0.8.4.0@aar') {
+    compile('com.afollestad.material-dialogs:core:0.8.4.2@aar') {
         transitive = true
     }
-    compile('com.afollestad.material-dialogs:commons:0.8.4.0@aar') {
+    compile('com.afollestad.material-dialogs:commons:0.8.4.2@aar') {
         transitive = true
     }
     compile 'com.afollestad:material-cab:0.1.5'

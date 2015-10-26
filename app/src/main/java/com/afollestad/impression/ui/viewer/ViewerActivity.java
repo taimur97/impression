@@ -26,7 +26,6 @@ import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.print.PrintHelper;
 import android.support.v4.view.ViewPager;
-import android.support.v7.internal.widget.TintImageView;
 import android.support.v7.widget.Toolbar;
 import android.text.Html;
 import android.util.Log;
@@ -37,6 +36,7 @@ import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.view.Window;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.afollestad.impression.R;
@@ -102,7 +102,7 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
     private boolean mIsReturning;
     private boolean mAllVideos;
 
-    private TintImageView mOverflow;
+    private ImageView mOverflow;
 
     private class FileBeamCallback implements NfcAdapter.CreateBeamUrisCallback {
 
@@ -654,7 +654,7 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
                 if (outViews.isEmpty()) {
                     return;
                 }
-                mOverflow = (TintImageView) outViews.get(0);
+                mOverflow = (ImageView) outViews.get(0);
                 mOverflow.setColorFilter(color, PorterDuff.Mode.SRC_ATOP);
                 removeOnGlobalLayoutListener(mToolbar, this);
             }
