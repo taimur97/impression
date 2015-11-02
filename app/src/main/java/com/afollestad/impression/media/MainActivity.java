@@ -1,16 +1,15 @@
-package com.afollestad.impression.ui;
+package com.afollestad.impression.media;
 
+import android.Manifest;
 import android.animation.ValueAnimator;
-import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.Fragment;
 import android.app.FragmentManager;
-import android.app.FragmentTransaction;
 import android.app.SharedElementCallback;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.res.Configuration;
+import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
@@ -18,6 +17,7 @@ import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.view.GravityCompat;
+import android.support.v4.view.animation.FastOutSlowInInterpolator;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBarDrawerToggle;
@@ -35,20 +35,20 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewTreeObserver;
 import android.view.Window;
-import android.view.animation.DecelerateInterpolator;
 import android.widget.CheckBox;
 import android.widget.FrameLayout;
 import android.widget.ListView;
 import android.widget.RadioButton;
 import android.widget.TextView;
 
+import com.afollestad.impression.BuildConfig;
 import com.afollestad.impression.R;
 import com.afollestad.impression.api.AlbumEntry;
 import com.afollestad.impression.cab.MediaCab;
-import com.afollestad.impression.fragments.MediaFragment;
 import com.afollestad.impression.fragments.NavDrawerFragment;
 import com.afollestad.impression.providers.IncludedFolderProvider;
 import com.afollestad.impression.providers.SortMemoryProvider;
+import com.afollestad.impression.ui.SettingsActivity;
 import com.afollestad.impression.ui.base.ThemedActivity;
 import com.afollestad.impression.utils.Utils;
 import com.afollestad.impression.views.BreadCrumbLayout;
@@ -68,52 +68,89 @@ import java.util.Map;
 public class MainActivity extends ThemedActivity
         implements FolderChooserDialog.FolderCallback {
 
-    public DrawerLayout mDrawerLayout;
-    private ActionBarDrawerToggle mDrawerToggle;
-    public boolean mPickMode;
-    private SelectAlbumMode mSelectAlbumMode = SelectAlbumMode.NONE;
-    public MediaCab mMediaCab;
-    public Toolbar mToolbar;
-    public BreadCrumbLayout mCrumbs;
-
-    private CharSequence mTitle;
-    public boolean drawerArrowOpen;
-    private final static int SETTINGS_REQUEST = 9000;
-
-    private static final String TAG = "MainActivity";
-    private static final boolean DEBUG = true;
     public static final String EXTRA_CURRENT_ITEM_POSITION = "extra_current_item_position";
     public static final String EXTRA_OLD_ITEM_POSITION = "extra_old_item_position";
-    public static final String ACTION_SELECT_ALBUM = "com.afollestad.impression.SELECT_FOLDER";
+    public static final String ACTION_SELECT_ALBUM = BuildConfig.APPLICATION_ID + ".SELECT_FOLDER";
+    private static final int SETTINGS_REQUEST = 9000;
+    private static final String TAG = "MainActivity";
+    private static final boolean DEBUG = true;
+    private DrawerLayout mDrawerLayout;
+    private AnimatedDrawerToggle mAnimatedDrawerToggle;
+    private boolean mPickMode;
+    private SelectAlbumMode mSelectAlbumMode = SelectAlbumMode.NONE;
+    private MediaCab mMediaCab;
+    private Toolbar mToolbar;
+    private BreadCrumbLayout mCrumbs;
+    private CharSequence mTitle;
+    private RecyclerView mRecyclerView;
+    private Bundle mTmpState;
+    private boolean mIsReentering;
 
-    public enum SelectAlbumMode {
-        NONE,
-        COPY,
-        MOVE,
-        CHOOSE
+    private static void LOG(String message, boolean isReentering) {
+        if (DEBUG) {
+            Log.i(TAG, String.format("%s: %s", isReentering ? "REENTERING" : "EXITING", message));
+        }
     }
 
-    public RecyclerView mRecyclerView;
-    public Bundle mTmpState;
-    public boolean mIsReentering;
+    public DrawerLayout getDrawerLayout() {
+        return mDrawerLayout;
+    }
+
+    public boolean isPickMode() {
+        return mPickMode;
+    }
+
+    public void setIsReentering(boolean isReentering) {
+        mIsReentering = isReentering;
+    }
+
+    public Bundle getTmpState() {
+        return mTmpState;
+    }
+
+    public void setTmpState(Bundle tmpState) {
+        mTmpState = tmpState;
+    }
+
+    public MediaCab getMediaCab() {
+        return mMediaCab;
+    }
+
+    public void setMediaCab(MediaCab mediaCab) {
+        mMediaCab = mediaCab;
+    }
+
+    public BreadCrumbLayout getCrumbs() {
+        return mCrumbs;
+    }
+
+    public void invalidateArrow(String albumPath) {
+        if (albumPath == null || albumPath.equals(AlbumEntry.ALBUM_OVERVIEW) ||
+                albumPath.equals(Environment.getExternalStorageDirectory().getAbsolutePath())) {
+            animateDrawerArrow(true);
+        } else {
+            animateDrawerArrow(false);
+        }
+    }
 
     public void animateDrawerArrow(boolean closed) {
-        if (mDrawerToggle == null || drawerArrowOpen == !closed) return;
+        float currentOffset;
+        if (mAnimatedDrawerToggle == null || (currentOffset = mAnimatedDrawerToggle.getOffset()) == (closed ? 0 : 1))
+            return;
         ValueAnimator anim;
-        drawerArrowOpen = !closed;
         if (closed) {
-            anim = ValueAnimator.ofFloat(1f, 0f);
+            anim = ValueAnimator.ofFloat(currentOffset, 0f);
         } else {
-            anim = ValueAnimator.ofFloat(0f, 1f);
+            anim = ValueAnimator.ofFloat(currentOffset, 1f);
         }
         anim.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
             @Override
             public void onAnimationUpdate(ValueAnimator valueAnimator) {
                 float slideOffset = (Float) valueAnimator.getAnimatedValue();
-                mDrawerToggle.onDrawerSlide(null, slideOffset);
+                mAnimatedDrawerToggle.setOffset(slideOffset);
             }
         });
-        anim.setInterpolator(new DecelerateInterpolator());
+        anim.setInterpolator(new FastOutSlowInInterpolator());
         anim.setDuration(300);
         anim.start();
     }
@@ -259,6 +296,7 @@ public class MainActivity extends ThemedActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
         setupSharedElementCallback();
 
         mToolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -269,38 +307,23 @@ public class MainActivity extends ThemedActivity
         processIntent(getIntent());
 
         ActionBar actionBar = getSupportActionBar();
-        assert actionBar != null;
         actionBar.setDisplayHomeAsUpEnabled(true);
-        actionBar.setHomeButtonEnabled(true);
 
         if (!isSelectAlbumMode()) {
             mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
-            mDrawerToggle = new ActionBarDrawerToggle(this, mDrawerLayout,
-                    R.string.navigation_drawer_open, R.string.navigation_drawer_close) {
-                @Override
-                public void onDrawerOpened(View drawerView) {
-                }
+            mAnimatedDrawerToggle = new AnimatedDrawerToggle();
+            mAnimatedDrawerToggle.syncState();
+            mAnimatedDrawerToggle.setOffset(0f);
 
-                @Override
-                public void onDrawerSlide(View drawerView, float slideOffset) {
-                    if (drawerView == null) super.onDrawerSlide(mDrawerLayout, slideOffset);
-                }
-
+            mDrawerLayout.setDrawerListener(new DrawerLayout.SimpleDrawerListener() {
                 @Override
                 public void onDrawerClosed(View drawerView) {
+                    super.onDrawerClosed(drawerView);
                     Fragment nav = getFragmentManager().findFragmentByTag("NAV_DRAWER");
                     if (nav != null)
                         ((NavDrawerFragment) nav).notifyClosed();
                 }
-            };
-            mDrawerLayout.setDrawerShadow(R.drawable.drawer_shadow, GravityCompat.START);
-            mDrawerLayout.post(new Runnable() {
-                @Override
-                public void run() {
-                    mDrawerToggle.syncState();
-                }
             });
-            mDrawerLayout.setDrawerListener(mDrawerToggle);
             mDrawerLayout.setStatusBarBackgroundColor(primaryColorDark());
 
             FrameLayout navDrawerFrame = (FrameLayout) findViewById(R.id.nav_drawer_frame);
@@ -318,7 +341,7 @@ public class MainActivity extends ThemedActivity
                     (getIntent().getAction().equals(Intent.ACTION_GET_CONTENT) ||
                             getIntent().getAction().equals(Intent.ACTION_PICK))) {
                 mTitle = getTitle();
-                getSupportActionBar().setTitle(R.string.pick_something);
+                setTitle(R.string.pick_something);
                 mPickMode = true;
             }
         } else {
@@ -333,55 +356,31 @@ public class MainActivity extends ThemedActivity
         mCrumbs.setFragmentManager(getFragmentManager());
         mCrumbs.setCallback(new BreadCrumbLayout.SelectionCallback() {
             @Override
-            public void onCrumbSelection(BreadCrumbLayout.Crumb crumb, int count, int index) {
+            public void onCrumbSelection(BreadCrumbLayout.Crumb crumb, int index) {
                 if (index == -1) {
                     onBackPressed();
                 } else {
-                    saveScrollPosition();
-                    int active = mCrumbs.getActiveIndex();
-                    if (active > index) {
-                        final int difference = Math.abs(active - index);
-                        for (int i = 0; i < difference; i++) {
-                            try {
-                                getFragmentManager().popBackStack();
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    } else if (active < index) {
-                        for (int i = active + 1; i != index + 1; i++)
-                            addArtificalBackStack(mCrumbs.getCrumb(i).getPath(), true);
+                    String activeFile = null;
+                    if (mCrumbs.getActiveIndex() > -1)
+                        activeFile = mCrumbs.getCrumb(mCrumbs.getActiveIndex()).getPath();
+                    if (crumb.getPath() != null && activeFile != null &&
+                            crumb.getPath().equals(activeFile)) {
+                        Fragment frag = getFragmentManager().findFragmentById(R.id.content_frame);
+                        ((MediaFragment) frag).getPresenter().jumpToTop(true);
+                    } else {
+                        switchAlbum(crumb, crumb.getPath() == null, true);
                     }
-                    mCrumbs.setActive(crumb);
                 }
-            }
-
-            @Override
-            public void onArtificialSelection(BreadCrumbLayout.Crumb crumb, String path, boolean backStack) {
-                addArtificalBackStack(path, backStack);
             }
         });
 
         if (savedInstanceState == null) {
             // Show initial page (overview)
-            switchPage(AlbumEntry.ALBUM_OVERVIEW, true);
+            switchAlbum(null);
         } else if (!isSelectAlbumMode()) {
             if (mTitle != null) getSupportActionBar().setTitle(mTitle);
             mMediaCab = MediaCab.restoreState(savedInstanceState, this);
         }
-
-        getFragmentManager().addOnBackStackChangedListener(new FragmentManager.OnBackStackChangedListener() {
-            @Override
-            public void onBackStackChanged() {
-                MediaFragment content = (MediaFragment) getFragmentManager().findFragmentById(R.id.content_frame);
-                if (content != null)
-                    content.onBackStackResume();
-                NavDrawerFragment nav = (NavDrawerFragment) getFragmentManager().findFragmentByTag("NAV_DRAWER");
-                if (content != null && nav != null && content.getAlbumPath() != null) {
-                    nav.notifyBackStack(content.getAlbumPath());
-                }
-            }
-        });
 
         if (savedInstanceState != null && savedInstanceState.containsKey("breadcrumbs_state")) {
             mCrumbs.restoreFromStateWrapper((BreadCrumbLayout.SavedStateWrapper)
@@ -389,26 +388,6 @@ public class MainActivity extends ThemedActivity
         }
 
         SortMemoryProvider.cleanup(this);
-    }
-
-    private void addArtificalBackStack(final String to, boolean backStack) {
-        Fragment frag = MediaFragment.create(to);
-        String tag = null;
-        if (to != null &&
-                (to.equals(Environment.getExternalStorageDirectory().getAbsolutePath()) ||
-                        to.equals(AlbumEntry.ALBUM_OVERVIEW))) {
-            tag = "[root]";
-        }
-        @SuppressLint("CommitTransaction")
-        FragmentTransaction transaction = getFragmentManager().beginTransaction()
-                .replace(R.id.content_frame, frag, tag);
-        if (backStack)
-            transaction.addToBackStack(null);
-        try {
-            transaction.commit();
-        } catch (IllegalStateException e) {
-            e.printStackTrace();
-        }
     }
 
 
@@ -488,12 +467,6 @@ public class MainActivity extends ThemedActivity
         }
     }
 
-    @Override
-    public void onConfigurationChanged(Configuration newConfig) {
-        super.onConfigurationChanged(newConfig);
-        mDrawerToggle.onConfigurationChanged(newConfig);
-    }
-
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     @Override
     public void onActivityReenter(int resultCode, Intent data) {
@@ -527,8 +500,10 @@ public class MainActivity extends ThemedActivity
         } else {
             if (mDrawerLayout != null && mDrawerLayout.isDrawerOpen(GravityCompat.START)) {
                 mDrawerLayout.closeDrawer(GravityCompat.START);
-            } else if (mCrumbs.canPop()) {
-                mCrumbs.pop();
+            } else if (mCrumbs.popHistory()) {
+                // Go to previous crumb in history
+                final BreadCrumbLayout.Crumb crumb = mCrumbs.lastHistory();
+                switchAlbum(crumb, false, false);
             } else {
                 super.onBackPressed();
             }
@@ -548,7 +523,7 @@ public class MainActivity extends ThemedActivity
             startActivityForResult(new Intent(this, SettingsActivity.class), SETTINGS_REQUEST);
             return true;
         } else if (item.getItemId() == android.R.id.home) {
-            if (drawerArrowOpen) {
+            if (mAnimatedDrawerToggle.getOffset() == 1) {
                 onBackPressed();
                 return true;
             } else if (isSelectAlbumMode()) {
@@ -557,7 +532,7 @@ public class MainActivity extends ThemedActivity
             }
         }
         return mDrawerLayout != null && (mDrawerLayout.getDrawerLockMode(GravityCompat.START) == DrawerLayout.LOCK_MODE_LOCKED_CLOSED ||
-                mDrawerToggle.onOptionsItemSelected(item) || super.onOptionsItemSelected(item));
+                mAnimatedDrawerToggle.onOptionsItemSelected(item) || super.onOptionsItemSelected(item));
     }
 
     @Override
@@ -570,28 +545,66 @@ public class MainActivity extends ThemedActivity
         }
     }
 
-    private void switchPage(String path, boolean closeDrawer) {
-        switchPage(path, closeDrawer, false);
+    public boolean navDrawerSwitchAlbum(String path) {
+        MediaFragment frag = (MediaFragment) getFragmentManager().findFragmentById(R.id.content_frame);
+        if (!path.equals(frag.getPresenter().getAlbumPath())) {
+            mCrumbs.clearHistory();
+            switchAlbum(path);
+            return true;
+        }
+        return false;
     }
 
-    public void switchPage(String to, boolean closeDrawer, boolean backStack) {
-        boolean wasNull = false;
-        if (to == null) {
+    public void switchAlbum(String path) {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) !=
+                PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+
+        boolean wasNull = (path == null);
+        if (wasNull) {
             // Initial directory
-            wasNull = true;
-            to = Environment.getExternalStorageDirectory().getAbsolutePath();
+            path = AlbumEntry.ALBUM_OVERVIEW;
         }
-        BreadCrumbLayout.Crumb crumb = new BreadCrumbLayout.Crumb(this, to);
-        if (!backStack) {
-            mCrumbs.clearCrumbs();
-            mCrumbs.addCrumb(crumb, true);
-            addArtificalBackStack(to, false);
+
+        BreadCrumbLayout.Crumb crumb = new BreadCrumbLayout.Crumb(this, path);
+        switchAlbum(crumb, wasNull, true);
+    }
+
+    public void switchAlbum(BreadCrumbLayout.Crumb crumb, boolean forceRecreate, boolean addToHistory) {
+        if (forceRecreate) {
+            // Rebuild artificial history, most likely first time load
+            mCrumbs.clearHistory();
+            String path = crumb.getPath();
+            while (path != null) {
+                mCrumbs.addHistory(new BreadCrumbLayout.Crumb(this, path));
+                if (BreadCrumbLayout.isStorage(path))
+                    break;
+                path = new File(path).getParent();
+            }
+            mCrumbs.reverseHistory();
+        } else if (addToHistory) {
+            mCrumbs.addHistory(crumb);
+        }
+        mCrumbs.setActiveOrAdd(crumb, forceRecreate);
+
+        final String to = crumb.getPath();
+        MediaFragment frag = (MediaFragment) getFragmentManager().findFragmentById(R.id.content_frame);
+
+        if (frag == null) {
+            frag = MediaPresenter.newInstance(to);
+            getFragmentManager().beginTransaction().replace(R.id.content_frame, frag).commit();
         } else {
-            final boolean explorerMode = PreferenceManager.getDefaultSharedPreferences(this)
-                    .getBoolean("explorer_mode", false);
-            mCrumbs.setActiveOrAdd(crumb, !explorerMode, wasNull);
+            MediaPresenter presenter = frag.getPresenter();
+            String albumPath = presenter.getAlbumPath();
+            if (!albumPath.equals(to)) {
+                presenter.setAlbumPath(to);
+            }
         }
-        if (closeDrawer && mDrawerLayout != null)
+    }
+
+    public void closeDrawer() {
+        if (mDrawerLayout != null)
             mDrawerLayout.closeDrawers();
     }
 
@@ -606,12 +619,6 @@ public class MainActivity extends ThemedActivity
                 frag = fm.findFragmentByTag(name);
                 if (frag != null) ((MediaFragment) frag).reload();
             }
-        }
-    }
-
-    private static void LOG(String message, boolean isReentering) {
-        if (DEBUG) {
-            Log.i(TAG, String.format("%s: %s", isReentering ? "REENTERING" : "EXITING", message));
         }
     }
 
@@ -710,6 +717,31 @@ public class MainActivity extends ThemedActivity
                     }
                 }
             });
+        }
+    }
+
+    public enum SelectAlbumMode {
+        NONE,
+        COPY,
+        MOVE,
+        CHOOSE
+    }
+
+    private class AnimatedDrawerToggle extends ActionBarDrawerToggle {
+
+        private float mOffset;
+
+        public AnimatedDrawerToggle() {
+            super(MainActivity.this, MainActivity.this.mDrawerLayout, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+        }
+
+        public float getOffset() {
+            return mOffset;
+        }
+
+        public void setOffset(float slideOffset) {
+            super.onDrawerSlide(null, slideOffset);
+            mOffset = slideOffset;
         }
     }
 }

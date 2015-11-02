@@ -8,8 +8,6 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:clipToPadding="false"
-        android:paddingBottom="@dimen/grid_spacing"
-        android:paddingLeft="@dimen/grid_spacing"
         android:scrollbars="vertical"
         tools:ignore="RtlHardcoded,RtlSymmetry" />
 
@@ -18,13 +16,14 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:fontFamily="sans-serif-light"
         android:gravity="center"
         android:lineSpacingMultiplier="1.5"
         android:padding="24dp"
         android:textColor="?empty_text_color"
         android:textSize="20sp"
-        android:visibility="gone" />
+        android:visibility="gone"
+        tools:text="EMPTY IT'S EMPTY"
+        tools:visibility="visible" />
 
     <ProgressBar
         android:id="@+id/progress"

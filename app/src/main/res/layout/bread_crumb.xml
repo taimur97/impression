@@ -1,36 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    android:orientation="horizontal"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:gravity="center_vertical"
-    tools:ignore="UseCompoundDrawables"
     android:background="?selectableItemBackground"
+    android:gravity="center_vertical|start"
     android:minHeight="@dimen/breadcrumb_height"
-    android:paddingLeft="@dimen/breadcrumb_padding_side"
-    android:paddingRight="@dimen/breadcrumb_padding_side">
+    android:orientation="horizontal"
+    android:paddingEnd="@dimen/breadcrumb_padding_side"
+    android:paddingLeft="12dp"
+    android:paddingRight="@dimen/breadcrumb_padding_side"
+    android:paddingStart="12dp"
+    tools:ignore="UseCompoundDrawables">
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        tools:text="Storage"
-        tools:textColor="#000"
+        android:paddingEnd="@dimen/breadcrumb_arrow_margin"
+        android:paddingRight="@dimen/breadcrumb_arrow_margin"
+        android:textAlignment="viewStart"
         android:textAllCaps="true"
+        android:textColor="#fff"
         android:textSize="@dimen/breadcrumb_fontsize"
-        android:textColor="#fff" />
+        tools:ignore="RtlCompat,RtlSymmetry,UnusedAttribute"
+        tools:text="Storage"
+        tools:textColor="#000" />
 
     <ImageView
         android:layout_width="@dimen/breadcrumb_arrow_size"
         android:layout_height="@dimen/breadcrumb_arrow_size"
-        android:src="@drawable/ic_right_arrow"
-        tools:ignore="ContentDescription"
         android:scaleType="fitXY"
-        tools:visibility="visible"
+        android:src="@drawable/ic_right_arrow"
         android:visibility="gone"
-        android:layout_marginLeft="@dimen/breadcrumb_arrow_margin"
-        android:layout_marginStart="@dimen/breadcrumb_arrow_margin"
-        android:layout_marginRight="@dimen/breadcrumb_arrow_margin"
-        android:layout_marginEnd="@dimen/breadcrumb_arrow_margin" />
+        tools:ignore="ContentDescription"
+        tools:visibility="visible" />
 
 </LinearLayout>

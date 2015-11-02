@@ -22,9 +22,9 @@ import com.afollestad.impression.R;
 import com.afollestad.impression.adapters.MediaAdapter;
 import com.afollestad.impression.api.AlbumEntry;
 import com.afollestad.impression.api.base.MediaEntry;
-import com.afollestad.impression.fragments.MediaFragment;
+import com.afollestad.impression.media.MainActivity;
+import com.afollestad.impression.media.MediaFragment;
 import com.afollestad.impression.providers.ExcludedFolderProvider;
-import com.afollestad.impression.ui.MainActivity;
 import com.afollestad.impression.ui.viewer.ViewerActivity;
 import com.afollestad.impression.utils.TimeUtils;
 import com.afollestad.impression.utils.Utils;
@@ -49,15 +49,13 @@ import java.util.List;
  */
 public class MediaCab implements Serializable, MaterialCab.Callback {
 
-    private final transient MainActivity mContext;
-    private transient MediaFragment mFragment;
-
-    private List<MediaEntry> mMediaEntries;
-    private MaterialCab mCab;
-
     public final static int COPY_REQUEST_CODE = 8000;
     public final static int MOVE_REQUEST_CODE = 9000;
     private static final String STATE_MEDIACAB_ENTRIES = "state_media_cab_entries";
+    private final transient MainActivity mContext;
+    private transient MediaFragment mFragment;
+    private List<MediaEntry> mMediaEntries;
+    private MaterialCab mCab;
 
     public MediaCab(Activity context) {
         this((MainActivity) context);
@@ -68,6 +66,17 @@ public class MediaCab implements Serializable, MaterialCab.Callback {
         mMediaEntries = new ArrayList<>();
     }
 
+    public static MediaCab restoreState(Bundle in, MainActivity context) {
+        ViewerActivity.MediaWrapper wrapper = (ViewerActivity.MediaWrapper) in.getSerializable(STATE_MEDIACAB_ENTRIES);
+        if (wrapper != null) {
+            MediaCab cab = new MediaCab(context);
+            cab.mMediaEntries = wrapper.getMedia();
+            cab.mCab = MaterialCab.restoreState(in, context, cab);
+            return cab;
+        }
+        return null;
+    }
+
     public void setFragment(MediaFragment frag, boolean invalidateChecked) {
         mFragment = frag;
         if (invalidateChecked)
@@ -75,8 +84,8 @@ public class MediaCab implements Serializable, MaterialCab.Callback {
     }
 
     public void start() {
-        mContext.mDrawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);
-        mContext.mMediaCab = this;
+        mContext.getDrawerLayout().setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);
+        mContext.setMediaCab(this);
         if (mCab == null) {
             mCab = new MaterialCab(mContext, R.id.cab_stub)
                     .setMenu(R.menu.cab)
@@ -99,17 +108,6 @@ public class MediaCab implements Serializable, MaterialCab.Callback {
     public void saveState(Bundle out) {
         mCab.saveState(out);
         out.putSerializable(STATE_MEDIACAB_ENTRIES, new ViewerActivity.MediaWrapper(mMediaEntries, true));
-    }
-
-    public static MediaCab restoreState(Bundle in, MainActivity context) {
-        ViewerActivity.MediaWrapper wrapper = (ViewerActivity.MediaWrapper) in.getSerializable(STATE_MEDIACAB_ENTRIES);
-        if (wrapper != null) {
-            MediaCab cab = new MediaCab(context);
-            cab.mMediaEntries = wrapper.getMedia();
-            cab.mCab = MaterialCab.restoreState(in, context, cab);
-            return cab;
-        }
-        return null;
     }
 
     public boolean isStarted() {
@@ -514,8 +512,8 @@ public class MediaCab implements Serializable, MaterialCab.Callback {
     @Override
     public boolean onCabFinished(MaterialCab materialCab) {
         if (mContext != null) {
-            mContext.mMediaCab = null;
-            mContext.mDrawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED);
+            mContext.setMediaCab(null);
+            mContext.getDrawerLayout().setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED);
         }
         if (mFragment != null) {
             ((MediaAdapter) mFragment.getAdapter()).clearChecked();

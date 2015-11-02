@@ -2,8 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:minHeight="48dp"
+    android:layout_height="wrap_content"
     android:orientation="vertical">
 
     <View
@@ -16,27 +15,27 @@
     <RelativeLayout
         android:id="@+id/viewFrame"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="48dp"
         android:background="?list_selector"
-        android:clickable="true"
-        android:padding="16dp">
+        android:paddingLeft="16dp"
+        android:paddingRight="16dp">
 
         <!--suppress AndroidDomInspection -->
         <TextView
+
             android:id="@+id/title"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_alignParentLeft="true"
-            android:layout_alignParentStart="true"
+            android:layout_height="wrap_content"
+
             android:layout_centerVertical="true"
+            android:layout_toLeftOf="@id/icon"
+            android:layout_toStartOf="@id/icon"
             android:fontFamily="@string/font_fontFamily_medium"
             android:singleLine="true"
             android:textSize="@dimen/nav_drawer_textsize"
             android:textStyle="@integer/font_textStyle_medium"
-            tools:text="Content"
-            android:gravity="start"
-            android:textAlignment="viewStart"
-            tools:ignore="UnusedAttribute" />
+            tools:ignore="UnusedAttribute"
+            tools:text="Content" />
 
         <ImageView
             android:id="@+id/icon"
@@ -45,7 +44,8 @@
             android:layout_alignParentEnd="true"
             android:layout_alignParentRight="true"
             android:layout_centerVertical="true"
-            android:scaleType="fitXY"
+            android:layout_marginLeft="16dp"
+            android:layout_marginStart="16dp"
             android:src="@drawable/ic_action_add"
             tools:ignore="ContentDescription" />
 

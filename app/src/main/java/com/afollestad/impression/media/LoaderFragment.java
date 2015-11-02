@@ -1,4 +1,4 @@
-package com.afollestad.impression.fragments.base;
+package com.afollestad.impression.media;
 
 import android.Manifest;
 import android.app.Activity;
@@ -20,24 +20,30 @@ import com.afollestad.impression.adapters.MediaAdapter;
 import com.afollestad.impression.adapters.base.HybridCursorAdapter;
 import com.afollestad.impression.api.base.MediaEntry;
 import com.afollestad.impression.providers.SortMemoryProvider;
-import com.afollestad.impression.ui.MainActivity;
+import com.afollestad.impression.utils.PrefUtils;
 import com.afollestad.impression.utils.Utils;
 import com.afollestad.impression.views.BreadCrumbLayout;
 
 /**
  * @author Aidan Follestad (afollestad)
  */
-public abstract class LoaderFragment<VH extends RecyclerView.ViewHolder>
-        extends ImpressionListFragment implements Account.EntriesCallback {
+public abstract class LoaderFragment<VH extends RecyclerView.ViewHolder, P extends LoaderPresenter>
+        extends ImpressionListFragment<P> implements Account.EntriesCallback, LoaderView {
 
     public boolean sortRememberDir = false;
-    protected MediaAdapter.SortMode mSortCache;
+    protected MediaAdapter.SortMode sortCache;
     protected BreadCrumbLayout.Crumb crumb;
+
+    protected static MediaAdapter.FileFilterMode getFilterMode(Context context) {
+        if (context == null) return MediaAdapter.FileFilterMode.ALL;
+        int explorerMode = PreferenceManager.getDefaultSharedPreferences(context).getInt("filter_mode", 0);
+        return MediaAdapter.FileFilterMode.valueOf(explorerMode);
+    }
 
     public void saveScrollPosition() {
         if (crumb == null)
             return;
-        crumb.setScrollY(getLayoutManager().findFirstVisibleItemPosition());
+        crumb.setScrollPosition(mPresenter.createLayoutManager().findFirstVisibleItemPosition());
         final View firstChild = getRecyclerView().getChildAt(0);
         if (firstChild != null)
             crumb.setScrollOffset((int) firstChild.getY());
@@ -46,9 +52,9 @@ public abstract class LoaderFragment<VH extends RecyclerView.ViewHolder>
     private void restoreScrollPosition() {
         if (crumb == null)
             return;
-        final int scrollY = crumb.getScrollY();
+        final int scrollY = crumb.getScrollPosition();
         if (scrollY > -1 && scrollY < getAdapter().getItemCount()) {
-            getLayoutManager().scrollToPositionWithOffset(scrollY, crumb.getScrollOffset());
+            mPresenter.createLayoutManager().scrollToPositionWithOffset(scrollY, crumb.getScrollOffset());
         }
     }
 
@@ -64,14 +70,8 @@ public abstract class LoaderFragment<VH extends RecyclerView.ViewHolder>
         getActivity().invalidateOptionsMenu();
     }
 
-    protected static MediaAdapter.FileFilterMode getFilterMode(Context context) {
-        if (context == null) return MediaAdapter.FileFilterMode.ALL;
-        int explorerMode = PreferenceManager.getDefaultSharedPreferences(context).getInt("filter_mode", 0);
-        return MediaAdapter.FileFilterMode.valueOf(explorerMode);
-    }
-
     protected final void setSortMode(MediaAdapter.SortMode mode, String rememberPath) {
-        mSortCache = mode;
+        sortCache = mode;
         SortMemoryProvider.remember(getActivity(), rememberPath, mode);
         invalidateLayoutManagerAndAdapter();
         reload();
@@ -86,12 +86,6 @@ public abstract class LoaderFragment<VH extends RecyclerView.ViewHolder>
         getActivity().invalidateOptionsMenu();
     }
 
-    protected final MediaAdapter.ViewMode getViewMode() {
-        if (getActivity() == null) return MediaAdapter.ViewMode.GRID;
-        int explorerMode = PreferenceManager.getDefaultSharedPreferences(getActivity()).getInt("view_mode", 0);
-        return MediaAdapter.ViewMode.valueOf(explorerMode);
-    }
-
     protected final void setExplorerMode(final boolean explorerMode) {
         MainActivity act = (MainActivity) getActivity();
         if (act == null) return;
@@ -99,22 +93,9 @@ public abstract class LoaderFragment<VH extends RecyclerView.ViewHolder>
                 .putBoolean("explorer_mode", explorerMode).commit();
         reload();
         act.getFragmentManager().popBackStack(null, FragmentManager.POP_BACK_STACK_INCLUSIVE);
-        act.setTitle(getTitle());
+        act.setTitle(mPresenter.getTitle());
         act.invalidateOptionsMenu();
         act.invalidateCrumbs();
-    }
-
-    protected final boolean isExplorerMode() {
-        return getActivity() != null && PreferenceManager.getDefaultSharedPreferences(getActivity()).getBoolean("explorer_mode", false);
-    }
-
-    protected final int getGridWidth() {
-        if (getActivity() == null) return 1;
-        final Resources r = getResources();
-        final int defaultGrid = r.getInteger(R.integer.default_grid_width);
-        final int orientation = r.getConfiguration().orientation;
-        return PreferenceManager.getDefaultSharedPreferences(getActivity())
-                .getInt("grid_size_" + orientation, defaultGrid);
     }
 
     protected final void setGridWidth(int width) {
@@ -132,8 +113,6 @@ public abstract class LoaderFragment<VH extends RecyclerView.ViewHolder>
         return (HybridCursorAdapter<VH>) super.getAdapter();
     }
 
-    protected abstract String getAlbumPath();
-
     private void getAllEntries(final Account.EntriesCallback callback) {
         if (getActivity() == null) return;
         App.getCurrentAccount(getActivity(), new Account.AccountCallback() {
@@ -141,9 +120,9 @@ public abstract class LoaderFragment<VH extends RecyclerView.ViewHolder>
             public void onAccount(Account acc) {
                 if (!isAdded()) return;
                 if (acc != null) {
-                    acc.getEntries(getAlbumPath(), getOverviewMode(),
-                            isExplorerMode(), getFilterMode(getActivity()),
-                            SortMemoryProvider.remember(getActivity(), getAlbumPath()), callback);
+                    acc.getEntries(mPresenter.getAlbumPath(), getOverviewMode(),
+                            PrefUtils.isExplorerMode(getActivity()), getFilterMode(getActivity()),
+                            SortMemoryProvider.remember(getActivity(), mPresenter.getAlbumPath()), callback);
                 }
             }
         });
@@ -187,9 +166,6 @@ public abstract class LoaderFragment<VH extends RecyclerView.ViewHolder>
     }
 
     @Override
-    protected abstract HybridCursorAdapter<VH> initializeAdapter();
-
-    @Override
     public void onEntries(MediaEntry[] entries) {
         if (!isAdded())
             return;
@@ -215,7 +191,7 @@ public abstract class LoaderFragment<VH extends RecyclerView.ViewHolder>
                 int albumCount = 0;
                 int videoCount = 0;
                 int photoCount = 0;
-                for (MediaEntry e : entries) {
+                for (MediaEntry<? extends Object> e : entries) {
                     if (e.isFolder()) folderCount++;
                     else if (e.isAlbum()) albumCount++;
                     else if (e.isVideo()) videoCount++;
@@ -267,4 +243,7 @@ public abstract class LoaderFragment<VH extends RecyclerView.ViewHolder>
         if (getAdapter() != null)
             getAdapter().changeContent(null, null, true, false);
     }
+
+    @Override
+    protected abstract P createPresenter();
 }

@@ -12,9 +12,9 @@
         android:layout_height="?actionBarSize"
         android:background="@drawable/transparent"
         android:elevation="@dimen/toolbar_elevation"
+        android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
         app:contentInsetStart="@dimen/toolbar_inset"
         app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
-        app:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
         tools:ignore="UnusedAttribute" />
 
     <RelativeLayout
@@ -56,8 +56,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_centerVertical="true"
-                android:layout_marginRight="8dp"
                 android:layout_marginEnd="8dp"
+                android:layout_marginRight="8dp"
                 android:textColor="@color/dark_vanilla_gray"
                 android:textSize="@dimen/editor_control_text" />
 
@@ -66,17 +66,17 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_centerVertical="true"
+                android:layout_toEndOf="@+id/saveEffect"
                 android:layout_toLeftOf="@+id/saveEffect"
                 android:layout_toRightOf="@+id/seekbarLabel"
-                android:layout_toEndOf="@+id/saveEffect"
                 android:layout_toStartOf="@+id/saveEffect" />
 
             <ImageButton
                 android:id="@+id/saveEffect"
                 android:layout_width="?attr/actionBarSize"
                 android:layout_height="?attr/actionBarSize"
-                android:layout_alignParentRight="true"
                 android:layout_alignParentEnd="true"
+                android:layout_alignParentRight="true"
                 android:layout_centerVertical="true"
                 android:background="?android:actionBarItemBackground"
                 android:src="@drawable/ic_action_done_dark"

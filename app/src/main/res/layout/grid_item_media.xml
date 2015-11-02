@@ -7,9 +7,6 @@
     android:focusable="false"
     android:focusableInTouchMode="false"
     android:foreground="?grid_selector"
-    android:paddingEnd="@dimen/grid_spacing"
-    android:paddingRight="@dimen/grid_spacing"
-    android:paddingTop="@dimen/grid_spacing"
     tools:ignore="RtlSymmetry">
 
     <com.afollestad.impression.views.ImpressionImageView
@@ -25,10 +22,8 @@
         android:layout_height="@dimen/grid_titleframe_height"
         android:layout_gravity="bottom"
         android:background="@color/grid_overlay"
-        android:paddingBottom="10dp"
         android:paddingLeft="16dp"
         android:paddingRight="16dp"
-        android:paddingTop="10dp"
         android:visibility="gone"
         tools:visibility="visible">
 

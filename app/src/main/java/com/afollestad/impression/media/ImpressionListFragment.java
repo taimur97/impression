@@ -1,9 +1,10 @@
-package com.afollestad.impression.fragments.base;
+package com.afollestad.impression.media;
 
 import android.app.Fragment;
+import android.content.Context;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
-import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -11,21 +12,23 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import com.afollestad.impression.R;
-import com.afollestad.impression.ui.MainActivity;
+import com.afollestad.impression.adapters.SpacesItemDecoration;
 
 /**
  * @author Aidan Follestad (afollestad)
  */
-public abstract class ImpressionListFragment extends Fragment {
+public abstract class ImpressionListFragment<P extends ImpressionListPresenter> extends Fragment implements ImpressionListView {
 
-    private RecyclerView mRecyclerView;
-    private RecyclerView.Adapter mAdapter;
+    protected RecyclerView mRecyclerView;
+    protected RecyclerView.Adapter mAdapter;
 
-    RecyclerView.Adapter getAdapter() {
+    protected P mPresenter;
+
+    public RecyclerView.Adapter getAdapter() {
         return mAdapter;
     }
 
-    RecyclerView getRecyclerView() {
+    public RecyclerView getRecyclerView() {
         return mRecyclerView;
     }
 
@@ -44,6 +47,13 @@ public abstract class ImpressionListFragment extends Fragment {
         }
     }
 
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        mPresenter = createPresenter();
+        mPresenter.attachView(this);
+    }
+
     @Nullable
     @Override
     public final View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -53,30 +63,31 @@ public abstract class ImpressionListFragment extends Fragment {
     @Override
     public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        ((TextView) view.findViewById(R.id.empty)).setText(getEmptyText());
+
+        ((TextView) view.findViewById(R.id.empty)).setText(mPresenter.getEmptyText());
         mRecyclerView = (RecyclerView) view.findViewById(R.id.list);
         mRecyclerView.setScrollBarStyle(View.SCROLLBARS_INSIDE_OVERLAY);
+
         invalidateLayoutManagerAndAdapter();
     }
 
-    protected void invalidateLayoutManagerAndAdapter() {
-        mRecyclerView.setLayoutManager(getLayoutManager());
-        mAdapter = initializeAdapter();
+    //TODO: Don't recreate layout manager
+    public void invalidateLayoutManagerAndAdapter() {
+        mRecyclerView.setLayoutManager(mPresenter.createLayoutManager());
+        int spacing = getResources().getDimensionPixelSize(R.dimen.grid_spacing);
+        mRecyclerView.addItemDecoration(new SpacesItemDecoration(spacing));
+        mAdapter = mPresenter.createAdapter();
         mRecyclerView.setAdapter(mAdapter);
     }
 
-    public void onBackStackResume() {
-        if (getActivity() != null) {
-            MainActivity act = (MainActivity) getActivity();
-            act.mRecyclerView = mRecyclerView;
+    @Override
+    public Context getContextCompat() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            return getContext();
+        } else {
+            return getActivity();
         }
     }
 
-    protected abstract String getTitle();
-
-    protected abstract int getEmptyText();
-
-    protected abstract GridLayoutManager getLayoutManager();
-
-    protected abstract RecyclerView.Adapter initializeAdapter();
+    protected abstract P createPresenter();
 }

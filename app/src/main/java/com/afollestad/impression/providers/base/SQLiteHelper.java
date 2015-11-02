@@ -7,7 +7,7 @@ import android.util.Log;
 
 class SQLiteHelper extends SQLiteOpenHelper {
 
-    private static final String DATABASE = "CoupCash";
+    private static final String DATABASE = "Impression";
     private static final int DATABASE_VERSION = 3;
     private final String TABLE;
 

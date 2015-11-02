@@ -7,8 +7,9 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.preference.PreferenceManager;
 
+import com.afollestad.impression.BuildConfig;
 import com.afollestad.impression.adapters.MediaAdapter;
-import com.afollestad.impression.fragments.base.LoaderFragment;
+import com.afollestad.impression.media.LoaderFragment;
 import com.afollestad.impression.providers.base.ProviderBase;
 
 import java.io.File;
@@ -19,12 +20,11 @@ import java.io.File;
 public class SortMemoryProvider extends ProviderBase {
 
     private final static String COLUMNS = "_id INTEGER PRIMARY KEY AUTOINCREMENT, path TEXT, mode INTEGER";
+    private final static Uri CONTENT_URI = Uri.parse("content://" + BuildConfig.APPLICATION_ID + ".sortstorage");
 
     public SortMemoryProvider() {
         super("sort_memory", COLUMNS);
     }
-
-    private final static Uri CONTENT_URI = Uri.parse("content://com.afollestad.impression.sortmemory");
 
     public static void cleanup(Context context) {
         final ContentResolver r = context.getContentResolver();

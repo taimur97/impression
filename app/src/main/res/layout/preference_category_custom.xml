@@ -1,12 +1,15 @@
 <!--suppress AndroidDomInspection -->
-<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+<TextView
     android:id="@android:id/title"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="48dp"
     android:fontFamily="@string/font_fontFamily_medium"
     android:paddingLeft="16dip"
     android:paddingRight="16dip"
     android:paddingTop="16dp"
     android:textColor="?colorAccent"
     android:textSize="14sp"
-    android:textStyle="@integer/font_textStyle_medium" />
+    android:textStyle="@integer/font_textStyle_medium"
+    tools:text="Sup man? The ceiling. Or the sky if you're a normal human." />

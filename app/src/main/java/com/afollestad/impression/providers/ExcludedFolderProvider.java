@@ -7,6 +7,7 @@ import android.net.Uri;
 import android.os.Environment;
 import android.preference.PreferenceManager;
 
+import com.afollestad.impression.BuildConfig;
 import com.afollestad.impression.providers.base.ProviderBase;
 
 import java.io.File;
@@ -19,12 +20,11 @@ import java.util.List;
 public class ExcludedFolderProvider extends ProviderBase {
 
     private final static String COLUMNS = "_id INTEGER PRIMARY KEY AUTOINCREMENT, path TEXT";
+    private final static Uri CONTENT_URI = Uri.parse("content://" + BuildConfig.APPLICATION_ID + ".excludedfolder");
 
     public ExcludedFolderProvider() {
         super("excluded", COLUMNS);
     }
-
-    private final static Uri CONTENT_URI = Uri.parse("content://com.afollestad.impression.excluded");
 
     public static void clear(Context context) {
         context.getContentResolver().delete(CONTENT_URI, null, null);

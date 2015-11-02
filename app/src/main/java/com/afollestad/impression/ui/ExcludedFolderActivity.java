@@ -11,6 +11,7 @@ import android.view.View;
 
 import com.afollestad.impression.R;
 import com.afollestad.impression.adapters.ExcludedFolderAdapter;
+import com.afollestad.impression.media.MainActivity;
 import com.afollestad.impression.providers.ExcludedFolderProvider;
 import com.afollestad.impression.ui.base.ThemedActivity;
 
@@ -19,8 +20,8 @@ import com.afollestad.impression.ui.base.ThemedActivity;
  */
 public class ExcludedFolderActivity extends ThemedActivity {
 
-    private ExcludedFolderAdapter mAdapter;
     private final static int CHOOSE_FOLDER_REQUEST = 5000;
+    private ExcludedFolderAdapter mAdapter;
 
     @Override
     protected int darkTheme() {

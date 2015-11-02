@@ -4,6 +4,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.net.Uri;
 
+import com.afollestad.impression.BuildConfig;
 import com.afollestad.impression.providers.base.ProviderBase;
 
 import java.io.File;
@@ -13,13 +14,12 @@ import java.io.File;
  */
 public class IncludedFolderProvider extends ProviderBase {
 
+    public final static Uri CONTENT_URI = Uri.parse("content://" + BuildConfig.APPLICATION_ID + ".includedfolder");
     private final static String COLUMNS = "_id INTEGER PRIMARY KEY AUTOINCREMENT, path TEXT";
 
     public IncludedFolderProvider() {
         super("included", COLUMNS);
     }
-
-    public final static Uri CONTENT_URI = Uri.parse("content://com.afollestad.impression.included");
 
     public static void clear(Context context) {
         context.getContentResolver().delete(CONTENT_URI, null, null);

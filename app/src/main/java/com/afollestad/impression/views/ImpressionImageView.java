@@ -26,11 +26,18 @@ import java.lang.ref.WeakReference;
  */
 public class ImpressionImageView extends ImageView {
 
+    private MediaEntry mEntry;
+    private WeakReference<View> mProgress;
+    private Bitmap mCheck;
+    private Bitmap mPlay;
+    private Bitmap mGif;
+    private int mPlayOverlay;
+    private int mSelectedColor;
+    private boolean mIsGif;
     public ImpressionImageView(Context context) {
         super(context);
         init(context);
     }
-
     public ImpressionImageView(Context context, AttributeSet attrs) {
         super(context, attrs);
         init(context);
@@ -45,15 +52,6 @@ public class ImpressionImageView extends ImageView {
         mPlayOverlay = ContextCompat.getColor(context, R.color.video_play_overlay);
         mSelectedColor = ContextCompat.getColor(context, R.color.picture_activated_overlay);
     }
-
-    private MediaEntry mEntry;
-    private WeakReference<View> mProgress;
-    private Bitmap mCheck;
-    private Bitmap mPlay;
-    private Bitmap mGif;
-    private int mPlayOverlay;
-    private int mSelectedColor;
-    private boolean isGif;
 
     public void load(MediaEntry entry, View progress) {
         setTag(null);
@@ -72,7 +70,7 @@ public class ImpressionImageView extends ImageView {
         if (entry.isAlbum())
             pathToLoad = ((AlbumEntry) entry).mFirstPath;
         String ext = Utils.getExtension(entry.data());
-        isGif = ext != null && ext.equalsIgnoreCase("gif");
+        mIsGif = ext != null && ext.equalsIgnoreCase("gif");
         Ion.with(this)
                 .centerCrop()
                 .animateGif(AnimateGifMode.NO_ANIMATE)
@@ -91,6 +89,7 @@ public class ImpressionImageView extends ImageView {
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+        //noinspection SuspiciousNameCombination
         setMeasuredDimension(widthMeasureSpec, widthMeasureSpec);
         if (getTag() != null)
             load((Integer) getTag());
@@ -111,7 +110,7 @@ public class ImpressionImageView extends ImageView {
                         (getMeasuredWidth() / 2) - (targetDimen / 2),
                         (getMeasuredHeight() / 2) - (targetDimen / 2),
                         null);
-            } else if (isGif) {
+            } else if (mIsGif) {
                 canvas.drawColor(mPlayOverlay);
                 canvas.drawBitmap(mGif,
                         (getMeasuredWidth() / 2) - (targetDimen / 2),

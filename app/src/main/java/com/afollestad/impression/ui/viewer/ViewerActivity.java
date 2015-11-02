@@ -62,13 +62,84 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import static com.afollestad.impression.fragments.viewer.ViewerPageFragment.LIGHT_MODE_ON;
-import static com.afollestad.impression.ui.MainActivity.EXTRA_CURRENT_ITEM_POSITION;
-import static com.afollestad.impression.ui.MainActivity.EXTRA_OLD_ITEM_POSITION;
+import static com.afollestad.impression.media.MainActivity.EXTRA_CURRENT_ITEM_POSITION;
+import static com.afollestad.impression.media.MainActivity.EXTRA_OLD_ITEM_POSITION;
 
 /**
  * @author Aidan Follestad (afollestad)
  */
 public class ViewerActivity extends ThemedActivity implements SlideshowInitDialog.SlideshowCallback {
+
+    public static final int TOOLBAR_FADE_OFFSET = 2750;
+    public static final int TOOLBAR_FADE_DURATION = 400;
+    private static final int EDIT_REQUEST = 1000;
+    private static final String STATE_CURRENT_POSITION = "state_current_position";
+    private static final String STATE_OLD_POSITION = "state_old_position";
+    public Toolbar mToolbar;
+    public boolean mFinishedTransition;
+    private List<MediaEntry> mEntries;
+    private ViewPager mPager;
+    private ViewerPageAdapter mAdapter;
+    private Timer mTimer;
+    private int mCurrentPosition;
+    private int mOriginalPosition;
+    private boolean startedPostponedTransition;
+    private boolean mLightMode;
+    private int mStatusBarHeight;
+    private boolean mIsReturning;
+    private boolean mAllVideos;
+    private ImageView mOverflow;
+    private boolean systemUIFocus = false;
+    private long mSlideshowDelay;
+    private boolean mSlideshowLoop;
+    private Timer mSlideshowTimer;
+    private ViewPager.OnPageChangeListener mPagerListener = new ViewPager.OnPageChangeListener() {
+
+        int previousState;
+        boolean userScrollChange;
+
+        @Override
+        public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
+        }
+
+        @Override
+        public void onPageSelected(int position) {
+            if (userScrollChange)
+                stopSlideshow();
+            ViewerPageFragment noActive = (ViewerPageFragment) getFragmentManager().findFragmentByTag("page:" + mCurrentPosition);
+            if (noActive != null)
+                noActive.setIsActive(false);
+            mCurrentPosition = position;
+            ViewerPageFragment active = (ViewerPageFragment) getFragmentManager().findFragmentByTag("page:" + mCurrentPosition);
+            if (active != null) {
+                active.setIsActive(true);
+                mLightMode = active.mLightMode == LIGHT_MODE_ON;
+            }
+            mAdapter.mCurrentPage = position;
+            invalidateOptionsMenu();
+        }
+
+        @Override
+        public void onPageScrollStateChanged(int state) {
+            if (previousState == ViewPager.SCROLL_STATE_DRAGGING
+                    && state == ViewPager.SCROLL_STATE_SETTLING)
+                userScrollChange = true;
+            else if (previousState == ViewPager.SCROLL_STATE_SETTLING
+                    && state == ViewPager.SCROLL_STATE_IDLE)
+                userScrollChange = false;
+
+            previousState = state;
+        }
+    };
+
+    @SuppressWarnings("deprecation")
+    private static void removeOnGlobalLayoutListener(View v, ViewTreeObserver.OnGlobalLayoutListener listener) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
+            v.getViewTreeObserver().removeGlobalOnLayoutListener(listener);
+        } else {
+            v.getViewTreeObserver().removeOnGlobalLayoutListener(listener);
+        }
+    }
 
     @Override
     protected int darkTheme() {
@@ -78,45 +149,6 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
     @Override
     protected int lightTheme() {
         return R.style.AppTheme_Viewer;
-    }
-
-    private List<MediaEntry> mEntries;
-    private ViewPager mPager;
-    private ViewerPageAdapter mAdapter;
-    public Toolbar mToolbar;
-    private Timer mTimer;
-
-    public static final int TOOLBAR_FADE_OFFSET = 2750;
-    public static final int TOOLBAR_FADE_DURATION = 400;
-    private static final int EDIT_REQUEST = 1000;
-
-    private static final String STATE_CURRENT_POSITION = "state_current_position";
-    private static final String STATE_OLD_POSITION = "state_old_position";
-    private int mCurrentPosition;
-    private int mOriginalPosition;
-    private boolean startedPostponedTransition;
-    public boolean mFinishedTransition;
-    private boolean mLightMode;
-    private int mStatusBarHeight;
-
-    private boolean mIsReturning;
-    private boolean mAllVideos;
-
-    private ImageView mOverflow;
-
-    private class FileBeamCallback implements NfcAdapter.CreateBeamUrisCallback {
-
-        public FileBeamCallback() {
-        }
-
-        @Override
-        public Uri[] createBeamUris(NfcEvent event) {
-            if (mCurrentPosition == -1) return null;
-            return new Uri[]{
-                    Utils.getImageContentUri(ViewerActivity.this,
-                            new File(mEntries.get(mCurrentPosition).data()))
-            };
-        }
     }
 
     public void invalidateLightMode(boolean lightMode) {
@@ -135,25 +167,6 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
             return;
         startedPostponedTransition = true;
         startPostponedEnterTransition();
-    }
-
-    public static class MediaWrapper implements Serializable {
-
-        private final List<MediaEntry> mMediaEntries;
-
-        public MediaWrapper(List<MediaEntry> mediaEntries, boolean allowFolders) {
-            mMediaEntries = new ArrayList<>();
-            for (int i = 0; i < mediaEntries.size(); i++) {
-                MediaEntry p = mediaEntries.get(i);
-                p.setRealIndex(i);
-                if (allowFolders || !p.isFolder())
-                    mMediaEntries.add(p);
-            }
-        }
-
-        public List<MediaEntry> getMedia() {
-            return mMediaEntries;
-        }
     }
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
@@ -283,45 +296,6 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
             return r.getDimensionPixelSize(id);
         return 0;
     }
-
-    private ViewPager.OnPageChangeListener mPagerListener = new ViewPager.OnPageChangeListener() {
-
-        int previousState;
-        boolean userScrollChange;
-
-        @Override
-        public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
-        }
-
-        @Override
-        public void onPageSelected(int position) {
-            if (userScrollChange)
-                stopSlideshow();
-            ViewerPageFragment noActive = (ViewerPageFragment) getFragmentManager().findFragmentByTag("page:" + mCurrentPosition);
-            if (noActive != null)
-                noActive.setIsActive(false);
-            mCurrentPosition = position;
-            ViewerPageFragment active = (ViewerPageFragment) getFragmentManager().findFragmentByTag("page:" + mCurrentPosition);
-            if (active != null) {
-                active.setIsActive(true);
-                mLightMode = active.mLightMode == LIGHT_MODE_ON;
-            }
-            mAdapter.mCurrentPage = position;
-            invalidateOptionsMenu();
-        }
-
-        @Override
-        public void onPageScrollStateChanged(int state) {
-            if (previousState == ViewPager.SCROLL_STATE_DRAGGING
-                    && state == ViewPager.SCROLL_STATE_SETTLING)
-                userScrollChange = true;
-            else if (previousState == ViewPager.SCROLL_STATE_SETTLING
-                    && state == ViewPager.SCROLL_STATE_IDLE)
-                userScrollChange = false;
-
-            previousState = state;
-        }
-    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -527,8 +501,6 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
                         | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
     }
 
-    private boolean systemUIFocus = false;
-
     public void systemUIFocusChange() {
         systemUIFocus = !systemUIFocus;
         if (systemUIFocus) {
@@ -564,10 +536,6 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
         super.onOptionsMenuClosed(menu);
         // Resume the fade animation
         invokeToolbar(false);
-    }
-
-    public interface ToolbarFadeListener {
-        void onFade();
     }
 
     private void invokeToolbar(boolean tapped) {
@@ -659,15 +627,6 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
                 removeOnGlobalLayoutListener(mToolbar, this);
             }
         });
-    }
-
-    @SuppressWarnings("deprecation")
-    private static void removeOnGlobalLayoutListener(View v, ViewTreeObserver.OnGlobalLayoutListener listener) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
-            v.getViewTreeObserver().removeGlobalOnLayoutListener(listener);
-        } else {
-            v.getViewTreeObserver().removeOnGlobalLayoutListener(listener);
-        }
     }
 
     private Bitmap loadBitmap(File file) {
@@ -768,10 +727,6 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
         }
         return super.onOptionsItemSelected(item);
     }
-
-    private long mSlideshowDelay;
-    private boolean mSlideshowLoop;
-    private Timer mSlideshowTimer;
 
     @Override
     public void onStartSlideshow(long delay, boolean loop) {
@@ -905,5 +860,43 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
         data.putExtra(EXTRA_CURRENT_ITEM_POSITION, mCurrentPosition);
         setResult(RESULT_OK, data);
         super.finishAfterTransition();
+    }
+
+    public interface ToolbarFadeListener {
+        void onFade();
+    }
+
+    public static class MediaWrapper implements Serializable {
+
+        private final List<MediaEntry> mMediaEntries;
+
+        public MediaWrapper(List<MediaEntry> mediaEntries, boolean allowFolders) {
+            mMediaEntries = new ArrayList<>();
+            for (int i = 0; i < mediaEntries.size(); i++) {
+                MediaEntry p = mediaEntries.get(i);
+                p.setRealIndex(i);
+                if (allowFolders || !p.isFolder())
+                    mMediaEntries.add(p);
+            }
+        }
+
+        public List<MediaEntry> getMedia() {
+            return mMediaEntries;
+        }
+    }
+
+    private class FileBeamCallback implements NfcAdapter.CreateBeamUrisCallback {
+
+        public FileBeamCallback() {
+        }
+
+        @Override
+        public Uri[] createBeamUris(NfcEvent event) {
+            if (mCurrentPosition == -1) return null;
+            return new Uri[]{
+                    Utils.getImageContentUri(ViewerActivity.this,
+                            new File(mEntries.get(mCurrentPosition).data()))
+            };
+        }
     }
 }

@@ -5,6 +5,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 
+import com.afollestad.impression.BuildConfig;
 import com.afollestad.impression.accounts.GoogleDriveAccount;
 import com.afollestad.impression.accounts.LocalAccount;
 import com.afollestad.impression.accounts.base.Account;
@@ -15,13 +16,12 @@ import com.afollestad.impression.providers.base.ProviderBase;
  */
 public class AccountProvider extends ProviderBase {
 
+    public final static Uri CONTENT_URI = Uri.parse("content://" + BuildConfig.APPLICATION_ID + ".account");
     private final static String COLUMNS = "_id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, type INTEGER";
 
     public AccountProvider() {
         super("account", COLUMNS);
     }
-
-    public final static Uri CONTENT_URI = Uri.parse("content://com.afollestad.impression.accounts");
 
     public static Account add(Context context, String name, int type) {
         ContentValues values = new ContentValues();

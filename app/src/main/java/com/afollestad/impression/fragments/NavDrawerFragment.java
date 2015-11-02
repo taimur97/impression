@@ -4,7 +4,6 @@ import android.Manifest;
 import android.app.Fragment;
 import android.content.pm.PackageManager;
 import android.graphics.PorterDuff;
-import android.graphics.Typeface;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
@@ -28,10 +27,10 @@ import com.afollestad.impression.accounts.base.Account;
 import com.afollestad.impression.adapters.MediaAdapter;
 import com.afollestad.impression.adapters.NavDrawerAdapter;
 import com.afollestad.impression.api.AlbumEntry;
+import com.afollestad.impression.media.MainActivity;
 import com.afollestad.impression.providers.AccountProvider;
 import com.afollestad.impression.providers.ExcludedFolderProvider;
 import com.afollestad.impression.providers.IncludedFolderProvider;
-import com.afollestad.impression.ui.MainActivity;
 import com.afollestad.impression.ui.base.ThemedActivity;
 import com.afollestad.impression.utils.Utils;
 import com.afollestad.materialdialogs.MaterialDialog;
@@ -46,17 +45,13 @@ import java.util.List;
 public class NavDrawerFragment extends Fragment implements NavDrawerAdapter.Callback {
 
     private static final String STATE_SELECTED_POSITION = "selected_navigation_drawer_position";
+    public Account mCurrentAccount;
     private int mCurrentSelectedPosition;
     private NavDrawerAdapter mAdapter;
     private LinearLayout mAccountsFrame;
     private List<Account> mAccounts;
-    public Account mCurrentAccount;
-
     private int mSelectedColor;
     private int mRegularColor;
-
-    public NavDrawerFragment() {
-    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -76,17 +71,12 @@ public class NavDrawerFragment extends Fragment implements NavDrawerAdapter.Call
         if (dropdown.getTag() != null) dropdown.performClick();
     }
 
-    public void notifyBackStack(String albumPath) {
-        mAdapter.setItemChecked(albumPath);
-    }
-
     private void invalidateAccountViews(View itemView, int currentIndex, int selectedIndex) {
         if (itemView == null) {
             for (int i = 0; i < mAccountsFrame.getChildCount() - 1; i++) {
                 invalidateAccountViews(mAccountsFrame.getChildAt(i), i, selectedIndex);
             }
         } else {
-            Typeface medium = mAdapter.getRobotoMedium();
             TextView title = (TextView) itemView.findViewById(R.id.title);
             ImageView icon = (ImageView) itemView.findViewById(R.id.icon);
 
@@ -109,7 +99,6 @@ public class NavDrawerFragment extends Fragment implements NavDrawerAdapter.Call
             itemView.setTag(currentIndex);
             title.setText(acc.name());
             title.setTextColor(activated ? mSelectedColor : mRegularColor);
-            title.setTypeface(medium);
         }
     }
 
@@ -145,7 +134,6 @@ public class NavDrawerFragment extends Fragment implements NavDrawerAdapter.Call
 
     private void setupHeader(View view) {
         View addAccountFrame = ((ViewStub) view.findViewById(R.id.addAccountStub)).inflate();
-        ((TextView) addAccountFrame.findViewById(R.id.title)).setTypeface(mAdapter.getRobotoMedium());
         ((ImageView) addAccountFrame.findViewById(R.id.icon)).getDrawable().mutate().setColorFilter(mRegularColor, PorterDuff.Mode.SRC_ATOP);
 
         mAccountsFrame = (LinearLayout) view.findViewById(R.id.accountsFrame);
@@ -314,7 +302,7 @@ public class NavDrawerFragment extends Fragment implements NavDrawerAdapter.Call
                                     if (mAdapter.get(mCurrentSelectedPosition).isAdd())
                                         mCurrentSelectedPosition--;
                                     NavDrawerAdapter.Entry newPath = mAdapter.get(mCurrentSelectedPosition);
-                                    act.switchPage(newPath.getPath(), !newPath.isIncluded(), false);
+                                    act.navDrawerSwitchAlbum(newPath.getPath());
                                     mAdapter.setItemChecked(mCurrentSelectedPosition);
                                 }
                             }
@@ -340,7 +328,7 @@ public class NavDrawerFragment extends Fragment implements NavDrawerAdapter.Call
                                     if (mAdapter.get(mCurrentSelectedPosition).isAdd())
                                         mCurrentSelectedPosition--;
                                     NavDrawerAdapter.Entry newPath = mAdapter.get(mCurrentSelectedPosition);
-                                    act.switchPage(newPath.getPath(), !newPath.isIncluded(), false);
+                                    act.navDrawerSwitchAlbum(newPath.getPath());
                                     mAdapter.setItemChecked(mCurrentSelectedPosition);
                                 }
                             }
@@ -349,7 +337,7 @@ public class NavDrawerFragment extends Fragment implements NavDrawerAdapter.Call
         } else {
             mCurrentSelectedPosition = index;
             mAdapter.setItemChecked(index);
-            ((MainActivity) getActivity()).switchPage(entry.getPath(), true, index > 0);
+            ((MainActivity) getActivity()).navDrawerSwitchAlbum(entry.getPath());
         }
     }
 }

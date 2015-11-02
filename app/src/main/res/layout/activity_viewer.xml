@@ -14,10 +14,10 @@
         android:layout_height="?actionBarSize"
         android:background="@color/viewer_overlay"
         android:elevation="@dimen/toolbar_elevation"
+        android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
         android:transitionName="Toolbar"
         app:contentInsetStart="@dimen/toolbar_inset"
         app:popupTheme="?popup_theme"
-        app:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
         tools:ignore="UnusedAttribute" />
 
 </merge>

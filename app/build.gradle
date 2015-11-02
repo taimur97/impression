@@ -2,7 +2,7 @@ apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion 23
-    buildToolsVersion "23.0.1"
+    buildToolsVersion "23.0.2"
 
     signingConfigs {
         production {
@@ -19,16 +19,21 @@ android {
         targetSdkVersion 23
         versionCode 64
         versionName "0.7.3.11"
+        manifestPlaceholders = [appName: "@string/app_name"]
     }
+
     buildTypes {
         debug {
             signingConfig signingConfigs.production
+            manifestPlaceholders = [appName: "Impression DEBUG"]
+            applicationIdSuffix '.debug'
+            versionNameSuffix '-DEBUG'
         }
         release {
             signingConfig signingConfigs.production
             minifyEnabled true
             shrinkResources true
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
 }
@@ -39,16 +44,12 @@ repositories {
 }
 
 dependencies {
-    compile('com.github.afollestad.material-dialogs:core:0.8.5.0@aar') {
-        transitive = true
-    }
-    compile('com.github.afollestad.material-dialogs:commons:0.8.5.0@aar') {
-        transitive = true
-    }
+    compile 'com.github.afollestad.material-dialogs:core:0.8.5.0'
+    compile 'com.github.afollestad.material-dialogs:commons:0.8.5.0'
     compile 'com.afollestad:material-cab:0.1.5'
 
     compile 'com.koushikdutta.ion:ion:2.1.6'
-    compile 'com.github.chrisbanes.photoview:library:1.2.3'
+    compile 'com.commit451:PhotoView:1.2.4'
 
     compile 'com.android.support:appcompat-v7:23.1.0'
     compile 'com.android.support:recyclerview-v7:23.1.0'

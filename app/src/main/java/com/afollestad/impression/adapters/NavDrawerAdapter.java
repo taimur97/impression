@@ -2,7 +2,6 @@ package com.afollestad.impression.adapters;
 
 import android.content.Context;
 import android.graphics.PorterDuff;
-import android.graphics.Typeface;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -14,7 +13,6 @@ import com.afollestad.impression.R;
 import com.afollestad.impression.api.AlbumEntry;
 import com.afollestad.impression.ui.base.ThemedActivity;
 import com.afollestad.impression.utils.Utils;
-import com.afollestad.materialdialogs.util.TypefaceHelper;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -29,9 +27,14 @@ public class NavDrawerAdapter extends RecyclerView.Adapter<NavDrawerAdapter.View
 
     private final Context mContext;
     private final List<Entry> mEntries;
-    private int mCheckedItem;
     private final Callback mCallback;
-    private final Typeface mRobotoMedium;
+    private int mCheckedItem;
+
+    public NavDrawerAdapter(Context context, Callback callback) {
+        mContext = context;
+        mEntries = new ArrayList<>();
+        mCallback = callback;
+    }
 
     public void clear() {
         mEntries.clear();
@@ -75,37 +78,6 @@ public class NavDrawerAdapter extends RecyclerView.Adapter<NavDrawerAdapter.View
         return false;
     }
 
-    public interface Callback {
-        void onEntrySelected(int index, Entry entry, boolean longClick);
-    }
-
-    public static class ViewHolder extends RecyclerView.ViewHolder {
-
-        public final View mView;
-        public final View mDivider;
-        public final ImageView mIcon;
-        public final TextView mTextView;
-
-        public ViewHolder(View v) {
-            super(v);
-            mView = v.findViewById(R.id.viewFrame);
-            mDivider = ((ViewGroup) v).getChildAt(0);
-            mIcon = (ImageView) v.findViewById(R.id.icon);
-            mTextView = (TextView) v.findViewById(R.id.title);
-        }
-    }
-
-    public Typeface getRobotoMedium() {
-        return mRobotoMedium;
-    }
-
-    public NavDrawerAdapter(Context context, Callback callback) {
-        mContext = context;
-        mRobotoMedium = TypefaceHelper.get(mContext, "Roboto-Medium");
-        mEntries = new ArrayList<>();
-        mCallback = callback;
-    }
-
     public void add(Entry entry) {
         if (mEntries.contains(entry)) return;
         mEntries.add(entry);
@@ -143,38 +115,37 @@ public class NavDrawerAdapter extends RecyclerView.Adapter<NavDrawerAdapter.View
     public void onBindViewHolder(ViewHolder holder, int position) {
         Entry entry = mEntries.get(position);
         if (entry.isAdd()) {
-            holder.mTextView.setText(R.string.include_folder);
-            holder.mDivider.setVisibility(position > 0 && !mEntries.get(position - 1)
+            holder.textView.setText(R.string.include_folder);
+            holder.vivider.setVisibility(position > 0 && !mEntries.get(position - 1)
                     .isIncluded() ? View.VISIBLE : View.GONE);
-            holder.mIcon.setVisibility(View.VISIBLE);
-            holder.mIcon.getDrawable().mutate().setColorFilter(
+            holder.icon.setVisibility(View.VISIBLE);
+            holder.icon.getDrawable().mutate().setColorFilter(
                     Utils.resolveColor(mContext, android.R.attr.textColorPrimary), PorterDuff.Mode.SRC_ATOP);
         } else if (entry.getPath().equals(AlbumEntry.ALBUM_OVERVIEW)) {
-            holder.mTextView.setText(R.string.overview);
-            holder.mDivider.setVisibility(View.GONE);
-            holder.mIcon.setVisibility(View.GONE);
+            holder.textView.setText(R.string.overview);
+            holder.vivider.setVisibility(View.GONE);
+            holder.icon.setVisibility(View.GONE);
         } else {
-            holder.mIcon.setVisibility(View.GONE);
+            holder.icon.setVisibility(View.GONE);
             if (entry.isIncluded()) {
-                holder.mDivider.setVisibility(position > 0 && !mEntries.get(position - 1)
+                holder.vivider.setVisibility(position > 0 && !mEntries.get(position - 1)
                         .isIncluded() ? View.VISIBLE : View.GONE);
             } else {
-                holder.mDivider.setVisibility(View.GONE);
+                holder.vivider.setVisibility(View.GONE);
             }
-            holder.mTextView.setText(entry.getName());
+            holder.textView.setText(entry.getName());
         }
-        holder.mTextView.setTypeface(mRobotoMedium);
-        holder.mView.setTag(position);
-        holder.mView.setActivated(mCheckedItem == position);
-        if (holder.mView.isActivated()) {
-            holder.mTextView.setTextColor(((ThemedActivity) mContext).accentColor());
+        holder.view.setTag(position);
+        holder.view.setActivated(mCheckedItem == position);
+        if (holder.view.isActivated()) {
+            holder.textView.setTextColor(((ThemedActivity) mContext).accentColor());
         } else {
-            holder.mTextView.setTextColor(Utils.resolveColor(mContext, android.R.attr.textColorPrimary));
+            holder.textView.setTextColor(Utils.resolveColor(mContext, android.R.attr.textColorPrimary));
         }
-        holder.mView.setOnClickListener(this);
+        holder.view.setOnClickListener(this);
         if (position > 0)
-            holder.mView.setOnLongClickListener(this);
-        else holder.mView.setOnLongClickListener(null);
+            holder.view.setOnLongClickListener(this);
+        else holder.view.setOnLongClickListener(null);
     }
 
     @Override
@@ -185,6 +156,26 @@ public class NavDrawerAdapter extends RecyclerView.Adapter<NavDrawerAdapter.View
     public void notifyDataSetChangedAndSort() {
         Collections.sort(mEntries, new NavDrawerSorter());
         super.notifyDataSetChanged();
+    }
+
+    public interface Callback {
+        void onEntrySelected(int index, Entry entry, boolean longClick);
+    }
+
+    protected static class ViewHolder extends RecyclerView.ViewHolder {
+
+        final View view;
+        final View vivider;
+        final ImageView icon;
+        final TextView textView;
+
+        public ViewHolder(View v) {
+            super(v);
+            view = v.findViewById(R.id.viewFrame);
+            vivider = ((ViewGroup) v).getChildAt(0);
+            icon = (ImageView) v.findViewById(R.id.icon);
+            textView = (TextView) v.findViewById(R.id.title);
+        }
     }
 
     private static class NavDrawerSorter implements Comparator<Entry> {

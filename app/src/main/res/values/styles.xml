@@ -21,7 +21,6 @@
         <item name="empty_image_background">@color/material_indigo_100</item>
 
         <item name="windowActionModeOverlay">true</item>
-        <item name="android:actionOverflowButtonStyle">@style/Widget.ActionButton.Overflow</item>
     </style>
 
     <style name="_ParentThemeDark" parent="Theme.AppCompat.NoActionBar">
@@ -47,7 +46,6 @@
         <item name="empty_image_background">@color/nav_drawer_dark</item>
 
         <item name="windowActionModeOverlay">true</item>
-        <item name="android:actionOverflowButtonStyle">@style/Widget.ActionButton.Overflow</item>
     </style>
 
     <style name="AppTheme" parent="@style/_ParentTheme" />
@@ -72,10 +70,6 @@
         <item name="colorAccent">@android:color/white</item>
         <item name="android:windowBackground">@color/dark_theme_gray</item>
         <item name="md_dark_theme">true</item>
-    </style>
-
-    <style name="Widget.ActionButton.Overflow" parent="Widget.AppCompat.ActionButton.Overflow">
-        <item name="android:contentDescription">@string/abc_action_menu_overflow_description</item>
     </style>
 
     <style name="ToolbarSubtitleStyle" parent="TextAppearance.AppCompat.Widget.ActionBar.Subtitle">
