@@ -62,11 +62,11 @@
         <item name="android:windowBackground">@android:color/black</item>
     </style>
 
-    <style name="AppTheme.Settings" parent="Theme.AppCompat.Light.NoActionBar">
+    <style name="AppTheme.Settings" parent="AppTheme">
         <item name="colorAccent">@android:color/black</item>
     </style>
 
-    <style name="AppTheme.Settings.Dark" parent="Theme.AppCompat.NoActionBar">
+    <style name="AppTheme.Settings.Dark" parent="AppTheme.Dark">
         <item name="colorAccent">@android:color/white</item>
         <item name="android:windowBackground">@color/dark_theme_gray</item>
         <item name="md_dark_theme">true</item>

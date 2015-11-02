@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <com.afollestad.impression.views.ImpressionPreferenceCategory
+    <com.afollestad.impression.views.ImpressionPreferenceCategoryNoDivider
         android:key="info_category"
         android:title="@string/info">
 
@@ -10,7 +10,7 @@
             android:summary="@string/about_desc"
             android:title="@string/about" />
 
-    </com.afollestad.impression.views.ImpressionPreferenceCategory>
+    </com.afollestad.impression.views.ImpressionPreferenceCategoryNoDivider>
 
     <com.afollestad.impression.views.ImpressionPreferenceCategory
         android:key="behavior_category"
@@ -58,7 +58,7 @@
             android:title="@string/accent_color" />
 
         <CheckBoxPreference
-            android:defaultValue="true"
+            android:defaultValue="false"
             android:key="colored_navbar"
             android:layout="@layout/preference_custom"
             android:persistent="true"

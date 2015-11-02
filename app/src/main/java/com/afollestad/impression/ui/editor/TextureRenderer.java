@@ -24,20 +24,6 @@ import java.nio.FloatBuffer;
 
 public class TextureRenderer {
 
-    private int mProgram;
-    private int mTexSamplerHandle;
-    private int mTexCoordHandle;
-    private int mPosCoordHandle;
-
-    private FloatBuffer mTexVertices;
-    private FloatBuffer mPosVertices;
-
-    private int mViewWidth;
-    private int mViewHeight;
-
-    private int mTexWidth;
-    private int mTexHeight;
-
     private static final String VERTEX_SHADER =
             "attribute vec4 a_position;\n" +
                     "attribute vec2 a_texcoord;\n" +
@@ -46,7 +32,6 @@ public class TextureRenderer {
                     "  gl_Position = a_position;\n" +
                     "  v_texcoord = a_texcoord;\n" +
                     "}\n";
-
     private static final String FRAGMENT_SHADER =
             "precision mediump float;\n" +
                     "uniform sampler2D tex_sampler;\n" +
@@ -54,16 +39,23 @@ public class TextureRenderer {
                     "void main() {\n" +
                     "  gl_FragColor = texture2D(tex_sampler, v_texcoord);\n" +
                     "}\n";
-
     private static final float[] TEX_VERTICES = {
             0.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f
     };
-
     private static final float[] POS_VERTICES = {
             -1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f
     };
-
     private static final int FLOAT_SIZE_BYTES = 4;
+    private int mProgram;
+    private int mTexSamplerHandle;
+    private int mTexCoordHandle;
+    private int mPosCoordHandle;
+    private FloatBuffer mTexVertices;
+    private FloatBuffer mPosVertices;
+    private int mViewWidth;
+    private int mViewHeight;
+    private int mTexWidth;
+    private int mTexHeight;
 
     public void init() {
         // Create program

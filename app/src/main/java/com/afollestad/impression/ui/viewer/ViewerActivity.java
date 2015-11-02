@@ -16,7 +16,6 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
-import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.nfc.NfcAdapter;
 import android.nfc.NfcEvent;
@@ -47,6 +46,7 @@ import com.afollestad.impression.api.base.MediaEntry;
 import com.afollestad.impression.fragments.dialog.SlideshowInitDialog;
 import com.afollestad.impression.fragments.viewer.ViewerPageFragment;
 import com.afollestad.impression.ui.base.ThemedActivity;
+import com.afollestad.impression.utils.PrefUtils;
 import com.afollestad.impression.utils.TimeUtils;
 import com.afollestad.impression.utils.Utils;
 import com.afollestad.materialdialogs.MaterialDialog;
@@ -154,10 +154,9 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
     public void invalidateLightMode(boolean lightMode) {
         if (lightMode == mLightMode) return;
         mLightMode = lightMode;
-        final Drawable navIcon = ContextCompat.getDrawable(this, R.drawable.ic_nav_back);
-        final int darkGray = ContextCompat.getColor(this, R.color.viewer_lightmode_icons);
+        /*final int darkGray = ContextCompat.getColor(this, R.color.viewer_lightmode_icons);
         navIcon.setColorFilter(mLightMode ? darkGray : Color.WHITE, PorterDuff.Mode.SRC_ATOP);
-        mToolbar.setNavigationIcon(navIcon);
+        mToolbar.setNavigationIcon(navIcon);*/
         invalidateOptionsMenu();
     }
 
@@ -229,7 +228,7 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
                     ObjectAnimator.ofObject(mToolbar, "backgroundColor", new ArgbEvaluator(), primaryColor(), viewerOverlayColor)
                             .setDuration(duration)
                             .start();
-                    if (navigationBar != null && isColoredNavBar())
+                    if (navigationBar != null && PrefUtils.isColoredNavBar(ViewerActivity.this))
                         ObjectAnimator.ofObject(navigationBar, "backgroundColor", new ArgbEvaluator(), primaryColorDark, black)
                                 .setDuration(duration)
                                 .start();
@@ -240,7 +239,7 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
                 } else {
                     mToolbar.setBackgroundColor(primaryColor());
 
-                    if (navigationBar != null && isColoredNavBar())
+                    if (navigationBar != null && PrefUtils.isColoredNavBar(ViewerActivity.this))
                         ObjectAnimator.ofObject(navigationBar, "backgroundColor", new ArgbEvaluator(), black, primaryColorDark())
                                 .setDuration(duration)
                                 .start();
@@ -297,6 +296,7 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
         return 0;
     }
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -312,13 +312,8 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
         FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         params.setMargins(0, getStatusBarHeight(), 0, 0);
         mToolbar.setLayoutParams(params);
-        mToolbar.setNavigationIcon(R.drawable.ic_nav_back);
-        mToolbar.setNavigationOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                onBackPressed();
-            }
-        });
+
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
         if (savedInstanceState == null) {
             if (getIntent() != null && getIntent().getExtras() != null) {
@@ -724,6 +719,8 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
                     }).build().show();
         } else if (item.getItemId() == R.id.slideshow) {
             new SlideshowInitDialog().show(this);
+        } else if (item.getItemId() == android.R.id.home) {
+            onBackPressed();
         }
         return super.onOptionsItemSelected(item);
     }

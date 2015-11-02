@@ -17,6 +17,8 @@
         android:layout_centerVertical="true"
         android:layout_marginLeft="16dp"
         android:layout_marginStart="16dp"
+        android:layout_toLeftOf="@android:id/widget_frame"
+        android:layout_toStartOf="@android:id/widget_frame"
         android:visibility="gone"
         tools:visibility="visible" />
 
@@ -61,7 +63,11 @@
         android:id="@android:id/widget_frame"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
-        android:gravity="center_vertical"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentRight="true"
+        android:layout_centerVertical="true"
+        android:layout_marginLeft="16dp"
+        android:layout_marginStart="16dp"
         android:orientation="vertical" />
 
 </RelativeLayout>

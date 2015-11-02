@@ -128,6 +128,18 @@ public class CropOverlayView extends View {
 
     // View Methods ////////////////////////////////////////////////////////////
 
+    /**
+     * Indicates whether the crop window is small enough that the guidelines
+     * should be shown. Public because this function is also used to determine
+     * if the center handle should be focused.
+     *
+     * @return boolean Whether the guidelines should be shown or not
+     */
+    public static boolean showGuidelines() {
+        return !((Math.abs(Edge.LEFT.getCoordinate() - Edge.RIGHT.getCoordinate()) < DEFAULT_SHOW_GUIDELINES_LIMIT)
+                || (Math.abs(Edge.TOP.getCoordinate() - Edge.BOTTOM.getCoordinate()) < DEFAULT_SHOW_GUIDELINES_LIMIT));
+    }
+
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
 
@@ -168,6 +180,8 @@ public class CropOverlayView extends View {
         drawCorners(canvas);
     }
 
+    // Public Methods //////////////////////////////////////////////////////////
+
     @Override
     public boolean onTouchEvent(@NonNull MotionEvent event) {
 
@@ -197,8 +211,6 @@ public class CropOverlayView extends View {
                 return false;
         }
     }
-
-    // Public Methods //////////////////////////////////////////////////////////
 
     /**
      * Informs the CropOverlayView of the image's position relative to the
@@ -298,6 +310,8 @@ public class CropOverlayView extends View {
         }
     }
 
+    // Private Methods /////////////////////////////////////////////////////////
+
     /**
      * Sets all initial values, but does not call initCropWindow to reset the
      * views. Used once at the very start to initialize the attributes.
@@ -337,8 +351,6 @@ public class CropOverlayView extends View {
         }
 
     }
-
-    // Private Methods /////////////////////////////////////////////////////////
 
     private void init(Context context) {
 
@@ -444,18 +456,6 @@ public class CropOverlayView extends View {
             Edge.RIGHT.setCoordinate(bitmapRect.right - horizontalPadding);
             Edge.BOTTOM.setCoordinate(bitmapRect.bottom - verticalPadding);
         }
-    }
-
-    /**
-     * Indicates whether the crop window is small enough that the guidelines
-     * should be shown. Public because this function is also used to determine
-     * if the center handle should be focused.
-     *
-     * @return boolean Whether the guidelines should be shown or not
-     */
-    public static boolean showGuidelines() {
-        return !((Math.abs(Edge.LEFT.getCoordinate() - Edge.RIGHT.getCoordinate()) < DEFAULT_SHOW_GUIDELINES_LIMIT)
-                || (Math.abs(Edge.TOP.getCoordinate() - Edge.BOTTOM.getCoordinate()) < DEFAULT_SHOW_GUIDELINES_LIMIT));
     }
 
     private void drawRuleOfThirdsGuidelines(Canvas canvas) {

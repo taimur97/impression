@@ -36,8 +36,8 @@ public class LocalAccount extends Account implements AsyncCursor.Callback {
 
     private final LinkedList<AlbumCallback> mAlbumCallbacks;
     private final LinkedList<AlbumCallback> mIncludedFolderCallbacks;
-    private AlbumEntry[] mPreEntries;
     private final int mId;
+    private AlbumEntry[] mPreEntries;
     private MediaAdapter.FileFilterMode mFilterMode;
 
     public LocalAccount(Context context, int id) {

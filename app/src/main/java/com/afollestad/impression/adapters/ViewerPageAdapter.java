@@ -2,12 +2,12 @@ package com.afollestad.impression.adapters;
 
 import android.app.Fragment;
 import android.app.FragmentManager;
+import android.support.v13.app.FragmentStatePagerAdapter;
 import android.support.v4.view.PagerAdapter;
 import android.view.ViewGroup;
 
 import com.afollestad.impression.api.base.MediaEntry;
 import com.afollestad.impression.fragments.viewer.ViewerPageFragment;
-import com.afollestad.impression.utils.FragmentStatePagerAdapter;
 
 import java.util.List;
 
@@ -17,8 +17,8 @@ import java.util.List;
 public class ViewerPageAdapter extends FragmentStatePagerAdapter {
 
     private final List<MediaEntry> mMedia;
-    private String mInfo;
     public int mCurrentPage;
+    private String mInfo;
     private ViewerPageFragment mCurrentFragment;
 
     public ViewerPageAdapter(FragmentManager fm, List<MediaEntry> media, String info, int initialOffset) {

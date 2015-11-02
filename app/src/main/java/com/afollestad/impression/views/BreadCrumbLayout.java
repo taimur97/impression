@@ -45,6 +45,7 @@ public class BreadCrumbLayout extends HorizontalScrollView implements View.OnCli
     private int mActive;
     private SelectionCallback mCallback;
     private FragmentManager mFragmentManager;
+
     public BreadCrumbLayout(Context context) {
         super(context);
         init();
@@ -54,6 +55,7 @@ public class BreadCrumbLayout extends HorizontalScrollView implements View.OnCli
         super(context, attrs);
         init();
     }
+
     public BreadCrumbLayout(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         init();

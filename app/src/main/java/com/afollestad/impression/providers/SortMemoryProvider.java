@@ -20,7 +20,7 @@ import java.io.File;
 public class SortMemoryProvider extends ProviderBase {
 
     private final static String COLUMNS = "_id INTEGER PRIMARY KEY AUTOINCREMENT, path TEXT, mode INTEGER";
-    private final static Uri CONTENT_URI = Uri.parse("content://" + BuildConfig.APPLICATION_ID + ".sortstorage");
+    private final static Uri CONTENT_URI = Uri.parse("content://" + BuildConfig.APPLICATION_ID + ".sortmemory");
 
     public SortMemoryProvider() {
         super("sort_memory", COLUMNS);

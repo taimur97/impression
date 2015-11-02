@@ -25,17 +25,8 @@ import java.util.concurrent.TimeUnit;
  */
 public class ImpressionVideoView extends VideoView {
 
-    public ImpressionVideoView(Context context) {
-        super(context);
-    }
-
-    public ImpressionVideoView(Context context, AttributeSet attrs) {
-        super(context, attrs);
-    }
-
     private static final int FADE_DELAY = ViewerActivity.TOOLBAR_FADE_OFFSET;
     private static final int FADE_DURATION = ViewerActivity.TOOLBAR_FADE_DURATION;
-
     private ViewerPageFragment mFragment;
     private ImageView mIcon;
     private View mOverlay;
@@ -44,8 +35,26 @@ public class ImpressionVideoView extends VideoView {
     private TextView mDuration;
     private SeekBar mSeeker;
     private Handler mUpdateHandler;
+    private final Runnable updateSeekerTask = new Runnable() {
+        @Override
+        public void run() {
+            mPosition.setText(minutesAndSeconds(getCurrentPosition()));
+            mDuration.setText(minutesAndSeconds(getDuration()));
+            mSeeker.setProgress(getCurrentPosition());
+            mSeeker.setMax(getDuration());
+            if (isPlaying())
+                mUpdateHandler.postDelayed(updateSeekerTask, 150);
+        }
+    };
     private boolean mWasPlaying;
     private boolean mClickedOverlay;
+    public ImpressionVideoView(Context context) {
+        super(context);
+    }
+
+    public ImpressionVideoView(Context context, AttributeSet attrs) {
+        super(context, attrs);
+    }
 
     private void reset(View view) {
         view.animate().cancel();
@@ -194,18 +203,6 @@ public class ImpressionVideoView extends VideoView {
         mUpdateHandler = new Handler();
         mUpdateHandler.post(updateSeekerTask);
     }
-
-    private final Runnable updateSeekerTask = new Runnable() {
-        @Override
-        public void run() {
-            mPosition.setText(minutesAndSeconds(getCurrentPosition()));
-            mDuration.setText(minutesAndSeconds(getDuration()));
-            mSeeker.setProgress(getCurrentPosition());
-            mSeeker.setMax(getDuration());
-            if (isPlaying())
-                mUpdateHandler.postDelayed(updateSeekerTask, 150);
-        }
-    };
 
     private String minutesAndSeconds(long millis) {
         String minutes = TimeUnit.MILLISECONDS.toSeconds(millis) / 60 + ":";

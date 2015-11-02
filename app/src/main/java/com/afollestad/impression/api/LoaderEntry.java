@@ -43,6 +43,30 @@ public class LoaderEntry implements Serializable {
         return a;
     }
 
+    private String displayName() {
+        return _displayName;
+    }
+
+    public String data() {
+        return _data;
+    }
+
+    public long size() {
+        return _size;
+    }
+
+    private long dateModified() {
+        return _dateModified;
+    }
+
+    public long bucketId() {
+        return _bucketId;
+    }
+
+    public String parent() {
+        return new File(data()).getParent();
+    }
+
     public static class Sorter implements Comparator<LoaderEntry> {
 
         private final MediaAdapter.SortMode mSort;
@@ -87,29 +111,5 @@ public class LoaderEntry implements Serializable {
                     return rightTime.compareTo(leftTime);
             }
         }
-    }
-
-    private String displayName() {
-        return _displayName;
-    }
-
-    public String data() {
-        return _data;
-    }
-
-    public long size() {
-        return _size;
-    }
-
-    private long dateModified() {
-        return _dateModified;
-    }
-
-    public long bucketId() {
-        return _bucketId;
-    }
-
-    public String parent() {
-        return new File(data()).getParent();
     }
 }

@@ -546,6 +546,8 @@ public class MainActivity extends ThemedActivity
     }
 
     public boolean navDrawerSwitchAlbum(String path) {
+        mDrawerLayout.closeDrawers();
+
         MediaFragment frag = (MediaFragment) getFragmentManager().findFragmentById(R.id.content_frame);
         if (!path.equals(frag.getPresenter().getAlbumPath())) {
             mCrumbs.clearHistory();
@@ -601,11 +603,6 @@ public class MainActivity extends ThemedActivity
                 presenter.setAlbumPath(to);
             }
         }
-    }
-
-    public void closeDrawer() {
-        if (mDrawerLayout != null)
-            mDrawerLayout.closeDrawers();
     }
 
     public void notifyFoldersChanged() {

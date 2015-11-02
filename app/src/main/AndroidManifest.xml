@@ -95,19 +95,19 @@
 
         <provider
             android:name=".providers.IncludedFolderProvider"
-            android:authorities="${applicationId}.includedfolder"
+            android:authorities="${applicationId}.included"
             android:exported="false" />
         <provider
             android:name=".providers.ExcludedFolderProvider"
-            android:authorities="${applicationId}.excludedfolder"
+            android:authorities="${applicationId}.excluded"
             android:exported="false" />
         <provider
             android:name=".providers.AccountProvider"
-            android:authorities="${applicationId}.account"
+            android:authorities="${applicationId}.accounts"
             android:exported="false" />
         <provider
             android:name=".providers.SortMemoryProvider"
-            android:authorities="${applicationId}.sortstorage"
+            android:authorities="${applicationId}.sortmemory"
             android:exported="false" />
 
     </application>

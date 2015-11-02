@@ -16,7 +16,7 @@ import com.afollestad.impression.providers.base.ProviderBase;
  */
 public class AccountProvider extends ProviderBase {
 
-    public final static Uri CONTENT_URI = Uri.parse("content://" + BuildConfig.APPLICATION_ID + ".account");
+    public final static Uri CONTENT_URI = Uri.parse("content://" + BuildConfig.APPLICATION_ID + ".accounts");
     private final static String COLUMNS = "_id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, type INTEGER";
 
     public AccountProvider() {

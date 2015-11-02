@@ -12,16 +12,15 @@ import uk.co.senab.photoview.PhotoViewAttacher;
  */
 public class ScaleListenerImageView extends ImageView {
 
+    private PhotoViewAttacher mAttacher;
+    private boolean checkForChange;
+
     public ScaleListenerImageView(Context context) {
         super(context);
     }
-
     public ScaleListenerImageView(Context context, AttributeSet attrs) {
         super(context, attrs);
     }
-
-    private PhotoViewAttacher mAttacher;
-    private boolean checkForChange;
 
     public PhotoViewAttacher setPhotoAttacher() {
         if (mAttacher != null) {

@@ -57,6 +57,35 @@ public class CircleView extends FrameLayout {
         setWillNotDraw(false);
     }
 
+    @ColorInt
+    private static int translucentColor(int color) {
+        final float factor = 0.7f;
+        int alpha = Math.round(Color.alpha(color) * factor);
+        int red = Color.red(color);
+        int green = Color.green(color);
+        int blue = Color.blue(color);
+        return Color.argb(alpha, red, green, blue);
+    }
+
+    @ColorInt
+    public static int shiftColor(@ColorInt int color, @FloatRange(from = 0.0f, to = 2.0f) float by) {
+        if (by == 1f) return color;
+        float[] hsv = new float[3];
+        Color.colorToHSV(color, hsv);
+        hsv[2] *= by; // value component
+        return Color.HSVToColor(hsv);
+    }
+
+    @ColorInt
+    public static int shiftColorDown(@ColorInt int color) {
+        return shiftColor(color, 0.9f);
+    }
+
+    @ColorInt
+    public static int shiftColorUp(@ColorInt int color) {
+        return shiftColor(color, 1.1f);
+    }
+
     private void update(@ColorInt int color) {
         innerPaint.setColor(color);
         outerPaint.setColor(shiftColorDown(color));
@@ -141,7 +170,7 @@ public class CircleView extends FrameLayout {
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
         final int outerRadius = getMeasuredWidth() / 2;
-        if(mSelected) {
+        if (mSelected) {
             final int whiteRadius = outerRadius - borderWidthLarge;
             final int innerRadius = whiteRadius - borderWidthSmall;
             canvas.drawCircle(getMeasuredWidth() / 2,
@@ -164,40 +193,11 @@ public class CircleView extends FrameLayout {
         }
     }
 
-    @ColorInt
-    private static int translucentColor(int color) {
-        final float factor = 0.7f;
-        int alpha = Math.round(Color.alpha(color) * factor);
-        int red = Color.red(color);
-        int green = Color.green(color);
-        int blue = Color.blue(color);
-        return Color.argb(alpha, red, green, blue);
-    }
-
     private Drawable createSelector(int color) {
         ShapeDrawable darkerCircle = new ShapeDrawable(new OvalShape());
         darkerCircle.getPaint().setColor(translucentColor(shiftColorUp(color)));
         StateListDrawable stateListDrawable = new StateListDrawable();
         stateListDrawable.addState(new int[]{android.R.attr.state_pressed}, darkerCircle);
         return stateListDrawable;
-    }
-
-    @ColorInt
-    public static int shiftColor(@ColorInt int color, @FloatRange(from = 0.0f, to = 2.0f) float by) {
-        if (by == 1f) return color;
-        float[] hsv = new float[3];
-        Color.colorToHSV(color, hsv);
-        hsv[2] *= by; // value component
-        return Color.HSVToColor(hsv);
-    }
-
-    @ColorInt
-    public static int shiftColorDown(@ColorInt int color) {
-        return shiftColor(color, 0.9f);
-    }
-
-    @ColorInt
-    public static int shiftColorUp(@ColorInt int color) {
-        return shiftColor(color, 1.1f);
     }
 }

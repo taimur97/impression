@@ -34,10 +34,12 @@ public class ImpressionImageView extends ImageView {
     private int mPlayOverlay;
     private int mSelectedColor;
     private boolean mIsGif;
+
     public ImpressionImageView(Context context) {
         super(context);
         init(context);
     }
+
     public ImpressionImageView(Context context, AttributeSet attrs) {
         super(context, attrs);
         init(context);

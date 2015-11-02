@@ -12,6 +12,7 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 
 import com.afollestad.impression.R;
+import com.afollestad.impression.utils.PrefUtils;
 import com.afollestad.impression.views.CircleView;
 import com.afollestad.materialdialogs.internal.ThemeSingleton;
 
@@ -72,17 +73,13 @@ public abstract class ThemedActivity extends AppCompatActivity {
         PreferenceManager.getDefaultSharedPreferences(this).edit().putInt(key, newColor).commit();
     }
 
-    public boolean isColoredNavBar() {
-        return PreferenceManager.getDefaultSharedPreferences(this).getBoolean("colored_navbar", true);
-    }
-
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         mLastDarkTheme = isDarkTheme();
         mLastPrimaryColor = primaryColor();
         mLastAccentColor = accentColor();
-        mLastColoredNav = isColoredNavBar();
+        mLastColoredNav = PrefUtils.isColoredNavBar(this);
         ColorStateList sl = ColorStateList.valueOf(mLastAccentColor);
         ThemeSingleton.get().positiveColor = sl;
         ThemeSingleton.get().neutralColor = sl;
@@ -127,7 +124,7 @@ public abstract class ThemedActivity extends AppCompatActivity {
         boolean darkTheme = isDarkTheme();
         int primaryColor = primaryColor();
         int accentColor = accentColor();
-        boolean coloredNav = isColoredNavBar();
+        boolean coloredNav = PrefUtils.isColoredNavBar(this);
         if (darkTheme != mLastDarkTheme || primaryColor != mLastPrimaryColor ||
                 accentColor != mLastAccentColor || coloredNav != mLastColoredNav) {
             recreate();

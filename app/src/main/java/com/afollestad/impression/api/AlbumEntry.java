@@ -25,13 +25,22 @@ import java.util.Map;
 public class AlbumEntry implements MediaEntry<AlbumEntry> {
 
     public static final String ALBUM_OVERVIEW = Environment.getExternalStorageDirectory().getAbsolutePath();
-
+    public static final long ALBUM_ID_USEPATH = -1;
+    private static final long ALBUM_ID_ROOT = -2;
     private final File mFile;
+    public String mFirstPath;
     private int mSize;
     private long mAlbumId;
     private Map<String, LoaderEntry> loadedHolder;
-    public String mFirstPath;
     private int mRealIndex;
+
+    /**
+     * Used for cursor albums.
+     */
+    public AlbumEntry(String fromPath, long albumId) {
+        mFile = new File(fromPath);
+        mAlbumId = albumId;
+    }
 
     public void processLoaded(Context context) {
         if (loadedHolder == null) return;
@@ -50,14 +59,6 @@ public class AlbumEntry implements MediaEntry<AlbumEntry> {
 
     public void setBucketId(long id) {
         mAlbumId = id;
-    }
-
-    /**
-     * Used for cursor albums.
-     */
-    public AlbumEntry(String fromPath, long albumId) {
-        mFile = new File(fromPath);
-        mAlbumId = albumId;
     }
 
     @Override
@@ -185,7 +186,4 @@ public class AlbumEntry implements MediaEntry<AlbumEntry> {
     public String[] projection() {
         return null;
     }
-
-    public static final long ALBUM_ID_USEPATH = -1;
-    private static final long ALBUM_ID_ROOT = -2;
 }

@@ -12,9 +12,8 @@ public class GoogleAccountManager {
     private static final int FAIL = -1;
     private static final int UNCHANGED = 0;
     private static final int CHANGED = +1;
-
-    private String mCurrentEmail = null;  // cache locally
     private final Context context;
+    private String mCurrentEmail = null;  // cache locally
 
     public GoogleAccountManager(Context context) {
         this.context = context;

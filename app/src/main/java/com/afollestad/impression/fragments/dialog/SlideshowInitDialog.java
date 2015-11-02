@@ -19,19 +19,29 @@ public class SlideshowInitDialog extends DialogFragment {
     private SlideshowCallback mCallback;
     private SeekBar mSeek;
     private CheckBox mLoop;
+    private final MaterialDialog.ButtonCallback mActionCallback = new MaterialDialog.ButtonCallback() {
+        @Override
+        public void onPositive(MaterialDialog dialog) {
+            super.onPositive(dialog);
+            dialog.dismiss();
+            mCallback.onStartSlideshow(((long) mSeek.getProgress() + 1) * 1000, mLoop.isChecked());
+        }
+
+        @Override
+        public void onNegative(MaterialDialog dialog) {
+            super.onNegative(dialog);
+            dialog.dismiss();
+        }
+    };
     private TextView mSeekLabel;
+
+    public SlideshowInitDialog() {
+    }
 
     @Override
     public void onAttach(Activity activity) {
         super.onAttach(activity);
         mCallback = (SlideshowCallback) activity;
-    }
-
-    public interface SlideshowCallback {
-        void onStartSlideshow(long delay, boolean loop);
-    }
-
-    public SlideshowInitDialog() {
     }
 
     @Override
@@ -71,22 +81,11 @@ public class SlideshowInitDialog extends DialogFragment {
         return dialog;
     }
 
-    private final MaterialDialog.ButtonCallback mActionCallback = new MaterialDialog.ButtonCallback() {
-        @Override
-        public void onPositive(MaterialDialog dialog) {
-            super.onPositive(dialog);
-            dialog.dismiss();
-            mCallback.onStartSlideshow(((long) mSeek.getProgress() + 1) * 1000, mLoop.isChecked());
-        }
-
-        @Override
-        public void onNegative(MaterialDialog dialog) {
-            super.onNegative(dialog);
-            dialog.dismiss();
-        }
-    };
-
     public void show(Activity context) {
         show(context.getFragmentManager(), "FOLDER_SELECTOR");
+    }
+
+    public interface SlideshowCallback {
+        void onStartSlideshow(long delay, boolean loop);
     }
 }

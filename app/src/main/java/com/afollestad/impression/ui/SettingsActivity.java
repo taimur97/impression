@@ -21,6 +21,7 @@ import android.widget.ListView;
 
 import com.afollestad.impression.R;
 import com.afollestad.impression.ui.base.ThemedActivity;
+import com.afollestad.impression.utils.PrefUtils;
 import com.afollestad.impression.utils.Utils;
 import com.afollestad.impression.views.ImpressionPreference;
 import com.afollestad.materialdialogs.MaterialDialog;
@@ -57,6 +58,42 @@ public class SettingsActivity extends ThemedActivity implements ColorChooserDial
             primaryColor(color);
         }
         recreate();
+    }
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.preference_activity_custom);
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        toolbar.setBackgroundColor(primaryColor());
+        setSupportActionBar(toolbar);
+        //noinspection ConstantConditions
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+
+        if (savedInstanceState == null)
+            getFragmentManager().beginTransaction().replace(R.id.content_frame, new SettingsFragment()).commit();
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == android.R.id.home) {
+            onBackPressed();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void onBackPressed() {
+        finish();
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == EXCLUDED_REQUEST) {
+            setResult(resultCode);
+        }
     }
 
     public static class SettingsFragment extends PreferenceFragment {
@@ -121,7 +158,7 @@ public class SettingsActivity extends ThemedActivity implements ColorChooserDial
                 }
             });
 
-            findPreference("colored_navbar").setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+            findPreference(PrefUtils.COLORED_NAVBAR).setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
                 @Override
                 public boolean onPreferenceChange(Preference preference, Object newValue) {
                     if (getActivity() != null)
@@ -181,42 +218,8 @@ public class SettingsActivity extends ThemedActivity implements ColorChooserDial
             ListView list = (ListView) view.findViewById(android.R.id.list);
             list.setDivider(null);
             list.setDividerHeight(0);
-        }
-    }
-
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.preference_activity_custom);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        toolbar.setBackgroundColor(primaryColor());
-        setSupportActionBar(toolbar);
-        //noinspection ConstantConditions
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-
-        if (savedInstanceState == null)
-            getFragmentManager().beginTransaction().replace(R.id.content_frame, new SettingsFragment()).commit();
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == android.R.id.home) {
-            onBackPressed();
-            return true;
-        }
-        return super.onOptionsItemSelected(item);
-    }
-
-    @Override
-    public void onBackPressed() {
-        finish();
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == EXCLUDED_REQUEST) {
-            setResult(resultCode);
+            list.setPadding(0, Utils.convertDpToPx(getActivity(), 8), 0, Utils.convertDpToPx(getActivity(), 8));
+            list.setClipToPadding(false);
         }
     }
 }

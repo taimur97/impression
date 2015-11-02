@@ -25,6 +25,13 @@ public class ExcludedFolderAdapter extends RecyclerView.Adapter<ExcludedFolderAd
     private final List<String> mDataset;
     private final int primaryTextColor;
 
+    public ExcludedFolderAdapter(ExcludedFolderActivity context, String[] myDataset) {
+        mContext = context;
+        mDataset = new ArrayList<>();
+        Collections.addAll(mDataset, myDataset);
+        primaryTextColor = Utils.resolveColor(context, android.R.attr.textColorPrimary);
+    }
+
     @Override
     public void onClick(View v) {
         final int index = (Integer) v.getTag();
@@ -42,27 +49,6 @@ public class ExcludedFolderAdapter extends RecyclerView.Adapter<ExcludedFolderAd
                         mContext.invalidateEmptyText();
                     }
                 }).show();
-    }
-
-    public static class ViewHolder extends RecyclerView.ViewHolder {
-
-        public final View mView;
-        public final TextView mTitle;
-        public final ImageView mIcon;
-
-        public ViewHolder(View v) {
-            super(v);
-            mView = v.findViewById(R.id.viewFrame);
-            mTitle = (TextView) v.findViewById(R.id.title);
-            mIcon = (ImageView) v.findViewById(R.id.icon);
-        }
-    }
-
-    public ExcludedFolderAdapter(ExcludedFolderActivity context, String[] myDataset) {
-        mContext = context;
-        mDataset = new ArrayList<>();
-        Collections.addAll(mDataset, myDataset);
-        primaryTextColor = Utils.resolveColor(context, android.R.attr.textColorPrimary);
     }
 
     public void add(String path) {
@@ -90,5 +76,19 @@ public class ExcludedFolderAdapter extends RecyclerView.Adapter<ExcludedFolderAd
     @Override
     public int getItemCount() {
         return mDataset.size();
+    }
+
+    public static class ViewHolder extends RecyclerView.ViewHolder {
+
+        public final View mView;
+        public final TextView mTitle;
+        public final ImageView mIcon;
+
+        public ViewHolder(View v) {
+            super(v);
+            mView = v.findViewById(R.id.viewFrame);
+            mTitle = (TextView) v.findViewById(R.id.title);
+            mIcon = (ImageView) v.findViewById(R.id.icon);
+        }
     }
 }

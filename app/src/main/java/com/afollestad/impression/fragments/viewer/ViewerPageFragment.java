@@ -39,18 +39,17 @@ import uk.co.senab.photoview.PhotoViewAttacher;
  */
 public class ViewerPageFragment extends Fragment {
 
+    public static final short LIGHT_MODE_ON = 2;
     private static final short LIGHT_MODE_UNLOADED = 0;
     private static final short LIGHT_MODE_LOADING = -1;
     private static final short LIGHT_MODE_OFF = 1;
-    public static final short LIGHT_MODE_ON = 2;
-
+    public short mLightMode = LIGHT_MODE_UNLOADED;
     private MediaEntry mEntry;
     private String mMediaPath;
     private boolean isVideo;
     private boolean isActive;
     private String mBitmapInfo;
     private int mIndex;
-    public short mLightMode = LIGHT_MODE_UNLOADED;
     private boolean mImageZoomedUnderToolbar;
 
     private PhotoViewAttacher mAttacher;

@@ -38,18 +38,19 @@ import javax.microedition.khronos.opengles.GL10;
 
 public class EditorActivity extends AppCompatActivity implements GLSurfaceView.Renderer {
 
+    private final int[] mTextures = new int[2];
+    private final TextureRenderer mTexRenderer = new TextureRenderer();
     private GLSurfaceView mEffectView;
     private Bitmap mBitmap;
-
-    private final int[] mTextures = new int[2];
     private EffectContext mEffectContext;
     private Effect mEffect;
-    private final TextureRenderer mTexRenderer = new TextureRenderer();
     private int mImageWidth;
     private int mImageHeight;
     private boolean mInitialized = false;
     private String mCurrentEffect;
     private int mCurrentRotation;
+    private Timer mApplyDelayer;
+    private AdjusterCallack mAdjusterCallback;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -106,13 +107,6 @@ public class EditorActivity extends AppCompatActivity implements GLSurfaceView.R
                 .positiveText(android.R.string.ok)
                 .show();
     }
-
-    private interface AdjusterCallack {
-        void onAdjusted(int value);
-    }
-
-    private Timer mApplyDelayer;
-    private AdjusterCallack mAdjusterCallback;
 
     private void updateSeekLabel(float newValue) {
         TextView label = (TextView) findViewById(R.id.seekbarLabel);
@@ -556,5 +550,9 @@ public class EditorActivity extends AppCompatActivity implements GLSurfaceView.R
             // render the result of applyEffect()
             mTexRenderer.renderTexture(mTextures[0]);
         }
+    }
+
+    private interface AdjusterCallack {
+        void onAdjusted(int value);
     }
 }

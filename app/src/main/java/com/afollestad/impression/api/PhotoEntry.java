@@ -17,6 +17,7 @@ import java.io.File;
  */
 public class PhotoEntry implements MediaEntry<PhotoEntry> {
 
+    public String originalUri;
     private long _id;
     private String _data;
     private long _size;
@@ -31,9 +32,21 @@ public class PhotoEntry implements MediaEntry<PhotoEntry> {
     private int width;
     private int height;
     private int mRealIndex;
-    public String originalUri;
 
     public PhotoEntry() {
+    }
+
+    public static String sort(MediaAdapter.SortMode from) {
+        switch (from) {
+            default:
+                return MediaStore.Images.Media.DISPLAY_NAME + " DESC";
+            case NAME_ASC:
+                return MediaStore.Images.Media.DISPLAY_NAME + " ASC";
+            case MODIFIED_DATE_DESC:
+                return MediaStore.Images.Media.DATE_MODIFIED + " DESC";
+            case MODIFIED_DATE_ASC:
+                return MediaStore.Images.Media.DATE_MODIFIED + " ASC";
+        }
     }
 
     @Override
@@ -72,19 +85,6 @@ public class PhotoEntry implements MediaEntry<PhotoEntry> {
                 MediaStore.Images.Media.WIDTH,
                 MediaStore.Images.Media.HEIGHT
         };
-    }
-
-    public static String sort(MediaAdapter.SortMode from) {
-        switch (from) {
-            default:
-                return MediaStore.Images.Media.DISPLAY_NAME + " DESC";
-            case NAME_ASC:
-                return MediaStore.Images.Media.DISPLAY_NAME + " ASC";
-            case MODIFIED_DATE_DESC:
-                return MediaStore.Images.Media.DATE_MODIFIED + " DESC";
-            case MODIFIED_DATE_ASC:
-                return MediaStore.Images.Media.DATE_MODIFIED + " ASC";
-        }
     }
 
     @Override

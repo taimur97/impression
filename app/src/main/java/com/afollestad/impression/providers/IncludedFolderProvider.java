@@ -14,7 +14,7 @@ import java.io.File;
  */
 public class IncludedFolderProvider extends ProviderBase {
 
-    public final static Uri CONTENT_URI = Uri.parse("content://" + BuildConfig.APPLICATION_ID + ".includedfolder");
+    public final static Uri CONTENT_URI = Uri.parse("content://" + BuildConfig.APPLICATION_ID + ".included");
     private final static String COLUMNS = "_id INTEGER PRIMARY KEY AUTOINCREMENT, path TEXT";
 
     public IncludedFolderProvider() {

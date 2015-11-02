@@ -38,12 +38,12 @@ public class MediaAdapter extends HybridCursorAdapter<MediaAdapter.ViewHolder> {
     public static final int VIEW_TYPE_FOLDER = 1;
     public static final int VIEW_TYPE_NORMAL = 0;
 
+    private final Context mContext;
     private final Callback mCallback;
     private final List<MediaEntry> mEntries;
     private final List<String> mCheckedPaths;
     private final SortMode mSortMode;
     private final ViewMode mViewMode;
-    private final Context mContext;
     private final boolean mSelectAlbumMode;
 
     private final int mDefaultImageBackground;

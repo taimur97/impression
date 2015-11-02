@@ -19,18 +19,16 @@ import java.util.List;
  */
 public abstract class Account {
 
+    public static final int TYPE_LOCAL = 1;
+    public static final int TYPE_GOOGLE_DRIVE = 2;
+    public static final int TYPE_DROPBOX = 3;
+    private final static Object LOCK = new Object();
+    private static Account[] mAccountsSingleton;
     private final Context mContext;
 
     protected Account(Context context) {
         mContext = context;
     }
-
-    protected Context getContext() {
-        return mContext;
-    }
-
-    private final static Object LOCK = new Object();
-    private static Account[] mAccountsSingleton;
 
     public static void getAll(final Context context, final AccountsCallback callback) {
         synchronized (LOCK) {
@@ -84,6 +82,9 @@ public abstract class Account {
         PreferenceManager.getDefaultSharedPreferences(context).edit().putInt("active_account", acc.id()).commit();
     }
 
+    protected Context getContext() {
+        return mContext;
+    }
 
     public abstract int id();
 
@@ -99,14 +100,6 @@ public abstract class Account {
 
     public abstract void getEntries(String albumPath, int overviewMode, boolean explorerMode, MediaAdapter.FileFilterMode filter, MediaAdapter.SortMode sort, EntriesCallback callback);
 
-
-    public static abstract class AlbumCallback {
-
-        public abstract void onAlbums(AlbumEntry[] albums);
-
-        public abstract void onError(Exception e);
-    }
-
     public interface AccountCallback {
         void onAccount(Account account);
     }
@@ -114,14 +107,16 @@ public abstract class Account {
     public interface AccountsCallback {
         void onAccounts(Account[] accounts);
     }
-
     public interface EntriesCallback {
         void onEntries(MediaEntry[] entries);
 
         void onError(Exception e);
     }
 
-    public static final int TYPE_LOCAL = 1;
-    public static final int TYPE_GOOGLE_DRIVE = 2;
-    public static final int TYPE_DROPBOX = 3;
+    public static abstract class AlbumCallback {
+
+        public abstract void onAlbums(AlbumEntry[] albums);
+
+        public abstract void onError(Exception e);
+    }
 }

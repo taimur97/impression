@@ -20,7 +20,7 @@ import java.util.List;
 public class ExcludedFolderProvider extends ProviderBase {
 
     private final static String COLUMNS = "_id INTEGER PRIMARY KEY AUTOINCREMENT, path TEXT";
-    private final static Uri CONTENT_URI = Uri.parse("content://" + BuildConfig.APPLICATION_ID + ".excludedfolder");
+    private final static Uri CONTENT_URI = Uri.parse("content://" + BuildConfig.APPLICATION_ID + ".excluded");
 
     public ExcludedFolderProvider() {
         super("excluded", COLUMNS);

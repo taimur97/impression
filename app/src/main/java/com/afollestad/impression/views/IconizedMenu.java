@@ -27,18 +27,6 @@ public class IconizedMenu implements MenuBuilder.Callback, MenuPresenter.Callbac
     private OnDismissListener mDismissListener;
 
     /**
-     * Callback interface used to notify the application that the menu has closed.
-     */
-    public interface OnDismissListener {
-        /**
-         * Called when the associated menu has been dismissed.
-         *
-         * @param menu The PopupMenu that was dismissed.
-         */
-        void onDismiss(IconizedMenu menu);
-    }
-
-    /**
      * Construct a new PopupMenu.
      *
      * @param context Context for the PopupMenu.
@@ -161,6 +149,18 @@ public class IconizedMenu implements MenuBuilder.Callback, MenuPresenter.Callbac
      * @hide
      */
     public void onMenuModeChange(MenuBuilder menu) {
+    }
+
+    /**
+     * Callback interface used to notify the application that the menu has closed.
+     */
+    public interface OnDismissListener {
+        /**
+         * Called when the associated menu has been dismissed.
+         *
+         * @param menu The PopupMenu that was dismissed.
+         */
+        void onDismiss(IconizedMenu menu);
     }
 
     /**
