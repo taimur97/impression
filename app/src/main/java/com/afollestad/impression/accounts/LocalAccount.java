@@ -185,7 +185,7 @@ public class LocalAccount extends Account implements AsyncCursor.Callback {
                 @Override
                 public void run() {
                     final boolean is = PreferenceManager.getDefaultSharedPreferences(getContext()).getBoolean("include_subfolders_included", true);
-                    final List<MediaEntry> results = Utils.getEntriesFromFolder(getContext(), dir, explorerMode, !explorerMode && is, filter);
+                    final List<MediaEntry> results = Utils.getEntriesFromFolder(getContext(), dir, true, false, filter);
                     if (callback != null) {
                         mHandler.post(new Runnable() {
                             @Override

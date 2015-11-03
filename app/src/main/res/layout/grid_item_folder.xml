@@ -8,6 +8,9 @@
     android:focusableInTouchMode="false"
     android:foreground="?grid_selector"
     android:orientation="vertical"
+    android:paddingEnd="@dimen/grid_spacing"
+    android:paddingRight="@dimen/grid_spacing"
+    android:paddingTop="@dimen/grid_spacing"
     tools:ignore="RtlSymmetry">
 
     <com.afollestad.impression.views.ImpressionImageView

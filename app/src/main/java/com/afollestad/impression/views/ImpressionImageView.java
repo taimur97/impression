@@ -16,8 +16,8 @@ import com.afollestad.impression.R;
 import com.afollestad.impression.api.AlbumEntry;
 import com.afollestad.impression.api.base.MediaEntry;
 import com.afollestad.impression.utils.Utils;
-import com.koushikdutta.ion.Ion;
-import com.koushikdutta.ion.builder.AnimateGifMode;
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
 
 import java.lang.ref.WeakReference;
 
@@ -34,6 +34,8 @@ public class ImpressionImageView extends ImageView {
     private int mPlayOverlay;
     private int mSelectedColor;
     private boolean mIsGif;
+
+    private int mResourceId;
 
     public ImpressionImageView(Context context) {
         super(context);
@@ -56,7 +58,7 @@ public class ImpressionImageView extends ImageView {
     }
 
     public void load(MediaEntry entry, View progress) {
-        setTag(null);
+        mResourceId = -1;
         if (isInEditMode()) return;
         mEntry = entry;
         if (mEntry == null) return;
@@ -73,28 +75,30 @@ public class ImpressionImageView extends ImageView {
             pathToLoad = ((AlbumEntry) entry).mFirstPath;
         String ext = Utils.getExtension(entry.data());
         mIsGif = ext != null && ext.equalsIgnoreCase("gif");
-        Ion.with(this)
+        Glide.with(getContext())
+                .load(pathToLoad)
+                .asBitmap()
+                .diskCacheStrategy(DiskCacheStrategy.SOURCE)
                 .centerCrop()
-                .animateGif(AnimateGifMode.NO_ANIMATE)
-                .load(pathToLoad);
+                .into(this);
     }
 
     private void load(int resourceId) {
-        setTag(resourceId);
+        mResourceId = resourceId;
         if (getMeasuredWidth() == 0) return;
         setImageDrawable(null);
-        Ion.with(this)
+        Glide.with(getContext())
+                .load("android.resource://" + getContext().getPackageName() + "/" + resourceId)
                 .centerCrop()
-                .load("android.resource://" + getContext().getPackageName() + "/" + resourceId);
+                .into(this);
     }
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
         //noinspection SuspiciousNameCombination
-        setMeasuredDimension(widthMeasureSpec, widthMeasureSpec);
-        if (getTag() != null)
-            load((Integer) getTag());
+        super.onMeasure(widthMeasureSpec, widthMeasureSpec);
+        if (mResourceId != -1)
+            load(mResourceId);
         else load(mEntry, null);
     }
 

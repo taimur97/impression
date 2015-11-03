@@ -1,38 +1,34 @@
 package com.afollestad.impression.media;
 
-
 import android.app.Activity;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
-import android.preference.PreferenceManager;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.ActivityOptionsCompat;
-import android.support.v7.widget.GridLayoutManager;
 import android.view.View;
 import android.widget.ImageView;
 
+import com.afollestad.impression.MvpPresenter;
 import com.afollestad.impression.R;
 import com.afollestad.impression.adapters.MediaAdapter;
-import com.afollestad.impression.adapters.base.HybridCursorAdapter;
 import com.afollestad.impression.api.AlbumEntry;
 import com.afollestad.impression.api.base.MediaEntry;
 import com.afollestad.impression.cab.MediaCab;
 import com.afollestad.impression.providers.SortMemoryProvider;
-import com.afollestad.impression.ui.viewer.ViewerActivity;
 import com.afollestad.impression.utils.PrefUtils;
 import com.afollestad.impression.utils.Utils;
-import com.koushikdutta.ion.Ion;
-import com.koushikdutta.ion.bitmap.BitmapInfo;
+import com.afollestad.impression.viewer.ViewerActivity;
 
 import java.io.File;
 
 import static com.afollestad.impression.media.MainActivity.EXTRA_CURRENT_ITEM_POSITION;
 import static com.afollestad.impression.media.MainActivity.EXTRA_OLD_ITEM_POSITION;
 
-public class MediaPresenter extends LoaderPresenter<MediaAdapter.ViewHolder, MediaView> {
+public class MediaPresenter extends MvpPresenter<MediaView> {
 
     public static final String INIT_ALBUM_PATH = "albumPath";
 
@@ -47,14 +43,32 @@ public class MediaPresenter extends LoaderPresenter<MediaAdapter.ViewHolder, Med
         return frag;
     }
 
-    public final void jumpToTop(boolean animateChange) {
-        if (isViewAttached() && getView().getContextCompat() != null) {
-            if (animateChange) {
-                //getView().getAdapter().stopAnimation();
-                getView().getRecyclerView().smoothScrollToPosition(0);
-            } else {
-                getView().getRecyclerView().scrollToPosition(0);
-            }
+    public void setGridModeOn(boolean gridMode) {
+        if (!isViewAttached() || getView().getContextCompat() == null) return;
+
+        PrefUtils.setGridMode(getView().getContextCompat(), gridMode);
+
+        final int gridColumns = PrefUtils.getGridColumns(getView().getContextCompat());
+        getView().updateGridModeOn(gridMode);
+        getView().getAdapter().updateGridModeOn();
+        getView().updateGridColumns(gridColumns);
+        ((Activity) getView().getContextCompat()).invalidateOptionsMenu();
+    }
+
+    protected final void setGridColumns(int width) {
+        if (!isViewAttached() || getView().getContextCompat() == null) return;
+        final Resources r = getView().getContextCompat().getResources();
+        final int orientation = r.getConfiguration().orientation;
+        PrefUtils.setGridColumns(getView().getContextCompat(), orientation, width);
+
+        getView().updateGridColumns(width);
+        getView().getAdapter().updateGridColumns();
+    }
+
+    public void onViewCreated() {
+        if (isViewAttached()) {
+            final boolean gridMode = PrefUtils.isGridMode(getView().getContextCompat());
+            getView().initializeRecyclerView(gridMode, PrefUtils.getGridColumns(getView().getContextCompat()), createAdapter());
         }
     }
 
@@ -64,7 +78,7 @@ public class MediaPresenter extends LoaderPresenter<MediaAdapter.ViewHolder, Med
         }
     }
 
-    protected void create() {
+    protected void onCreate() {
         if (isViewAttached()) {
             //noinspection ConstantConditions
             mAlbumPath = getView().getArguments().getString(INIT_ALBUM_PATH);
@@ -72,16 +86,16 @@ public class MediaPresenter extends LoaderPresenter<MediaAdapter.ViewHolder, Med
         }
     }
 
-    protected void resume() {
+    protected void onResume() {
         if (isViewAttached() && getView().getContextCompat() != null) {
             MainActivity act = (MainActivity) getView().getContextCompat();
             if (act.getMediaCab() != null) {
                 act.getMediaCab().setFragment((MediaFragment) getView(), true);
             }
 
-            boolean darkTheme = PreferenceManager.getDefaultSharedPreferences(act).getBoolean("dark_theme", false);
+            boolean darkTheme = PrefUtils.isDarkTheme(act);
             if (darkTheme != mLastDarkTheme) {
-                getView().invalidateLayoutManagerAndAdapter();
+                getView().getAdapter().updateTheme();
             }
 
             setAlbumPath(mAlbumPath);
@@ -92,7 +106,6 @@ public class MediaPresenter extends LoaderPresenter<MediaAdapter.ViewHolder, Med
 
     }
 
-    @Override
     String getTitle() {
         if (isViewAttached()) {
             if (PrefUtils.isExplorerMode(getView().getContextCompat())) {
@@ -107,19 +120,8 @@ public class MediaPresenter extends LoaderPresenter<MediaAdapter.ViewHolder, Med
         return null;
     }
 
-    @Override
     int getEmptyText() {
         return R.string.no_photosorvideos;
-    }
-
-    @Override
-    GridLayoutManager createLayoutManager() {
-        if (isViewAttached()) {
-            int columnCount = getViewMode() == MediaAdapter.ViewMode.GRID ? getGridWidth() : 1;
-            return new GridLayoutManager(getView().getContextCompat(), columnCount);
-        } else {
-            return null;
-        }
     }
 
     public String getAlbumPath() {
@@ -144,12 +146,11 @@ public class MediaPresenter extends LoaderPresenter<MediaAdapter.ViewHolder, Med
         }
     }
 
-    protected HybridCursorAdapter<MediaAdapter.ViewHolder> createAdapter() {
+    protected MediaAdapter createAdapter() {
         if (isViewAttached()) {
             MainActivity act = (MainActivity) getView().getContextCompat();
             MediaAdapter.Callback callback = new MediaCallbackImpl();
-            return new MediaAdapter(act, SortMemoryProvider.remember(act, mAlbumPath),
-                    getViewMode(), callback, act.isSelectAlbumMode());
+            return new MediaAdapter(act, SortMemoryProvider.getSortMode(act, mAlbumPath), callback, act.isSelectAlbumMode());
         } else {
             return null;
         }
@@ -200,12 +201,14 @@ public class MediaPresenter extends LoaderPresenter<MediaAdapter.ViewHolder, Med
                         act.switchAlbum(pic.data());
                     } else {
                         ImageView iv = (ImageView) view.findViewById(R.id.image);
-                        BitmapInfo bi = Ion.with(iv).getBitmapInfo();
-                        ViewerActivity.MediaWrapper wrapper = ((MediaAdapter) getView().getAdapter()).getMedia();
+                        int width = iv.getDrawable().getIntrinsicWidth();
+                        int height = iv.getDrawable().getIntrinsicHeight();
+                        ViewerActivity.MediaWrapper wrapper = getView().getAdapter().getMedia();
                         final Intent intent = new Intent(act, ViewerActivity.class)
                                 .putExtra("media_entries", wrapper)
                                 .putExtra(EXTRA_CURRENT_ITEM_POSITION, index)
-                                .putExtra("bitmapInfo", bi != null ? bi.key : null);
+                                .putExtra(ViewerActivity.EXTRA_WIDTH, width)
+                                .putExtra(ViewerActivity.EXTRA_HEIGHT, height);
                         final String transName = "view_" + index;
                         final ActivityOptionsCompat options = ActivityOptionsCompat.makeSceneTransitionAnimation(
                                 act, iv, transName);

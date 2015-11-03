@@ -45,7 +45,7 @@ public class AlbumEntry implements MediaEntry<AlbumEntry> {
     public void processLoaded(Context context) {
         if (loadedHolder == null) return;
         mSize = loadedHolder.size();
-        MediaAdapter.SortMode sort = SortMemoryProvider.remember(context, mFile.getAbsolutePath());
+        MediaAdapter.SortMode sort = SortMemoryProvider.getSortMode(context, mFile.getAbsolutePath());
         List<LoaderEntry> mEntries = new ArrayList<>(loadedHolder.values());
         Collections.sort(mEntries, new LoaderEntry.Sorter(sort));
         mFirstPath = mEntries.get(0).data();

@@ -84,7 +84,7 @@ public class MainActivity extends ThemedActivity
     private CharSequence mTitle;
     private RecyclerView mRecyclerView;
     private Bundle mTmpState;
-    private boolean mIsReentering;
+    private boolean mIsReenteringFromViewer;
 
     private static void LOG(String message, boolean isReentering) {
         if (DEBUG) {
@@ -101,7 +101,7 @@ public class MainActivity extends ThemedActivity
     }
 
     public void setIsReentering(boolean isReentering) {
-        mIsReentering = isReentering;
+        mIsReenteringFromViewer = isReentering;
     }
 
     public Bundle getTmpState() {
@@ -171,12 +171,12 @@ public class MainActivity extends ThemedActivity
         final SharedElementCallback mCallback = new SharedElementCallback() {
             @Override
             public void onMapSharedElements(List<String> names, Map<String, View> sharedElements) {
-                LOG("onMapSharedElements(List<String>, Map<String, View>)", mIsReentering);
+                LOG("onMapSharedElements(List<String>, Map<String, View>)", mIsReenteringFromViewer);
                 boolean shouldAdd = true;
                 int oldPosition = mTmpState != null ? mTmpState.getInt(EXTRA_OLD_ITEM_POSITION) : 0;
                 int currentPosition = mTmpState != null ? mTmpState.getInt(EXTRA_CURRENT_ITEM_POSITION) : 0;
                 mTmpState = null;
-                if (mIsReentering) {
+                if (mIsReenteringFromViewer) {
                     shouldAdd = currentPosition != oldPosition;
                 }
                 if (shouldAdd && mRecyclerView != null) {
@@ -218,24 +218,24 @@ public class MainActivity extends ThemedActivity
                     sharedElements.put(Window.STATUS_BAR_BACKGROUND_TRANSITION_NAME, statusBar);
                 }
 
-                LOG("=== names: " + names.toString(), mIsReentering);
-                LOG("=== sharedElements: " + Utils.setToString(sharedElements.keySet()), mIsReentering);
+                LOG("=== names: " + names.toString(), mIsReenteringFromViewer);
+                LOG("=== sharedElements: " + Utils.setToString(sharedElements.keySet()), mIsReenteringFromViewer);
             }
 
             @Override
             public void onSharedElementStart(List<String> sharedElementNames, List<View> sharedElements,
                                              List<View> sharedElementSnapshots) {
-                LOG("onSharedElementStart(List<String>, List<View>, List<View>)", mIsReentering);
+                LOG("onSharedElementStart(List<String>, List<View>, List<View>)", mIsReenteringFromViewer);
                 logSharedElementsInfo(sharedElementNames, sharedElements);
             }
 
             @Override
             public void onSharedElementEnd(List<String> sharedElementNames, List<View> sharedElements,
                                            List<View> sharedElementSnapshots) {
-                LOG("onSharedElementEnd(List<String>, List<View>, List<View>)", mIsReentering);
+                LOG("onSharedElementEnd(List<String>, List<View>, List<View>)", mIsReenteringFromViewer);
                 logSharedElementsInfo(sharedElementNames, sharedElements);
 
-                if (mIsReentering) {
+                if (mIsReenteringFromViewer) {
                     View statusBar = getWindow().getDecorView().findViewById(android.R.id.statusBarBackground);
                     if (statusBar != null) {
                         statusBar.post(new Runnable() {
@@ -250,7 +250,7 @@ public class MainActivity extends ThemedActivity
             }
 
             private void logSharedElementsInfo(List<String> names, List<View> sharedElements) {
-                LOG("=== names: " + names.toString(), mIsReentering);
+                LOG("=== names: " + names.toString(), mIsReenteringFromViewer);
                 for (View view : sharedElements) {
                     int[] loc = new int[2];
                     //noinspection ResourceType
@@ -366,7 +366,7 @@ public class MainActivity extends ThemedActivity
                     if (crumb.getPath() != null && activeFile != null &&
                             crumb.getPath().equals(activeFile)) {
                         Fragment frag = getFragmentManager().findFragmentById(R.id.content_frame);
-                        ((MediaFragment) frag).getPresenter().jumpToTop(true);
+                        ((MediaFragment) frag).jumpToTop(true);
                     } else {
                         switchAlbum(crumb, crumb.getPath() == null, true);
                     }
@@ -447,13 +447,13 @@ public class MainActivity extends ThemedActivity
         mSelectAlbumMode = mode;
         switch (mSelectAlbumMode) {
             default:
-                getSupportActionBar().setTitle(R.string.choose_album);
+                setTitle(R.string.choose_album);
                 break;
             case COPY:
-                getSupportActionBar().setTitle(R.string.copy_to);
+                setTitle(R.string.copy_to);
                 break;
             case MOVE:
-                getSupportActionBar().setTitle(R.string.move_to);
+                setTitle(R.string.move_to);
                 break;
         }
         invalidateOptionsMenu();
@@ -471,7 +471,7 @@ public class MainActivity extends ThemedActivity
     @Override
     public void onActivityReenter(int resultCode, Intent data) {
         super.onActivityReenter(resultCode, data);
-        mIsReentering = true;
+        mIsReenteringFromViewer = true;
         mTmpState = new Bundle(data.getExtras());
         int oldPosition = mTmpState.getInt(EXTRA_OLD_ITEM_POSITION);
         int currentPosition = mTmpState.getInt(EXTRA_CURRENT_ITEM_POSITION);
@@ -519,6 +519,8 @@ public class MainActivity extends ThemedActivity
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
+        invalidateMenuTint();
+
         if (item.getItemId() == R.id.settings) {
             startActivityForResult(new Intent(this, SettingsActivity.class), SETTINGS_REQUEST);
             return true;

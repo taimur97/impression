@@ -1,4 +1,4 @@
-package com.afollestad.impression.fragments.viewer;
+package com.afollestad.impression.viewer;
 
 import android.annotation.TargetApi;
 import android.app.Fragment;
@@ -15,20 +15,22 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
-import android.widget.ImageView;
 
 import com.afollestad.impression.R;
 import com.afollestad.impression.api.PhotoEntry;
 import com.afollestad.impression.api.VideoEntry;
 import com.afollestad.impression.api.base.MediaEntry;
-import com.afollestad.impression.ui.viewer.ViewerActivity;
 import com.afollestad.impression.utils.Utils;
 import com.afollestad.impression.views.ImpressionVideoView;
 import com.afollestad.impression.views.ScaleListenerImageView;
-import com.koushikdutta.async.future.FutureCallback;
-import com.koushikdutta.ion.Ion;
-import com.koushikdutta.ion.bitmap.BitmapInfo;
-import com.koushikdutta.ion.builder.AnimateGifMode;
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.Priority;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.bumptech.glide.load.resource.gif.GifDrawable;
+import com.bumptech.glide.request.RequestListener;
+import com.bumptech.glide.request.animation.GlideAnimation;
+import com.bumptech.glide.request.target.SimpleTarget;
+import com.bumptech.glide.request.target.Target;
 
 import java.io.File;
 
@@ -40,6 +42,12 @@ import uk.co.senab.photoview.PhotoViewAttacher;
 public class ViewerPageFragment extends Fragment {
 
     public static final short LIGHT_MODE_ON = 2;
+    public static final int INIT_DIMEN_NONE = -1;
+    public static final String INIT_WIDTH = "width";
+    public static final String INIT_HEIGHT = "height";
+    public static final String INIT_INDEX = "index";
+    public static final String INIT_MEDIA = "media";
+    public static final String INIT_MEDIA_PATH = "media_path";
     private static final short LIGHT_MODE_UNLOADED = 0;
     private static final short LIGHT_MODE_LOADING = -1;
     private static final short LIGHT_MODE_OFF = 1;
@@ -48,7 +56,8 @@ public class ViewerPageFragment extends Fragment {
     private String mMediaPath;
     private boolean isVideo;
     private boolean isActive;
-    private String mBitmapInfo;
+    private int mWidth;
+    private int mHeight;
     private int mIndex;
     private boolean mImageZoomedUnderToolbar;
 
@@ -57,12 +66,13 @@ public class ViewerPageFragment extends Fragment {
     private ImpressionVideoView mVideo;
     private Bitmap mBitmap;
 
-    public static ViewerPageFragment create(MediaEntry entry, int index, String info) {
+    public static ViewerPageFragment create(MediaEntry entry, int index, int width, int height) {
         ViewerPageFragment frag = new ViewerPageFragment();
         Bundle args = new Bundle();
-        args.putSerializable("media", entry);
-        args.putInt("index", index);
-        args.putString("bitmapInfo", info);
+        args.putSerializable(INIT_MEDIA, entry);
+        args.putInt(INIT_INDEX, index);
+        args.putInt(INIT_WIDTH, width);
+        args.putInt(INIT_HEIGHT, height);
         frag.setArguments(args);
         return frag;
     }
@@ -70,13 +80,16 @@ public class ViewerPageFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        mBitmapInfo = getArguments().getString("bitmapInfo");
-        mIndex = getArguments().getInt("index");
-        if (getArguments().containsKey("media")) {
-            mEntry = (MediaEntry) getArguments().getSerializable("media");
+
+        mWidth = getArguments().getInt(INIT_WIDTH);
+        mHeight = getArguments().getInt(INIT_HEIGHT);
+
+        mIndex = getArguments().getInt(INIT_INDEX);
+        if (getArguments().containsKey(INIT_MEDIA)) {
+            mEntry = (MediaEntry) getArguments().getSerializable(INIT_MEDIA);
             isVideo = mEntry.isVideo();
-        } else if (getArguments().containsKey("media_path")) {
-            mMediaPath = getArguments().getString("media_path");
+        } else if (getArguments().containsKey(INIT_MEDIA_PATH)) {
+            mMediaPath = getArguments().getString(INIT_MEDIA_PATH);
             String mime = Utils.getMimeType(Utils.getExtension(mMediaPath));
             isVideo = mime != null && mime.startsWith("video/");
         }
@@ -173,15 +186,29 @@ public class ViewerPageFragment extends Fragment {
             return;
         }
 
-        if (mBitmapInfo != null && !isGif()) {
+        if (mWidth != INIT_DIMEN_NONE && mHeight != INIT_DIMEN_NONE && !isGif()) {
             // Sets the initial cached thumbnail while the rest of loading takes place
-            BitmapInfo bi = Ion.getDefault(getActivity())
-                    .getBitmapCache()
-                    .get(mBitmapInfo);
-            if (bi != null) {
-                mPhoto.setImageBitmap(bi.bitmap);
-                ((ViewerActivity) getActivity()).invalidateTransition();
-            }
+            Glide.with(this)
+                    .load(mEntry.data())
+                    .asBitmap()
+                    .skipMemoryCache(true)
+                    .diskCacheStrategy(DiskCacheStrategy.SOURCE)
+                    .priority(Priority.IMMEDIATE)
+                    .dontAnimate()
+                    .override(mWidth, mHeight)
+                    .listener(new RequestListener<String, Bitmap>() {
+                        @Override
+                        public boolean onException(Exception e, String model, Target<Bitmap> target, boolean isFirstResource) {
+                            return false;
+                        }
+
+                        @Override
+                        public boolean onResourceReady(Bitmap resource, String model, Target<Bitmap> target, boolean isFromMemoryCache, boolean isFirstResource) {
+                            ((ViewerActivity) getActivity()).invalidateTransition();
+                            return false;
+                        }
+                    })
+                    .into(mPhoto);
         } else {
             ((ViewerActivity) getActivity()).invalidateTransition();
         }
@@ -237,42 +264,48 @@ public class ViewerPageFragment extends Fragment {
         if (isGif()) {
             // GIFs can't be loaded as a Bitmap
             mLightMode = LIGHT_MODE_OFF;
-            Ion.with(mPhoto)
-                    .animateGif(AnimateGifMode.ANIMATE)
+            Glide.with(getActivity())
                     .load(getUri().toString())
-                    .setCallback(new FutureCallback<ImageView>() {
+                    .asGif()
+                    .listener(new RequestListener<String, GifDrawable>() {
                         @Override
-                        public void onCompleted(Exception e, ImageView result) {
+                        public boolean onException(Exception e, String model, Target<GifDrawable> target, boolean isFirstResource) {
+                            Utils.showErrorDialog(getActivity(), e);
+                            attachPhotoView();
+                            ((ViewerActivity) getActivity()).invalidateTransition();
+                            return false;
+                        }
+
+                        @Override
+                        public boolean onResourceReady(GifDrawable resource, String model, Target<GifDrawable> target, boolean isFromMemoryCache, boolean isFirstResource) {
                             if (!isAdded()) {
-                                return;
-                            } else if (e != null) {
-                                Utils.showErrorDialog(getActivity(), e);
-                                attachPhotoView();
-                                ((ViewerActivity) getActivity()).invalidateTransition();
-                                return;
+                                return false;
                             }
                             attachPhotoView();
                             ((ViewerActivity) getActivity()).invalidateTransition();
+                            return false;
                         }
-                    });
+                    })
+                    .into(mPhoto);
         } else {
             // Load the full size image into the view from the file
-            Ion.with(getActivity()).load(getUri().toString())
-                    .withBitmap()
+            //TODO
+            Glide.with(getActivity())
+                    .load(getUri().toString())
                     .asBitmap()
-                    .setCallback(new FutureCallback<Bitmap>() {
+                    .into(new SimpleTarget<Bitmap>() {
                         @Override
-                        public void onCompleted(Exception e, Bitmap result) {
+                        public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
                             if (!isAdded()) {
                                 return;
-                            } else if (e != null) {
+                            }/* else if (e != null) {
                                 Utils.showErrorDialog(getActivity(), e);
                                 attachPhotoView();
                                 ((ViewerActivity) getActivity()).invalidateTransition();
                                 return;
-                            }
+                            }*/
 
-                            mBitmap = result;
+                            mBitmap = resource;
                             if (mLightMode != LIGHT_MODE_LOADING) {
                                 mLightMode = LIGHT_MODE_LOADING;
                                 new Palette.Builder(mBitmap)
@@ -295,7 +328,7 @@ public class ViewerPageFragment extends Fragment {
                                         });
                             }
 
-                            mPhoto.setImageBitmap(result);
+                            mPhoto.setImageBitmap(resource);
                             attachPhotoView();
 
 //                        if (getView() != null) {

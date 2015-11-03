@@ -7,14 +7,16 @@
     android:focusable="false"
     android:focusableInTouchMode="false"
     android:foreground="?grid_selector"
+    android:paddingEnd="@dimen/grid_spacing"
+    android:paddingRight="@dimen/grid_spacing"
+    android:paddingTop="@dimen/grid_spacing"
     tools:ignore="RtlSymmetry">
 
     <com.afollestad.impression.views.ImpressionImageView
         android:id="@+id/image"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="?default_image_background"
-        android:scaleType="centerCrop" />
+        android:background="?default_image_background" />
 
     <RelativeLayout
         android:id="@+id/titleFrame"

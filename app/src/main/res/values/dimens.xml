@@ -6,9 +6,10 @@
 
     <dimen name="grid_folder_image_padding">16dp</dimen>
 
-    <dimen name="grid_spacing">1dp</dimen>
+    <dimen name="grid_spacing">4dp</dimen>
 
-    <dimen name="grid_spacing_list">15dp</dimen>
+    <dimen name="grid_spacing_list">16dp</dimen>
+    <dimen name="list_top_bottom_padding">8dp</dimen>
 
     <dimen name="list_item_image_size">40dp</dimen>
 

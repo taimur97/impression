@@ -218,7 +218,8 @@ public class SettingsActivity extends ThemedActivity implements ColorChooserDial
             ListView list = (ListView) view.findViewById(android.R.id.list);
             list.setDivider(null);
             list.setDividerHeight(0);
-            list.setPadding(0, Utils.convertDpToPx(getActivity(), 8), 0, Utils.convertDpToPx(getActivity(), 8));
+            int listTopBottomPadding = getResources().getDimensionPixelSize(R.dimen.list_top_bottom_padding);
+            list.setPadding(0, listTopBottomPadding, 0, listTopBottomPadding);
             list.setClipToPadding(false);
         }
     }

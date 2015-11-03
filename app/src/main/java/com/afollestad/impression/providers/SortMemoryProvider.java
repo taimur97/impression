@@ -9,7 +9,6 @@ import android.preference.PreferenceManager;
 
 import com.afollestad.impression.BuildConfig;
 import com.afollestad.impression.adapters.MediaAdapter;
-import com.afollestad.impression.media.LoaderFragment;
 import com.afollestad.impression.providers.base.ProviderBase;
 
 import java.io.File;
@@ -44,7 +43,7 @@ public class SortMemoryProvider extends ProviderBase {
         }).start();
     }
 
-    public static void remember(Context context, String path, MediaAdapter.SortMode mode) {
+    public static void save(Context context, String path, MediaAdapter.SortMode mode) {
         if (context == null) return;
         if (path == null) {
             PreferenceManager.getDefaultSharedPreferences(context).edit()
@@ -69,7 +68,7 @@ public class SortMemoryProvider extends ProviderBase {
         }
     }
 
-    public static MediaAdapter.SortMode remember(Context context, String path) {
+    public static MediaAdapter.SortMode getSortMode(Context context, String path) {
         if (context == null) {
             return MediaAdapter.SortMode.valueOf(MediaAdapter.SortMode.DEFAULT);
         } else if (path == null) {
@@ -77,6 +76,7 @@ public class SortMemoryProvider extends ProviderBase {
                     .getInt("sort_mode", MediaAdapter.SortMode.DEFAULT);
             return MediaAdapter.SortMode.valueOf(mode);
         }
+
         Cursor cursor = context.getContentResolver().query(CONTENT_URI,
                 null, "path = ?", new String[]{path}, null);
         int mode = -1;
@@ -88,32 +88,6 @@ public class SortMemoryProvider extends ProviderBase {
         if (mode == -1) {
             mode = PreferenceManager.getDefaultSharedPreferences(context)
                     .getInt("sort_mode", MediaAdapter.SortMode.DEFAULT);
-        }
-        return MediaAdapter.SortMode.valueOf(mode);
-    }
-
-    public static MediaAdapter.SortMode remember(LoaderFragment context, String path) {
-        if (context == null) {
-            return MediaAdapter.SortMode.valueOf(MediaAdapter.SortMode.DEFAULT);
-        } else if (path == null) {
-            final int mode = PreferenceManager.getDefaultSharedPreferences(context.getActivity())
-                    .getInt("sort_mode", MediaAdapter.SortMode.DEFAULT);
-            return MediaAdapter.SortMode.valueOf(mode);
-        }
-        Cursor cursor = context.getActivity().getContentResolver().query(CONTENT_URI,
-                null, "path = ?", new String[]{path}, null);
-        int mode = -1;
-        if (cursor != null) {
-            if (cursor.moveToFirst())
-                mode = cursor.getInt(2);
-            cursor.close();
-        }
-        if (mode == -1) {
-            mode = PreferenceManager.getDefaultSharedPreferences(context.getActivity())
-                    .getInt("sort_mode", MediaAdapter.SortMode.DEFAULT);
-            context.sortRememberDir = false;
-        } else {
-            context.sortRememberDir = true;
         }
         return MediaAdapter.SortMode.valueOf(mode);
     }

@@ -31,10 +31,6 @@ import java.util.Set;
  */
 public abstract class Utils {
 
-    public static int convertDpToPx(Context context, float dp) {
-        return (int) (dp * context.getResources().getDisplayMetrics().density + 0.5f);
-    }
-
     public static Uri getImageContentUri(Context context, File imageFile) {
         if (context == null) return null;
         final String mimeType = Utils.getMimeType(Utils.getExtension(imageFile.getName()));

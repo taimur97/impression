@@ -1,4 +1,4 @@
-package com.afollestad.impression.ui.viewer;
+package com.afollestad.impression.viewer;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
@@ -40,11 +40,9 @@ import android.widget.Toast;
 
 import com.afollestad.impression.R;
 import com.afollestad.impression.adapters.MediaAdapter;
-import com.afollestad.impression.adapters.ViewerPageAdapter;
 import com.afollestad.impression.api.PhotoEntry;
 import com.afollestad.impression.api.base.MediaEntry;
 import com.afollestad.impression.fragments.dialog.SlideshowInitDialog;
-import com.afollestad.impression.fragments.viewer.ViewerPageFragment;
 import com.afollestad.impression.ui.base.ThemedActivity;
 import com.afollestad.impression.utils.PrefUtils;
 import com.afollestad.impression.utils.TimeUtils;
@@ -61,35 +59,43 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import static com.afollestad.impression.fragments.viewer.ViewerPageFragment.LIGHT_MODE_ON;
 import static com.afollestad.impression.media.MainActivity.EXTRA_CURRENT_ITEM_POSITION;
 import static com.afollestad.impression.media.MainActivity.EXTRA_OLD_ITEM_POSITION;
+import static com.afollestad.impression.viewer.ViewerPageFragment.LIGHT_MODE_ON;
 
 /**
  * @author Aidan Follestad (afollestad)
  */
 public class ViewerActivity extends ThemedActivity implements SlideshowInitDialog.SlideshowCallback {
 
+    public static final String EXTRA_WIDTH = "com.afollestad.impression.width";
+    public static final String EXTRA_HEIGHT = "com.afollestad.impression.height";
+
     public static final int TOOLBAR_FADE_OFFSET = 2750;
     public static final int TOOLBAR_FADE_DURATION = 400;
     private static final int EDIT_REQUEST = 1000;
     private static final String STATE_CURRENT_POSITION = "state_current_position";
     private static final String STATE_OLD_POSITION = "state_old_position";
+
     public Toolbar mToolbar;
     public boolean mFinishedTransition;
     private List<MediaEntry> mEntries;
+
     private ViewPager mPager;
     private ViewerPageAdapter mAdapter;
+
     private Timer mTimer;
     private int mCurrentPosition;
     private int mOriginalPosition;
-    private boolean startedPostponedTransition;
+    private boolean mStartedPostponedTransition;
     private boolean mLightMode;
+
     private int mStatusBarHeight;
-    private boolean mIsReturning;
+    private boolean mIsReturningToMain;
+
     private boolean mAllVideos;
     private ImageView mOverflow;
-    private boolean systemUIFocus = false;
+    private boolean mSystemUIFocus = false;
     private long mSlideshowDelay;
     private boolean mSlideshowLoop;
     private Timer mSlideshowTimer;
@@ -162,9 +168,9 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     public void invalidateTransition() {
-        if (startedPostponedTransition || Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP)
+        if (mStartedPostponedTransition || Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP)
             return;
-        startedPostponedTransition = true;
+        mStartedPostponedTransition = true;
         startPostponedEnterTransition();
     }
 
@@ -174,7 +180,7 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
         final SharedElementCallback mCallback = new SharedElementCallback() {
             @Override
             public void onMapSharedElements(List<String> names, Map<String, View> sharedElements) {
-                if (mIsReturning) {
+                if (mIsReturningToMain) {
                     View sharedView = mAdapter.getCurrentDetailsFragment().getSharedElement();
                     names.clear();
                     sharedElements.clear();
@@ -221,7 +227,7 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
                 View navigationBar = decor.findViewById(android.R.id.navigationBarBackground);
                 View statusBar = decor.findViewById(android.R.id.statusBarBackground);
 
-                if (!mIsReturning) {
+                if (!mIsReturningToMain) {
                     int primaryColorDark = primaryColorDark();
                     int viewerOverlayColor = ContextCompat.getColor(ViewerActivity.this, R.color.viewer_overlay);
 
@@ -300,7 +306,7 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            startedPostponedTransition = false;
+            mStartedPostponedTransition = false;
             postponeEnterTransition();
         }
         super.onCreate(savedInstanceState);
@@ -398,7 +404,9 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
             }
 
             mAdapter = new ViewerPageAdapter(getFragmentManager(), mEntries,
-                    getIntent().getStringExtra("bitmapInfo"), mCurrentPosition);
+                    getIntent().getIntExtra(EXTRA_WIDTH, ViewerPageFragment.INIT_DIMEN_NONE),
+                    getIntent().getIntExtra(EXTRA_HEIGHT, ViewerPageFragment.INIT_DIMEN_NONE),
+                    mCurrentPosition);
             mPager = (ViewPager) findViewById(R.id.pager);
             mPager.setOffscreenPageLimit(1);
             mPager.setAdapter(mAdapter);
@@ -427,7 +435,7 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
             public void onSystemUiVisibilityChange(int visibility) {
                 if (visibility == View.VISIBLE) {
                     invokeToolbar(false);
-                    systemUIFocus = false; // this is inverted by the method below
+                    mSystemUIFocus = false; // this is inverted by the method below
                     systemUIFocusChange();
                 }
             }
@@ -497,8 +505,8 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
     }
 
     public void systemUIFocusChange() {
-        systemUIFocus = !systemUIFocus;
-        if (systemUIFocus) {
+        mSystemUIFocus = !mSystemUIFocus;
+        if (mSystemUIFocus) {
             showSystemUI();
             if (mTimer != null) {
                 mTimer.cancel();
@@ -508,7 +516,7 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
             mTimer.schedule(new TimerTask() {
                 @Override
                 public void run() {
-                    systemUIFocus = false;
+                    mSystemUIFocus = false;
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
@@ -850,7 +858,7 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     @Override
     public void finishAfterTransition() {
-        mIsReturning = true;
+        mIsReturningToMain = true;
         Intent data = new Intent();
         if (getIntent() != null)
             data.putExtra(EXTRA_OLD_ITEM_POSITION, getIntent().getIntExtra(EXTRA_CURRENT_ITEM_POSITION, 0));

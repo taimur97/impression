@@ -6,7 +6,6 @@ import android.net.Uri;
 import android.provider.MediaStore;
 import android.support.v4.view.ViewCompat;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,10 +18,10 @@ import com.afollestad.impression.api.FolderEntry;
 import com.afollestad.impression.api.PhotoEntry;
 import com.afollestad.impression.api.VideoEntry;
 import com.afollestad.impression.api.base.MediaEntry;
-import com.afollestad.impression.ui.viewer.ViewerActivity;
+import com.afollestad.impression.utils.PrefUtils;
 import com.afollestad.impression.utils.Utils;
+import com.afollestad.impression.viewer.ViewerActivity;
 import com.afollestad.impression.views.ImpressionImageView;
-import com.koushikdutta.ion.Ion;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -35,24 +34,24 @@ import java.util.List;
  */
 public class MediaAdapter extends HybridCursorAdapter<MediaAdapter.ViewHolder> {
 
-    public static final int VIEW_TYPE_FOLDER = 1;
-    public static final int VIEW_TYPE_NORMAL = 0;
+    public static final int VIEW_TYPE_GRID = 0;
+    public static final int VIEW_TYPE_GRID_FOLDER = 1;
+    public static final int VIEW_TYPE_LIST = 2;
 
     private final Context mContext;
     private final Callback mCallback;
     private final List<MediaEntry> mEntries;
     private final List<String> mCheckedPaths;
-    private final SortMode mSortMode;
-    private final ViewMode mViewMode;
     private final boolean mSelectAlbumMode;
+    private SortMode mSortMode;
+    private boolean mGridMode;
+    private int mDefaultImageBackground;
+    private int mEmptyImageBackground;
 
-    private final int mDefaultImageBackground;
-    private final int mEmptyImageBackground;
-
-    public MediaAdapter(Context context, SortMode sort, ViewMode viewMode, Callback callback, boolean selectAlbumMode) {
+    public MediaAdapter(Context context, SortMode sort, Callback callback, boolean selectAlbumMode) {
         mContext = context;
         mSortMode = sort;
-        mViewMode = viewMode;
+        mGridMode = PrefUtils.isGridMode(context);
         mCallback = callback;
         mEntries = new ArrayList<>();
         mCheckedPaths = new ArrayList<>();
@@ -64,9 +63,13 @@ public class MediaAdapter extends HybridCursorAdapter<MediaAdapter.ViewHolder> {
 
     @Override
     public int getItemViewType(int position) {
-        if (mEntries.get(position).isFolder())
-            return VIEW_TYPE_FOLDER;
-        return VIEW_TYPE_NORMAL;
+        if (!mGridMode) {
+            return VIEW_TYPE_LIST;
+        } else if (mEntries.get(position).isFolder()) {
+            return VIEW_TYPE_GRID_FOLDER;
+        } else {
+            return VIEW_TYPE_GRID;
+        }
     }
 
     public void setItemChecked(MediaEntry entry, boolean checked) {
@@ -150,6 +153,25 @@ public class MediaAdapter extends HybridCursorAdapter<MediaAdapter.ViewHolder> {
         }
     }
 
+    public void updateGridModeOn() {
+        mGridMode = PrefUtils.isGridMode(mContext);
+        notifyDataSetChanged();
+    }
+
+    public void updateGridColumns() {
+        notifyDataSetChanged();
+    }
+
+    public void setSortMode(SortMode mode) {
+        mSortMode = mode;
+    }
+
+    public void updateTheme() {
+        mDefaultImageBackground = Utils.resolveColor(mContext, R.attr.default_image_background);
+        mEmptyImageBackground = Utils.resolveColor(mContext, R.attr.empty_image_background);
+        notifyDataSetChanged();
+    }
+
     @Override
     public void changeContent(Cursor cursor, Uri from, boolean clear, boolean explorerMode) {
         if (cursor == null || from == null) {
@@ -192,15 +214,20 @@ public class MediaAdapter extends HybridCursorAdapter<MediaAdapter.ViewHolder> {
 
     @Override
     public MediaAdapter.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        View v;
-        final boolean gridMode = mViewMode == ViewMode.GRID;
-        if (viewType == VIEW_TYPE_FOLDER) {
-            v = LayoutInflater.from(mContext).inflate(gridMode ?
-                    R.layout.grid_item_folder : R.layout.list_item_media, parent, false);
-        } else {
-            v = LayoutInflater.from(mContext).inflate(gridMode ?
-                    R.layout.grid_item_media : R.layout.list_item_media, parent, false);
+        int layoutRes;
+        switch (viewType) {
+            case VIEW_TYPE_GRID_FOLDER:
+                layoutRes = R.layout.grid_item_folder;
+                break;
+            case VIEW_TYPE_LIST:
+                layoutRes = R.layout.list_item_media;
+                break;
+            case VIEW_TYPE_GRID:
+            default:
+                layoutRes = R.layout.grid_item_media;
+                break;
         }
+        View v = LayoutInflater.from(mContext).inflate(layoutRes, parent, false);
         return new ViewHolder(v);
     }
 
@@ -260,7 +287,7 @@ public class MediaAdapter extends HybridCursorAdapter<MediaAdapter.ViewHolder> {
                 holder.imageProgress.setVisibility(View.GONE);
             holder.image.setImageResource(R.drawable.ic_folder);
 
-            if (mViewMode == ViewMode.LIST) {
+            if (!mGridMode) {
                 if (holder.subTitle != null) {
                     holder.subTitle.setVisibility(View.VISIBLE);
                     holder.subTitle.setText(R.string.folder);
@@ -269,7 +296,7 @@ public class MediaAdapter extends HybridCursorAdapter<MediaAdapter.ViewHolder> {
                 holder.subTitle.setVisibility(View.GONE);
             }
         } else {
-            if (mViewMode == ViewMode.GRID) {
+            if (mGridMode) {
                 holder.titleFrame.setVisibility(View.GONE);
             } else {
                 holder.titleFrame.setVisibility(View.VISIBLE);
@@ -279,7 +306,6 @@ public class MediaAdapter extends HybridCursorAdapter<MediaAdapter.ViewHolder> {
                     holder.subTitle.setText(entry.mimeType());
                 }
             }
-            Ion.getDefault(mContext).configure().setLogging("ION", Log.ERROR);
             holder.image.load(entry, holder.imageProgress);
         }
     }
@@ -308,30 +334,6 @@ public class MediaAdapter extends HybridCursorAdapter<MediaAdapter.ViewHolder> {
                     return PHOTOS;
                 case 2:
                     return VIDEOS;
-            }
-        }
-
-        public int value() {
-            return value;
-        }
-    }
-
-    public enum ViewMode {
-        GRID(0),
-        LIST(1);
-
-        private final int value;
-
-        ViewMode(int value) {
-            this.value = value;
-        }
-
-        public static ViewMode valueOf(int value) {
-            switch (value) {
-                default:
-                    return GRID;
-                case 1:
-                    return LIST;
             }
         }
 

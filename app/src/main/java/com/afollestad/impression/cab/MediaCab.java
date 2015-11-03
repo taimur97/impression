@@ -25,9 +25,9 @@ import com.afollestad.impression.api.base.MediaEntry;
 import com.afollestad.impression.media.MainActivity;
 import com.afollestad.impression.media.MediaFragment;
 import com.afollestad.impression.providers.ExcludedFolderProvider;
-import com.afollestad.impression.ui.viewer.ViewerActivity;
 import com.afollestad.impression.utils.TimeUtils;
 import com.afollestad.impression.utils.Utils;
+import com.afollestad.impression.viewer.ViewerActivity;
 import com.afollestad.materialcab.MaterialCab;
 import com.afollestad.materialdialogs.MaterialDialog;
 

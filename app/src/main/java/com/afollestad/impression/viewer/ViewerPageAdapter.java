@@ -1,4 +1,4 @@
-package com.afollestad.impression.adapters;
+package com.afollestad.impression.viewer;
 
 import android.app.Fragment;
 import android.app.FragmentManager;
@@ -7,7 +7,6 @@ import android.support.v4.view.PagerAdapter;
 import android.view.ViewGroup;
 
 import com.afollestad.impression.api.base.MediaEntry;
-import com.afollestad.impression.fragments.viewer.ViewerPageFragment;
 
 import java.util.List;
 
@@ -18,13 +17,15 @@ public class ViewerPageAdapter extends FragmentStatePagerAdapter {
 
     private final List<MediaEntry> mMedia;
     public int mCurrentPage;
-    private String mInfo;
+    private int mCurrentPageWidth;
+    private int mCurrentPageHeight;
     private ViewerPageFragment mCurrentFragment;
 
-    public ViewerPageAdapter(FragmentManager fm, List<MediaEntry> media, String info, int initialOffset) {
+    public ViewerPageAdapter(FragmentManager fm, List<MediaEntry> media, int width, int height, int initialOffset) {
         super(fm);
         mMedia = media;
-        mInfo = info;
+        mCurrentPageWidth = width;
+        mCurrentPageHeight = height;
         mCurrentPage = initialOffset;
     }
 
@@ -44,13 +45,16 @@ public class ViewerPageAdapter extends FragmentStatePagerAdapter {
 
     @Override
     public Fragment getItem(int position) {
-        String info = null;
+        int width = ViewerPageFragment.INIT_DIMEN_NONE;
+        int height = ViewerPageFragment.INIT_DIMEN_NONE;
         if (mCurrentPage == position) {
-            info = mInfo;
-            mInfo = null;
+            width = mCurrentPageWidth;
+            height = mCurrentPageHeight;
+            mCurrentPageWidth = ViewerPageFragment.INIT_DIMEN_NONE;
+            mCurrentPageHeight = ViewerPageFragment.INIT_DIMEN_NONE;
         }
         int gridPosition = translateToGridIndex(position);
-        return ViewerPageFragment.create(mMedia.get(position), gridPosition, info)
+        return ViewerPageFragment.create(mMedia.get(position), gridPosition, width, height)
                 .setIsActive(mCurrentPage == position);
     }
 

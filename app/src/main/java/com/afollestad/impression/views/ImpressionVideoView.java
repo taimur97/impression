@@ -14,9 +14,9 @@ import android.widget.TextView;
 import android.widget.VideoView;
 
 import com.afollestad.impression.R;
-import com.afollestad.impression.fragments.viewer.ViewerPageFragment;
-import com.afollestad.impression.ui.viewer.ViewerActivity;
 import com.afollestad.impression.utils.Utils;
+import com.afollestad.impression.viewer.ViewerActivity;
+import com.afollestad.impression.viewer.ViewerPageFragment;
 
 import java.util.concurrent.TimeUnit;
 

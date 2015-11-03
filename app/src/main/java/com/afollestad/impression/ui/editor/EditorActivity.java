@@ -25,8 +25,9 @@ import com.afollestad.impression.R;
 import com.afollestad.impression.utils.Utils;
 import com.afollestad.impression.views.IconizedMenu;
 import com.afollestad.materialdialogs.MaterialDialog;
-import com.koushikdutta.async.future.FutureCallback;
-import com.koushikdutta.ion.Ion;
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.animation.GlideAnimation;
+import com.bumptech.glide.request.target.SimpleTarget;
 
 import java.io.File;
 import java.nio.IntBuffer;
@@ -78,23 +79,23 @@ public class EditorActivity extends AppCompatActivity implements GLSurfaceView.R
 
         Uri data = getIntent().getData();
         if (data.getScheme().equals("content")) {
-            Ion.with(this)
+            Glide.with(this)
                     .load(data.toString())
                     .asBitmap()
-                    .setCallback(new FutureCallback<Bitmap>() {
+                    .into(new SimpleTarget<Bitmap>() {
                         @Override
-                        public void onCompleted(Exception e, final Bitmap bitmap) {
-                            displayBitmap(bitmap);
+                        public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
+                            displayBitmap(resource);
                         }
                     });
         } else {
-            Ion.with(this)
+            Glide.with(this)
                     .load(new File(data.getPath()))
                     .asBitmap()
-                    .setCallback(new FutureCallback<Bitmap>() {
+                    .into(new SimpleTarget<Bitmap>() {
                         @Override
-                        public void onCompleted(Exception e, final Bitmap bitmap) {
-                            displayBitmap(bitmap);
+                        public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
+                            displayBitmap(resource);
                         }
                     });
         }
