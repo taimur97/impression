@@ -51,7 +51,7 @@ import com.afollestad.impression.providers.SortMemoryProvider;
 import com.afollestad.impression.ui.SettingsActivity;
 import com.afollestad.impression.ui.base.ThemedActivity;
 import com.afollestad.impression.utils.Utils;
-import com.afollestad.impression.views.BreadCrumbLayout;
+import com.afollestad.impression.widget.BreadCrumbLayout;
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.afollestad.materialdialogs.folderselector.FolderChooserDialog;
 import com.afollestad.materialdialogs.internal.MDTintHelper;

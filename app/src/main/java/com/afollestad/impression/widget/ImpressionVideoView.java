@@ -1,4 +1,4 @@
-package com.afollestad.impression.views;
+package com.afollestad.impression.widget;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;

@@ -5,7 +5,7 @@ import android.os.Bundle;
 
 import com.afollestad.impression.MvpView;
 import com.afollestad.impression.adapters.MediaAdapter;
-import com.afollestad.impression.views.BreadCrumbLayout;
+import com.afollestad.impression.widget.BreadCrumbLayout;
 
 interface MediaView extends MvpView {
 

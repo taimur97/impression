@@ -1,4 +1,4 @@
-package com.afollestad.impression.views;
+package com.afollestad.impression.widget;
 
 import android.content.Context;
 import android.preference.PreferenceCategory;

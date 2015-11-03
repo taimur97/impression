@@ -1,4 +1,4 @@
-package com.afollestad.impression.views;
+package com.afollestad.impression.widget;
 
 import android.content.Context;
 import android.content.res.Resources;
@@ -18,6 +18,8 @@ import com.afollestad.impression.api.base.MediaEntry;
 import com.afollestad.impression.utils.Utils;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.bumptech.glide.request.RequestListener;
+import com.bumptech.glide.request.target.Target;
 
 import java.lang.ref.WeakReference;
 
@@ -79,7 +81,18 @@ public class ImpressionImageView extends ImageView {
                 .load(pathToLoad)
                 .asBitmap()
                 .diskCacheStrategy(DiskCacheStrategy.SOURCE)
-                .centerCrop()
+                .listener(new RequestListener<String, Bitmap>() {
+                    @Override
+                    public boolean onException(Exception e, String model, Target<Bitmap> target, boolean isFirstResource) {
+                        return false;
+                    }
+
+                    @Override
+                    public boolean onResourceReady(Bitmap resource, String model, Target<Bitmap> target, boolean isFromMemoryCache, boolean isFirstResource) {
+                        int width = resource.getWidth();
+                        return false;
+                    }
+                })
                 .into(this);
     }
 

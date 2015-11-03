@@ -21,7 +21,7 @@ import com.afollestad.impression.api.base.MediaEntry;
 import com.afollestad.impression.utils.PrefUtils;
 import com.afollestad.impression.utils.Utils;
 import com.afollestad.impression.viewer.ViewerActivity;
-import com.afollestad.impression.views.ImpressionImageView;
+import com.afollestad.impression.widget.ImpressionImageView;
 
 import java.io.File;
 import java.util.ArrayList;

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.afollestad.impression.views.SquareFrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<com.afollestad.impression.widget.SquareFrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -13,7 +13,7 @@
     android:paddingTop="@dimen/grid_spacing"
     tools:ignore="RtlSymmetry">
 
-    <com.afollestad.impression.views.ImpressionImageView
+    <com.afollestad.impression.widget.ImpressionImageView
         android:id="@+id/image"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -64,4 +64,4 @@
 
     </RelativeLayout>
 
-</com.afollestad.impression.views.SquareFrameLayout>
+</com.afollestad.impression.widget.SquareFrameLayout>

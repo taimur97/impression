@@ -1,4 +1,4 @@
-package com.afollestad.impression.views;
+package com.afollestad.impression.widget;
 
 import android.annotation.TargetApi;
 import android.app.Activity;

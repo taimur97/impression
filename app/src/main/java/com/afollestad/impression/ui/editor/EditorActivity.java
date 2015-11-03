@@ -23,7 +23,7 @@ import android.widget.TextView;
 
 import com.afollestad.impression.R;
 import com.afollestad.impression.utils.Utils;
-import com.afollestad.impression.views.IconizedMenu;
+import com.afollestad.impression.widget.IconizedMenu;
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.animation.GlideAnimation;

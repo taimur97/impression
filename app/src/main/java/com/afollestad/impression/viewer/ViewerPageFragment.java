@@ -21,8 +21,8 @@ import com.afollestad.impression.api.PhotoEntry;
 import com.afollestad.impression.api.VideoEntry;
 import com.afollestad.impression.api.base.MediaEntry;
 import com.afollestad.impression.utils.Utils;
-import com.afollestad.impression.views.ImpressionVideoView;
-import com.afollestad.impression.views.ScaleListenerImageView;
+import com.afollestad.impression.widget.ImpressionVideoView;
+import com.afollestad.impression.widget.ScaleListenerImageView;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.Priority;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
@@ -191,7 +191,6 @@ public class ViewerPageFragment extends Fragment {
             Glide.with(this)
                     .load(mEntry.data())
                     .asBitmap()
-                    .skipMemoryCache(true)
                     .diskCacheStrategy(DiskCacheStrategy.SOURCE)
                     .priority(Priority.IMMEDIATE)
                     .dontAnimate()
@@ -212,12 +211,6 @@ public class ViewerPageFragment extends Fragment {
         } else {
             ((ViewerActivity) getActivity()).invalidateTransition();
         }
-
-//       String ext = Utils.getExtension(loadFile.getName());
-//        if (ext != null && !ext.equalsIgnoreCase("gif")) {
-//            // Using deep zoom with GIFs causes it to not be loaded
-//            ion.deepZoom();
-//        }
 
         ViewerActivity act = (ViewerActivity) getActivity();
         if (act == null)
@@ -250,8 +243,9 @@ public class ViewerPageFragment extends Fragment {
                         return;
                     act.getWindow().getEnterTransition().removeListener(this);
                     act.mFinishedTransition = true;
-                    if (isAdded())
-                        loadImage();
+                    //TODO?
+                    /*if (isAdded())
+                        loadImage();*/
                 }
             });
             return;

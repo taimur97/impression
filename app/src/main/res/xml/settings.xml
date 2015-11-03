@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <com.afollestad.impression.views.ImpressionPreferenceCategoryNoDivider
+    <com.afollestad.impression.widget.ImpressionPreferenceCategoryNoDivider
         android:key="info_category"
         android:title="@string/info">
 
-        <com.afollestad.impression.views.ImpressionPreference
+        <com.afollestad.impression.widget.ImpressionPreference
             android:key="about"
             android:summary="@string/about_desc"
             android:title="@string/about" />
 
-    </com.afollestad.impression.views.ImpressionPreferenceCategoryNoDivider>
+    </com.afollestad.impression.widget.ImpressionPreferenceCategoryNoDivider>
 
-    <com.afollestad.impression.views.ImpressionPreferenceCategory
+    <com.afollestad.impression.widget.ImpressionPreferenceCategory
         android:key="behavior_category"
         android:title="@string/behavior">
 
@@ -33,9 +33,9 @@
             android:title="@string/overview_display"
             android:widgetLayout="@layout/preference_dynamiccheckbox" />
 
-    </com.afollestad.impression.views.ImpressionPreferenceCategory>
+    </com.afollestad.impression.widget.ImpressionPreferenceCategory>
 
-    <com.afollestad.impression.views.ImpressionPreferenceCategory
+    <com.afollestad.impression.widget.ImpressionPreferenceCategory
         android:key="theme_category"
         android:title="@string/theme">
 
@@ -47,12 +47,12 @@
             android:title="@string/dark_mode"
             android:widgetLayout="@layout/preference_dynamiccheckbox" />
 
-        <com.afollestad.impression.views.ImpressionPreference
+        <com.afollestad.impression.widget.ImpressionPreference
             android:key="primary_color"
             android:summary="@string/primary_color_desc"
             android:title="@string/primary_color" />
 
-        <com.afollestad.impression.views.ImpressionPreference
+        <com.afollestad.impression.widget.ImpressionPreference
             android:key="accent_color"
             android:summary="@string/accent_color_desc"
             android:title="@string/accent_color" />
@@ -66,9 +66,9 @@
             android:title="@string/colored_navbar"
             android:widgetLayout="@layout/preference_dynamiccheckbox" />
 
-    </com.afollestad.impression.views.ImpressionPreferenceCategory>
+    </com.afollestad.impression.widget.ImpressionPreferenceCategory>
 
-    <com.afollestad.impression.views.ImpressionPreferenceCategory
+    <com.afollestad.impression.widget.ImpressionPreferenceCategory
         android:key="included_folder_category"
         android:title="@string/included_folders">
 
@@ -81,13 +81,13 @@
             android:title="@string/include_subfolders"
             android:widgetLayout="@layout/preference_dynamiccheckbox" />
 
-    </com.afollestad.impression.views.ImpressionPreferenceCategory>
+    </com.afollestad.impression.widget.ImpressionPreferenceCategory>
 
-    <com.afollestad.impression.views.ImpressionPreferenceCategory
+    <com.afollestad.impression.widget.ImpressionPreferenceCategory
         android:key="excluded_album_category"
         android:title="@string/excluded_folders">
 
-        <com.afollestad.impression.views.ImpressionPreference
+        <com.afollestad.impression.widget.ImpressionPreference
             android:key="excluded_folders"
             android:summary="@string/excluded_folders_desc"
             android:title="@string/excluded_folders" />
@@ -101,6 +101,6 @@
             android:title="@string/include_subfolders"
             android:widgetLayout="@layout/preference_dynamiccheckbox" />
 
-    </com.afollestad.impression.views.ImpressionPreferenceCategory>
+    </com.afollestad.impression.widget.ImpressionPreferenceCategory>
 
 </PreferenceScreen>

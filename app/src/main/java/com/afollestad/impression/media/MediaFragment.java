@@ -34,7 +34,7 @@ import com.afollestad.impression.cab.MediaCab;
 import com.afollestad.impression.providers.SortMemoryProvider;
 import com.afollestad.impression.utils.PrefUtils;
 import com.afollestad.impression.utils.Utils;
-import com.afollestad.impression.views.BreadCrumbLayout;
+import com.afollestad.impression.widget.BreadCrumbLayout;
 
 import java.io.File;
 

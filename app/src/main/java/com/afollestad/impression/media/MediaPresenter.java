@@ -69,6 +69,8 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
         if (isViewAttached()) {
             final boolean gridMode = PrefUtils.isGridMode(getView().getContextCompat());
             getView().initializeRecyclerView(gridMode, PrefUtils.getGridColumns(getView().getContextCompat()), createAdapter());
+
+            setAlbumPath(mAlbumPath);
         }
     }
 
@@ -98,7 +100,8 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
                 getView().getAdapter().updateTheme();
             }
 
-            setAlbumPath(mAlbumPath);
+            //TODO: reload more efficiently
+            //setAlbumPath(mAlbumPath);
         }
     }
 
