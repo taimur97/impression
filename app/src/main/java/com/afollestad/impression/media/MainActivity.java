@@ -43,6 +43,7 @@ import android.widget.TextView;
 
 import com.afollestad.impression.BuildConfig;
 import com.afollestad.impression.R;
+import com.afollestad.impression.adapters.MediaAdapter;
 import com.afollestad.impression.api.AlbumEntry;
 import com.afollestad.impression.cab.MediaCab;
 import com.afollestad.impression.fragments.NavDrawerFragment;
@@ -85,7 +86,6 @@ public class MainActivity extends ThemedActivity
     private Toolbar mToolbar;
     private BreadCrumbLayout mCrumbs;
     private CharSequence mTitle;
-    private RecyclerView mRecyclerView;
     private Bundle mTmpState;
     private boolean mIsReenteringFromViewer;
 
@@ -175,15 +175,17 @@ public class MainActivity extends ThemedActivity
             @Override
             public void onMapSharedElements(List<String> names, Map<String, View> sharedElements) {
                 LOG("onMapSharedElements(List<String>, Map<String, View>)", mIsReenteringFromViewer);
-                boolean shouldAdd = true;
+
+
                 int oldPosition = mTmpState != null ? mTmpState.getInt(EXTRA_OLD_ITEM_POSITION) : 0;
                 int currentPosition = mTmpState != null ? mTmpState.getInt(EXTRA_CURRENT_ITEM_POSITION) : 0;
                 mTmpState = null;
-                if (mIsReenteringFromViewer) {
-                    shouldAdd = currentPosition != oldPosition;
-                }
-                if (shouldAdd && mRecyclerView != null) {
-                    View newSharedView = mRecyclerView.findViewWithTag(currentPosition);
+
+                boolean shouldAddSharedImageView = !mIsReenteringFromViewer || currentPosition != oldPosition;
+
+                final RecyclerView recyclerView = findMediaFragment().getRecyclerView();
+                if (shouldAddSharedImageView && recyclerView != null) {
+                    View newSharedView = ((MediaAdapter.ViewHolder) recyclerView.findViewHolderForLayoutPosition(currentPosition)).image;
                     if (newSharedView != null) {
                         newSharedView = newSharedView.findViewById(R.id.image);
                         final String transName = newSharedView.getTransitionName();
@@ -288,7 +290,7 @@ public class MainActivity extends ThemedActivity
                         }
                     }).show();
         } else {
-            MediaFragment content = (MediaFragment) getFragmentManager().findFragmentById(R.id.content_frame);
+            MediaFragment content = findMediaFragment();
             if (content != null) content.reload();
             NavDrawerFragment nav = (NavDrawerFragment) getFragmentManager().findFragmentByTag("NAV_DRAWER");
             if (nav != null) nav.reloadAccounts();
@@ -478,16 +480,21 @@ public class MainActivity extends ThemedActivity
         mTmpState = new Bundle(data.getExtras());
         int oldPosition = mTmpState.getInt(EXTRA_OLD_ITEM_POSITION);
         int currentPosition = mTmpState.getInt(EXTRA_CURRENT_ITEM_POSITION);
-        if (oldPosition != currentPosition && mRecyclerView != null) {
-            mRecyclerView.scrollToPosition(currentPosition);
-        }
-        if (mRecyclerView != null) {
+
+        final RecyclerView recyclerView = findMediaFragment().getRecyclerView();
+        if (recyclerView != null) {
+            if (oldPosition != currentPosition) {
+                recyclerView.scrollToPosition(currentPosition);
+            }
+
             postponeEnterTransition();
-            mRecyclerView.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
+            recyclerView.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
                 @Override
                 public boolean onPreDraw() {
-                    mRecyclerView.getViewTreeObserver().removeOnPreDrawListener(this);
-                    mRecyclerView.requestLayout();
+                    recyclerView.getViewTreeObserver().removeOnPreDrawListener(this);
+
+                    //TODO
+                    // mRecyclerView.requestLayout();
                     startPostponedEnterTransition();
                     return true;
                 }
@@ -544,16 +551,20 @@ public class MainActivity extends ThemedActivity
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == SETTINGS_REQUEST && resultCode == Activity.RESULT_OK) {
-            MediaFragment content = (MediaFragment) getFragmentManager().findFragmentById(R.id.content_frame);
+            MediaFragment content = findMediaFragment();
             if (content != null) content.reload();
             reloadNavDrawerAlbums();
         }
     }
 
+    private MediaFragment findMediaFragment() {
+        return (MediaFragment) getFragmentManager().findFragmentById(R.id.content_frame);
+    }
+
     public boolean navDrawerSwitchAlbum(String path) {
         mDrawerLayout.closeDrawers();
 
-        MediaFragment frag = (MediaFragment) getFragmentManager().findFragmentById(R.id.content_frame);
+        MediaFragment frag = findMediaFragment();
         if (!path.equals(frag.getPresenter().getAlbumPath())) {
             mCrumbs.clearHistory();
             switchAlbum(path);
@@ -596,7 +607,7 @@ public class MainActivity extends ThemedActivity
         mCrumbs.setActiveOrAdd(crumb, forceRecreate);
 
         final String to = crumb.getPath();
-        MediaFragment frag = (MediaFragment) getFragmentManager().findFragmentById(R.id.content_frame);
+        MediaFragment frag = findMediaFragment();
 
         if (frag == null) {
             frag = MediaPresenter.newInstance(to);

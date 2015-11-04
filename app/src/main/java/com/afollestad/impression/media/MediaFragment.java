@@ -52,6 +52,10 @@ public class MediaFragment extends Fragment implements MediaView, Account.Entrie
     private MediaPresenter mPresenter;
     private boolean sortRememberDir = false;
 
+    RecyclerView getRecyclerView() {
+        return mRecyclerView;
+    }
+
     public final void jumpToTop(boolean animateChange) {
         if (animateChange) {
             //stopAnimation();

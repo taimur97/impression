@@ -87,7 +87,6 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
 
     private Timer mTimer;
     private int mCurrentPosition;
-    private int mOriginalPosition;
     private boolean mStartedPostponedTransition;
     private boolean mLightMode;
 
@@ -275,7 +274,6 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
     public void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putInt(STATE_CURRENT_POSITION, mCurrentPosition);
-        outState.putInt(STATE_OLD_POSITION, mOriginalPosition);
     }
 
     private int getStatusBarHeight() {
@@ -331,11 +329,9 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
         if (savedInstanceState == null) {
             if (getIntent() != null && getIntent().getExtras() != null) {
                 mCurrentPosition = getIntent().getExtras().getInt(EXTRA_CURRENT_ITEM_POSITION);
-                mOriginalPosition = mCurrentPosition;
             }
         } else {
             mCurrentPosition = savedInstanceState.getInt(STATE_CURRENT_POSITION);
-            mOriginalPosition = savedInstanceState.getInt(STATE_OLD_POSITION);
         }
 
         boolean dontSetPos = false;
