@@ -10,7 +10,6 @@ import android.os.Environment;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.ActivityOptionsCompat;
 import android.view.View;
-import android.widget.ImageView;
 
 import com.afollestad.impression.MvpPresenter;
 import com.afollestad.impression.R;
@@ -22,11 +21,9 @@ import com.afollestad.impression.providers.SortMemoryProvider;
 import com.afollestad.impression.utils.PrefUtils;
 import com.afollestad.impression.utils.Utils;
 import com.afollestad.impression.viewer.ViewerActivity;
+import com.afollestad.impression.widget.ImpressionImageView;
 
 import java.io.File;
-
-import static com.afollestad.impression.media.MainActivity.EXTRA_CURRENT_ITEM_POSITION;
-import static com.afollestad.impression.media.MainActivity.EXTRA_OLD_ITEM_POSITION;
 
 public class MediaPresenter extends MvpPresenter<MediaView> {
 
@@ -175,8 +172,8 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
 
             act.setIsReentering(false);
             act.setTmpState(new Bundle());
-            act.getTmpState().putInt(EXTRA_CURRENT_ITEM_POSITION, index);
-            act.getTmpState().putInt(EXTRA_OLD_ITEM_POSITION, index);
+            act.getTmpState().putInt(MainActivity.EXTRA_CURRENT_ITEM_POSITION, index);
+            act.getTmpState().putInt(MainActivity.EXTRA_OLD_ITEM_POSITION, index);
 
             if (act.isPickMode() || act.isSelectAlbumMode()) {
                 if (pic.isFolder() || pic.isAlbum()) {
@@ -203,13 +200,13 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
                     if (pic.isFolder() || pic.isAlbum()) {
                         act.switchAlbum(pic.data());
                     } else {
-                        ImageView iv = (ImageView) view.findViewById(R.id.image);
+                        ImpressionImageView iv = (ImpressionImageView) view.findViewById(R.id.image);
                         int width = iv.getDrawable().getIntrinsicWidth();
                         int height = iv.getDrawable().getIntrinsicHeight();
                         ViewerActivity.MediaWrapper wrapper = getView().getAdapter().getMedia();
                         final Intent intent = new Intent(act, ViewerActivity.class)
-                                .putExtra("media_entries", wrapper)
-                                .putExtra(EXTRA_CURRENT_ITEM_POSITION, index)
+                                .putExtra(ViewerActivity.EXTRA_MEDIA_ENTRIES, wrapper)
+                                .putExtra(MainActivity.EXTRA_CURRENT_ITEM_POSITION, index)
                                 .putExtra(ViewerActivity.EXTRA_WIDTH, width)
                                 .putExtra(ViewerActivity.EXTRA_HEIGHT, height);
                         final String transName = "view_" + index;

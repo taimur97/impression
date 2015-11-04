@@ -18,8 +18,6 @@ import com.afollestad.impression.api.base.MediaEntry;
 import com.afollestad.impression.utils.Utils;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
-import com.bumptech.glide.request.RequestListener;
-import com.bumptech.glide.request.target.Target;
 
 import java.lang.ref.WeakReference;
 
@@ -36,7 +34,8 @@ public class ImpressionImageView extends ImageView {
     private int mPlayOverlay;
     private int mSelectedColor;
     private boolean mIsGif;
-
+    private int mOriginalWidth;
+    private int mOriginalHeight;
     private int mResourceId;
 
     public ImpressionImageView(Context context) {
@@ -49,6 +48,14 @@ public class ImpressionImageView extends ImageView {
         init(context);
     }
 
+    public int getOriginalWidth() {
+        return mOriginalWidth;
+    }
+
+    public int getOriginalHeight() {
+        return mOriginalHeight;
+    }
+
     private void init(Context context) {
         if (isInEditMode()) return;
         final Resources r = getResources();
@@ -59,6 +66,7 @@ public class ImpressionImageView extends ImageView {
         mSelectedColor = ContextCompat.getColor(context, R.color.picture_activated_overlay);
     }
 
+    //TODO Method seems to be called a million times when transitioning
     public void load(MediaEntry entry, View progress) {
         mResourceId = -1;
         if (isInEditMode()) return;
@@ -66,7 +74,7 @@ public class ImpressionImageView extends ImageView {
         if (mEntry == null) return;
         if (mProgress == null && progress != null)
             mProgress = new WeakReference<>(progress);
-        if (getMeasuredWidth() == 0) return;
+        //if (getMeasuredWidth() == 0) return;
 
         setImageDrawable(null);
         if (mProgress != null && mProgress.get() != null) {
@@ -77,22 +85,10 @@ public class ImpressionImageView extends ImageView {
             pathToLoad = ((AlbumEntry) entry).mFirstPath;
         String ext = Utils.getExtension(entry.data());
         mIsGif = ext != null && ext.equalsIgnoreCase("gif");
+
         Glide.with(getContext())
                 .load(pathToLoad)
-                .asBitmap()
-                .diskCacheStrategy(DiskCacheStrategy.SOURCE)
-                .listener(new RequestListener<String, Bitmap>() {
-                    @Override
-                    public boolean onException(Exception e, String model, Target<Bitmap> target, boolean isFirstResource) {
-                        return false;
-                    }
-
-                    @Override
-                    public boolean onResourceReady(Bitmap resource, String model, Target<Bitmap> target, boolean isFromMemoryCache, boolean isFirstResource) {
-                        int width = resource.getWidth();
-                        return false;
-                    }
-                })
+                .diskCacheStrategy(DiskCacheStrategy.RESULT)
                 .into(this);
     }
 
@@ -112,7 +108,7 @@ public class ImpressionImageView extends ImageView {
         super.onMeasure(widthMeasureSpec, widthMeasureSpec);
         if (mResourceId != -1)
             load(mResourceId);
-        else load(mEntry, null);
+        /*else load(mEntry, null);*/
     }
 
     @Override

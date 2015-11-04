@@ -11,10 +11,12 @@ import android.support.annotation.Nullable;
 import android.support.v4.view.ViewCompat;
 import android.support.v7.graphics.Palette;
 import android.transition.Transition;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 
 import com.afollestad.impression.R;
 import com.afollestad.impression.api.PhotoEntry;
@@ -25,7 +27,9 @@ import com.afollestad.impression.widget.ImpressionVideoView;
 import com.afollestad.impression.widget.ScaleListenerImageView;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.Priority;
+import com.bumptech.glide.load.DecodeFormat;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.bumptech.glide.load.resource.drawable.GlideDrawable;
 import com.bumptech.glide.load.resource.gif.GifDrawable;
 import com.bumptech.glide.request.RequestListener;
 import com.bumptech.glide.request.animation.GlideAnimation;
@@ -39,35 +43,44 @@ import uk.co.senab.photoview.PhotoViewAttacher;
 /**
  * @author Aidan Follestad (afollestad)
  */
-public class ViewerPageFragment extends Fragment {
+public class ViewerPagerFragment extends Fragment {
 
     public static final short LIGHT_MODE_ON = 2;
-    public static final int INIT_DIMEN_NONE = -1;
+
     public static final String INIT_WIDTH = "width";
     public static final String INIT_HEIGHT = "height";
+
     public static final String INIT_INDEX = "index";
     public static final String INIT_MEDIA = "media";
     public static final String INIT_MEDIA_PATH = "media_path";
+
     private static final short LIGHT_MODE_UNLOADED = 0;
     private static final short LIGHT_MODE_LOADING = -1;
     private static final short LIGHT_MODE_OFF = 1;
     public short mLightMode = LIGHT_MODE_UNLOADED;
+
     private MediaEntry mEntry;
     private String mMediaPath;
-    private boolean isVideo;
-    private boolean isActive;
+
+    private boolean mIsVideo;
+
     private int mWidth;
     private int mHeight;
-    private int mIndex;
+
     private boolean mImageZoomedUnderToolbar;
 
-    private PhotoViewAttacher mAttacher;
-    private ScaleListenerImageView mPhoto;
-    private ImpressionVideoView mVideo;
-    private Bitmap mBitmap;
+    private int mIndex;
+    private boolean mIsCurrent;
+/*
+    private boolean mThumbnailLoaded;
+    private boolean mFullImageLoaded;*/
 
-    public static ViewerPageFragment create(MediaEntry entry, int index, int width, int height) {
-        ViewerPageFragment frag = new ViewerPageFragment();
+    private PhotoViewAttacher mAttacher;
+    private ScaleListenerImageView mImageView;
+    private ImpressionVideoView mVideo;
+
+    public static ViewerPagerFragment create(MediaEntry entry, int index, int width, int height) {
+        ViewerPagerFragment frag = new ViewerPagerFragment();
         Bundle args = new Bundle();
         args.putSerializable(INIT_MEDIA, entry);
         args.putInt(INIT_INDEX, index);
@@ -87,11 +100,11 @@ public class ViewerPageFragment extends Fragment {
         mIndex = getArguments().getInt(INIT_INDEX);
         if (getArguments().containsKey(INIT_MEDIA)) {
             mEntry = (MediaEntry) getArguments().getSerializable(INIT_MEDIA);
-            isVideo = mEntry.isVideo();
+            mIsVideo = mEntry.isVideo();
         } else if (getArguments().containsKey(INIT_MEDIA_PATH)) {
             mMediaPath = getArguments().getString(INIT_MEDIA_PATH);
             String mime = Utils.getMimeType(Utils.getExtension(mMediaPath));
-            isVideo = mime != null && mime.startsWith("video/");
+            mIsVideo = mime != null && mime.startsWith("video/");
         }
     }
 
@@ -99,24 +112,26 @@ public class ViewerPageFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         final View view;
-        if (isVideo) {
+        if (mIsVideo) {
             view = inflater.inflate(R.layout.fragment_viewer_video, container, false);
             mVideo = (ImpressionVideoView) view.findViewById(R.id.video);
             ViewCompat.setTransitionName(mVideo, "view_" + mIndex);
         } else {
             view = inflater.inflate(R.layout.fragment_viewer, container, false);
-            mPhoto = (ScaleListenerImageView) view.findViewById(R.id.photo);
-            ViewCompat.setTransitionName(mPhoto, "view_" + mIndex);
+            mImageView = (ScaleListenerImageView) view.findViewById(R.id.photo);
+            ViewCompat.setTransitionName(mImageView, "view_" + mIndex);
         }
         return view;
     }
 
-    public ViewerPageFragment setIsActive(boolean active) {
-        isActive = active;
-        if (mVideo != null) {
-            if (!isActive) {
-                mVideo.pause(false);
-            }
+    public ViewerPagerFragment setIsCurrent(boolean active) {
+        mIsCurrent = active;
+        if (mVideo != null && !mIsCurrent) {
+            mVideo.pause(false);
+        } else if (mIsCurrent && isAdded()) {
+            loadFullImage();
+        } else if (!mIsCurrent && isAdded()) {
+            loadThumbOrFullIfCurrent();
         }
         return this;
     }
@@ -151,7 +166,7 @@ public class ViewerPageFragment extends Fragment {
     @Override
     public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        if (isVideo) {
+        if (mIsVideo) {
             if ((mEntry == null || mEntry.data() == null) && mMediaPath == null) return;
             mVideo.setVideoURI(getUri());
             View playFrame = view.findViewById(R.id.playFrame);
@@ -163,7 +178,7 @@ public class ViewerPageFragment extends Fragment {
             loadVideo();
             ((ViewerActivity) getActivity()).invalidateTransition();
         } else {
-            loadImage();
+            loadThumbOrFullIfCurrent();
         }
 
         // Might need the progress view later, e.g. for cloud images?
@@ -177,8 +192,7 @@ public class ViewerPageFragment extends Fragment {
             mAttacher.cleanup();
     }
 
-    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-    private void loadImage() {
+    private void loadThumbOrFullIfCurrent() {
         if ((mEntry == null || mEntry.data() == null || mEntry.data().trim().isEmpty()) &&
                 (mMediaPath == null || mMediaPath.trim().isEmpty())) {
             Utils.showErrorDialog(getActivity(), new Exception(getString(R.string.invalid_file_path_error)));
@@ -186,38 +200,52 @@ public class ViewerPageFragment extends Fragment {
             return;
         }
 
-        if (mWidth != INIT_DIMEN_NONE && mHeight != INIT_DIMEN_NONE && !isGif()) {
+        if (!isGif()) {
             // Sets the initial cached thumbnail while the rest of loading takes place
             Glide.with(this)
                     .load(mEntry.data())
-                    .asBitmap()
-                    .diskCacheStrategy(DiskCacheStrategy.SOURCE)
+                    .diskCacheStrategy(DiskCacheStrategy.RESULT)
                     .priority(Priority.IMMEDIATE)
                     .dontAnimate()
                     .override(mWidth, mHeight)
-                    .listener(new RequestListener<String, Bitmap>() {
+                    .listener(new RequestListener<String, GlideDrawable>() {
                         @Override
-                        public boolean onException(Exception e, String model, Target<Bitmap> target, boolean isFirstResource) {
+                        public boolean onException(Exception e, String model, Target<GlideDrawable> target, boolean isFirstResource) {
                             return false;
                         }
 
                         @Override
-                        public boolean onResourceReady(Bitmap resource, String model, Target<Bitmap> target, boolean isFromMemoryCache, boolean isFirstResource) {
-                            ((ViewerActivity) getActivity()).invalidateTransition();
+                        public boolean onResourceReady(GlideDrawable resource, String model, Target<GlideDrawable> target, boolean isFromMemoryCache, boolean isFirstResource) {
+
+                            if (!isFromMemoryCache) {
+                                Log.e("ViewerPager", "Image not from cache:" + model);
+                            }
                             return false;
                         }
                     })
-                    .into(mPhoto);
+                    .into(new SimpleTarget<GlideDrawable>() {
+                        @Override
+                        public void onResourceReady(GlideDrawable resource, GlideAnimation<? super GlideDrawable> glideAnimation) {
+                            ((ViewerActivity) getActivity()).invalidateTransition();
+                            mImageView.setImageDrawable(resource);
+                            mImageView.setScaleType(ImageView.ScaleType.FIT_CENTER);
+                        }
+                    });
         } else {
             ((ViewerActivity) getActivity()).invalidateTransition();
         }
 
+        if (mIsCurrent) {
+            loadFullImage();
+        }
+    }
+
+    private void loadFullImage() {
         ViewerActivity act = (ViewerActivity) getActivity();
-        if (act == null)
-            return;
-        else if (!act.mFinishedTransition && isActive) {
-            // If the activity transition didn't finish yet, wait for it to do so
-            // So that the photo view attacher attaches correctly.
+
+        // If the activity transition didn't finish yet, wait for it to do so
+        // So that the photo view attacher attaches correctly.
+        if (!act.mFinishedTransition && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             act.getWindow().getSharedElementEnterTransition().addListener(new Transition.TransitionListener() {
                 @Override
                 public void onTransitionStart(Transition transition) {
@@ -243,9 +271,9 @@ public class ViewerPageFragment extends Fragment {
                         return;
                     act.getWindow().getEnterTransition().removeListener(this);
                     act.mFinishedTransition = true;
-                    //TODO?
-                    /*if (isAdded())
-                        loadImage();*/
+
+                    if (isAdded())
+                        loadThumbOrFullIfCurrent();
                 }
             });
             return;
@@ -258,7 +286,7 @@ public class ViewerPageFragment extends Fragment {
         if (isGif()) {
             // GIFs can't be loaded as a Bitmap
             mLightMode = LIGHT_MODE_OFF;
-            Glide.with(getActivity())
+            Glide.with(this)
                     .load(getUri().toString())
                     .asGif()
                     .listener(new RequestListener<String, GifDrawable>() {
@@ -280,13 +308,13 @@ public class ViewerPageFragment extends Fragment {
                             return false;
                         }
                     })
-                    .into(mPhoto);
+                    .into(mImageView);
         } else {
             // Load the full size image into the view from the file
-            //TODO
-            Glide.with(getActivity())
+            Glide.with(this)
                     .load(getUri().toString())
                     .asBitmap()
+                    .format(DecodeFormat.PREFER_ARGB_8888)
                     .into(new SimpleTarget<Bitmap>() {
                         @Override
                         public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
@@ -299,10 +327,9 @@ public class ViewerPageFragment extends Fragment {
                                 return;
                             }*/
 
-                            mBitmap = resource;
                             if (mLightMode != LIGHT_MODE_LOADING) {
                                 mLightMode = LIGHT_MODE_LOADING;
-                                new Palette.Builder(mBitmap)
+                                new Palette.Builder(resource)
                                         .generate(new Palette.PaletteAsyncListener() {
                                             @Override
                                             public void onGenerated(Palette palette) {
@@ -322,7 +349,8 @@ public class ViewerPageFragment extends Fragment {
                                         });
                             }
 
-                            mPhoto.setImageBitmap(resource);
+                            mImageView.setImageBitmap(resource);
+
                             attachPhotoView();
 
 //                        if (getView() != null) {
@@ -336,7 +364,6 @@ public class ViewerPageFragment extends Fragment {
         }
     }
 
-    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     private void loadVideo() {
         if ((mEntry == null || mEntry.data() == null || mEntry.data().trim().isEmpty()) &&
                 (mMediaPath == null || mMediaPath.trim().isEmpty())) {
@@ -347,7 +374,7 @@ public class ViewerPageFragment extends Fragment {
         ViewerActivity act = (ViewerActivity) getActivity();
         if (act == null)
             return;
-        else if (!act.mFinishedTransition && isActive) {
+        else if (!act.mFinishedTransition && mIsCurrent && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             // If the activity transition didn't finish yet, wait for it to do so
             // So that the photo view attacher attaches correctly.
             act.getWindow().getSharedElementEnterTransition().addListener(new Transition.TransitionListener() {
@@ -393,7 +420,7 @@ public class ViewerPageFragment extends Fragment {
     }
 
     private void attachPhotoView() {
-        mAttacher = mPhoto.setPhotoAttacher();
+        mAttacher = mImageView.attachPhotoView();
         mAttacher.setOnMatrixChangeListener(new PhotoViewAttacher.OnMatrixChangedListener() {
             @Override
             public void onMatrixChanged(RectF rectF) {
@@ -441,10 +468,10 @@ public class ViewerPageFragment extends Fragment {
 
     @Nullable
     public View getSharedElement() {
-        if (isVideo) {
+        if (mIsVideo) {
             return mVideo;
         } else {
-            return mPhoto;
+            return mImageView;
         }
     }
 }

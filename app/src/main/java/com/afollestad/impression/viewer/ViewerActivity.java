@@ -61,7 +61,6 @@ import java.util.TimerTask;
 
 import static com.afollestad.impression.media.MainActivity.EXTRA_CURRENT_ITEM_POSITION;
 import static com.afollestad.impression.media.MainActivity.EXTRA_OLD_ITEM_POSITION;
-import static com.afollestad.impression.viewer.ViewerPageFragment.LIGHT_MODE_ON;
 
 /**
  * @author Aidan Follestad (afollestad)
@@ -70,10 +69,12 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
 
     public static final String EXTRA_WIDTH = "com.afollestad.impression.width";
     public static final String EXTRA_HEIGHT = "com.afollestad.impression.height";
+    public static final String EXTRA_MEDIA_ENTRIES = "com.afollestad.impression.media_entries";
 
     public static final int TOOLBAR_FADE_OFFSET = 2750;
     public static final int TOOLBAR_FADE_DURATION = 400;
     private static final int EDIT_REQUEST = 1000;
+
     private static final String STATE_CURRENT_POSITION = "state_current_position";
     private static final String STATE_OLD_POSITION = "state_old_position";
 
@@ -82,7 +83,7 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
     private List<MediaEntry> mEntries;
 
     private ViewPager mPager;
-    private ViewerPageAdapter mAdapter;
+    private ViewerPagerAdapter mAdapter;
 
     private Timer mTimer;
     private int mCurrentPosition;
@@ -99,6 +100,7 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
     private long mSlideshowDelay;
     private boolean mSlideshowLoop;
     private Timer mSlideshowTimer;
+
     private ViewPager.OnPageChangeListener mPagerListener = new ViewPager.OnPageChangeListener() {
 
         int previousState;
@@ -112,16 +114,17 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
         public void onPageSelected(int position) {
             if (userScrollChange)
                 stopSlideshow();
-            ViewerPageFragment noActive = (ViewerPageFragment) getFragmentManager().findFragmentByTag("page:" + mCurrentPosition);
-            if (noActive != null)
-                noActive.setIsActive(false);
+            ViewerPagerFragment oldCurrent = getCurrentViewerPagerFragment();
+            if (oldCurrent != null)
+                oldCurrent.setIsCurrent(false);
+
             mCurrentPosition = position;
-            ViewerPageFragment active = (ViewerPageFragment) getFragmentManager().findFragmentByTag("page:" + mCurrentPosition);
+            ViewerPagerFragment active = getCurrentViewerPagerFragment();
             if (active != null) {
-                active.setIsActive(true);
-                mLightMode = active.mLightMode == LIGHT_MODE_ON;
+                active.setIsCurrent(true);
+                //mLightMode = active.mLightMode == LIGHT_MODE_ON;
             }
-            mAdapter.mCurrentPage = position;
+            //mAdapter.setCurrentPage(position);
             invalidateOptionsMenu();
         }
 
@@ -145,6 +148,10 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
         } else {
             v.getViewTreeObserver().removeOnGlobalLayoutListener(listener);
         }
+    }
+
+    private ViewerPagerFragment getCurrentViewerPagerFragment() {
+        return (ViewerPagerFragment) getFragmentManager().findFragmentByTag("page:" + mCurrentPosition);
     }
 
     @Override
@@ -181,7 +188,7 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
             @Override
             public void onMapSharedElements(List<String> names, Map<String, View> sharedElements) {
                 if (mIsReturningToMain) {
-                    View sharedView = mAdapter.getCurrentDetailsFragment().getSharedElement();
+                    View sharedView = getCurrentViewerPagerFragment().getSharedElement();
                     names.clear();
                     sharedElements.clear();
 
@@ -333,8 +340,8 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
 
         boolean dontSetPos = false;
         if (getIntent() != null) {
-            if (getIntent().hasExtra("media_entries")) {
-                mEntries = ((MediaWrapper) getIntent().getSerializableExtra("media_entries")).getMedia();
+            if (getIntent().hasExtra(EXTRA_MEDIA_ENTRIES)) {
+                mEntries = ((MediaWrapper) getIntent().getSerializableExtra(EXTRA_MEDIA_ENTRIES)).getMedia();
             } else if (getIntent().getData() != null) {
                 mEntries = new ArrayList<>();
                 Uri data = getIntent().getData();
@@ -403,9 +410,9 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
                 }
             }
 
-            mAdapter = new ViewerPageAdapter(getFragmentManager(), mEntries,
-                    getIntent().getIntExtra(EXTRA_WIDTH, ViewerPageFragment.INIT_DIMEN_NONE),
-                    getIntent().getIntExtra(EXTRA_HEIGHT, ViewerPageFragment.INIT_DIMEN_NONE),
+            mAdapter = new ViewerPagerAdapter(getFragmentManager(), mEntries,
+                    getIntent().getIntExtra(EXTRA_WIDTH, -1),
+                    getIntent().getIntExtra(EXTRA_HEIGHT, -1),
                     mCurrentPosition);
             mPager = (ViewPager) findViewById(R.id.pager);
             mPager.setOffscreenPageLimit(1);

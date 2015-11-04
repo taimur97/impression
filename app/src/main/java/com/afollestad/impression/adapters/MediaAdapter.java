@@ -260,11 +260,6 @@ public class MediaAdapter extends HybridCursorAdapter<MediaAdapter.ViewHolder> {
             holder.view.setBackground(null);
         }
 
-        //TODO
-        /*holder.title.setTypeface(mRobotoRegular);
-        if (holder.subTitle != null)
-            holder.subTitle.setTypeface(mRobotoLight);*/
-
         if (entry.isAlbum()) {
             holder.titleFrame.setVisibility(View.VISIBLE);
             holder.title.setText(entry.displayName());

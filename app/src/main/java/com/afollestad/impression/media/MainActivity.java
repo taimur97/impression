@@ -68,12 +68,15 @@ import java.util.Map;
 public class MainActivity extends ThemedActivity
         implements FolderChooserDialog.FolderCallback {
 
-    public static final String EXTRA_CURRENT_ITEM_POSITION = "extra_current_item_position";
-    public static final String EXTRA_OLD_ITEM_POSITION = "extra_old_item_position";
+    public static final String EXTRA_CURRENT_ITEM_POSITION = "com.afollestad.impression.extra_current_item_position";
+    public static final String EXTRA_OLD_ITEM_POSITION = "com.afollestad.impression.extra_old_item_position";
+
     public static final String ACTION_SELECT_ALBUM = BuildConfig.APPLICATION_ID + ".SELECT_FOLDER";
     private static final int SETTINGS_REQUEST = 9000;
+
     private static final String TAG = "MainActivity";
     private static final boolean DEBUG = true;
+
     private DrawerLayout mDrawerLayout;
     private AnimatedDrawerToggle mAnimatedDrawerToggle;
     private boolean mPickMode;

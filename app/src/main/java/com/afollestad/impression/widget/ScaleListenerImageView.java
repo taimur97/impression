@@ -22,7 +22,7 @@ public class ScaleListenerImageView extends ImageView {
         super(context, attrs);
     }
 
-    public PhotoViewAttacher setPhotoAttacher() {
+    public PhotoViewAttacher attachPhotoView() {
         if (mAttacher != null) {
             mAttacher.cleanup();
             mAttacher = null;

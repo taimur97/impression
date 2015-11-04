@@ -16,7 +16,7 @@ import android.widget.VideoView;
 import com.afollestad.impression.R;
 import com.afollestad.impression.utils.Utils;
 import com.afollestad.impression.viewer.ViewerActivity;
-import com.afollestad.impression.viewer.ViewerPageFragment;
+import com.afollestad.impression.viewer.ViewerPagerFragment;
 
 import java.util.concurrent.TimeUnit;
 
@@ -27,7 +27,7 @@ public class ImpressionVideoView extends VideoView {
 
     private static final int FADE_DELAY = ViewerActivity.TOOLBAR_FADE_OFFSET;
     private static final int FADE_DURATION = ViewerActivity.TOOLBAR_FADE_DURATION;
-    private ViewerPageFragment mFragment;
+    private ViewerPagerFragment mFragment;
     private ImageView mIcon;
     private View mOverlay;
     private View mSeekerFrame;
@@ -111,7 +111,7 @@ public class ImpressionVideoView extends VideoView {
         fade(mSeekerFrame, true, 0f);
     }
 
-    public void hookViews(ViewerPageFragment fragment, View overlay) {
+    public void hookViews(ViewerPagerFragment fragment, View overlay) {
         mFragment = fragment;
         mOverlay = overlay;
         mIcon = (ImageView) overlay.findViewById(R.id.icon);
