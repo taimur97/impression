@@ -31,7 +31,7 @@ public class AlbumEntry implements MediaEntry<AlbumEntry> {
     public String mFirstPath;
     private int mSize;
     private long mAlbumId;
-    private Map<String, LoaderEntry> loadedHolder;
+    private Map<String, LoaderEntry> mLoadedHolder;
     private int mRealIndex;
 
     /**
@@ -43,18 +43,18 @@ public class AlbumEntry implements MediaEntry<AlbumEntry> {
     }
 
     public void processLoaded(Context context) {
-        if (loadedHolder == null) return;
-        mSize = loadedHolder.size();
+        if (mLoadedHolder == null) return;
+        mSize = mLoadedHolder.size();
         MediaAdapter.SortMode sort = SortMemoryProvider.getSortMode(context, mFile.getAbsolutePath());
-        List<LoaderEntry> mEntries = new ArrayList<>(loadedHolder.values());
+        List<LoaderEntry> mEntries = new ArrayList<>(mLoadedHolder.values());
         Collections.sort(mEntries, new LoaderEntry.Sorter(sort));
         mFirstPath = mEntries.get(0).data();
     }
 
     public void putLoaded(LoaderEntry entry) {
-        if (loadedHolder == null)
-            loadedHolder = new HashMap<>();
-        loadedHolder.put(entry.data(), entry);
+        if (mLoadedHolder == null)
+            mLoadedHolder = new HashMap<>();
+        mLoadedHolder.put(entry.data(), entry);
     }
 
     public void setBucketId(long id) {

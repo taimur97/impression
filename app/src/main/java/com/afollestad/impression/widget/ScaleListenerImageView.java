@@ -24,10 +24,10 @@ public class ScaleListenerImageView extends ImageView {
 
     public PhotoViewAttacher attachPhotoView() {
         if (mAttacher != null) {
-            mAttacher.cleanup();
-            mAttacher = null;
+            mAttacher.update();
+        } else{
+            mAttacher = new PhotoViewAttacher(this);
         }
-        mAttacher = new PhotoViewAttacher(this);
         return mAttacher;
     }
 

@@ -19,6 +19,7 @@
             android:background="@null"
             android:elevation="@dimen/toolbar_elevation"
             android:orientation="vertical"
+            android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
             android:transitionName="Toolbar"
             tools:ignore="UnusedAttribute">
 
@@ -31,7 +32,6 @@
                     android:layout_width="match_parent"
                     android:layout_height="?actionBarSize"
                     android:background="@null"
-                    android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
                     app:contentInsetStart="@dimen/toolbar_inset"
                     app:popupTheme="?popup_theme" />
 
@@ -45,12 +45,12 @@
             <com.afollestad.impression.widget.BreadCrumbLayout
                 android:id="@+id/breadCrumbs"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="@dimen/breadcrumb_height"
+                android:overScrollMode="never"
                 android:paddingEnd="@dimen/breadcrumb_arrow_margin"
                 android:paddingLeft="@dimen/breadcrumb_layout_margin"
                 android:paddingRight="@dimen/breadcrumb_arrow_margin"
                 android:paddingStart="@dimen/breadcrumb_layout_margin"
-                android:paddingTop="-48dp"
                 tools:ignore="NewApi,RtlSymmetry" />
 
             <TextView
@@ -58,16 +58,18 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="center_vertical|start"
-                android:paddingBottom="16dp"
+                android:paddingBottom="8dp"
                 android:paddingEnd="16dp"
                 android:paddingLeft="72dp"
                 android:paddingRight="16dp"
                 android:paddingStart="72dp"
+                android:paddingTop="8dp"
                 android:textAllCaps="true"
-                android:textColor="@android:color/white"
                 android:textSize="14sp"
                 android:visibility="gone"
-                tools:ignore="NewApi" />
+                tools:ignore="NewApi"
+                tools:text="Testing"
+                tools:visibility="visible" />
 
         </LinearLayout>
 

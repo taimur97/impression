@@ -27,6 +27,12 @@ import android.support.v7.widget.ActionMenuPresenter;
 import android.support.v7.widget.ActionMenuView;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.transition.ArcMotion;
+import android.transition.ChangeBounds;
+import android.transition.ChangeClipBounds;
+import android.transition.ChangeImageTransform;
+import android.transition.ChangeTransform;
+import android.transition.TransitionSet;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Gravity;
@@ -267,6 +273,28 @@ public class MainActivity extends ThemedActivity
         setExitSharedElementCallback(mCallback);
     }
 
+    private void setTransition() {
+        if(Build.VERSION.SDK_INT<Build.VERSION_CODES.LOLLIPOP){
+            return;
+        }
+
+        final TransitionSet transition = new TransitionSet();
+
+        transition.addTransition(new ChangeBounds());
+        transition.addTransition(new ChangeTransform());
+        transition.addTransition(new ChangeClipBounds());
+        transition.addTransition(new ChangeImageTransform());
+
+        transition.setDuration(150);
+        transition.setInterpolator(new FastOutSlowInInterpolator());
+        final ArcMotion pathMotion = new ArcMotion();
+        pathMotion.setMaximumAngle(50);
+        transition.setPathMotion(pathMotion);
+
+        getWindow().setSharedElementExitTransition(transition);
+        getWindow().setSharedElementReenterTransition(transition);
+    }
+
     private void saveScrollPosition() {
         Fragment frag = getFragmentManager().findFragmentById(R.id.content_frame);
         if (frag != null) {
@@ -303,6 +331,7 @@ public class MainActivity extends ThemedActivity
         setContentView(R.layout.activity_main);
 
         setupSharedElementCallback();
+        setTransition();
 
         mToolbar = (Toolbar) findViewById(R.id.toolbar);
         mToolbar.setSubtitleTextAppearance(this, R.style.ToolbarSubtitleStyle);

@@ -57,7 +57,7 @@ public class ViewerPagerFragment extends Fragment {
     private static final short LIGHT_MODE_UNLOADED = 0;
     private static final short LIGHT_MODE_LOADING = -1;
     private static final short LIGHT_MODE_OFF = 1;
-    public short mLightMode = LIGHT_MODE_UNLOADED;
+    private short mLightMode = LIGHT_MODE_UNLOADED;
 
     private MediaEntry mEntry;
     private String mMediaPath;
@@ -70,10 +70,9 @@ public class ViewerPagerFragment extends Fragment {
     private boolean mImageZoomedUnderToolbar;
 
     private int mIndex;
-    private boolean mIsCurrent;
-/*
-    private boolean mThumbnailLoaded;
-    private boolean mFullImageLoaded;*/
+    private boolean mIsActive;
+
+    private SimpleTarget<Bitmap> mFullImageTarget;
 
     private PhotoViewAttacher mAttacher;
     private ScaleListenerImageView mImageView;
@@ -124,16 +123,21 @@ public class ViewerPagerFragment extends Fragment {
         return view;
     }
 
-    public ViewerPagerFragment setIsCurrent(boolean active) {
-        mIsCurrent = active;
-        if (mVideo != null && !mIsCurrent) {
-            mVideo.pause(false);
-        } else if (mIsCurrent && isAdded()) {
-            loadFullImage();
-        } else if (!mIsCurrent && isAdded()) {
-            loadThumbOrFullIfCurrent();
+    public void setIsActive(boolean active) {
+        boolean old = mIsActive;
+        mIsActive = active;
+        if (!mIsActive) {
+            if (mVideo != null) {
+                mVideo.pause(false);
+            }
+            if (old != mIsActive && isAdded()) {
+                loadThumbAndFullIfCurrent();
+            }
+        } else {
+            if (!old && isAdded()) {
+                loadFullImage();
+            }
         }
-        return this;
     }
 
     private boolean isGif() {
@@ -178,7 +182,7 @@ public class ViewerPagerFragment extends Fragment {
             loadVideo();
             ((ViewerActivity) getActivity()).invalidateTransition();
         } else {
-            loadThumbOrFullIfCurrent();
+            loadThumbAndFullIfCurrent();
         }
 
         // Might need the progress view later, e.g. for cloud images?
@@ -192,7 +196,7 @@ public class ViewerPagerFragment extends Fragment {
             mAttacher.cleanup();
     }
 
-    private void loadThumbOrFullIfCurrent() {
+    private void loadThumbAndFullIfCurrent() {
         if ((mEntry == null || mEntry.data() == null || mEntry.data().trim().isEmpty()) &&
                 (mMediaPath == null || mMediaPath.trim().isEmpty())) {
             Utils.showErrorDialog(getActivity(), new Exception(getString(R.string.invalid_file_path_error)));
@@ -203,6 +207,32 @@ public class ViewerPagerFragment extends Fragment {
         if (!isGif()) {
             // Sets the initial cached thumbnail while the rest of loading takes place
             Glide.with(this)
+                    /*.using(new StreamModelLoader<String>() {
+                        @Override
+                        public DataFetcher<InputStream> getResourceFetcher(final String model, int i, int i1) {
+                            return new DataFetcher<InputStream>() {
+                                @Override
+                                public InputStream loadData(Priority priority) throws Exception {
+                                    throw new IOException();
+                                }
+
+                                @Override
+                                public void cleanup() {
+
+                                }
+
+                                @Override
+                                public String getId() {
+                                    return model;
+                                }
+
+                                @Override
+                                public void cancel() {
+
+                                }
+                            };
+                        }
+                    })*/
                     .load(mEntry.data())
                     .diskCacheStrategy(DiskCacheStrategy.RESULT)
                     .priority(Priority.IMMEDIATE)
@@ -216,9 +246,12 @@ public class ViewerPagerFragment extends Fragment {
 
                         @Override
                         public boolean onResourceReady(GlideDrawable resource, String model, Target<GlideDrawable> target, boolean isFromMemoryCache, boolean isFirstResource) {
-
+                            //TODO: Look into how to make it load from a cached, scaled-down, non-cropped version of the drawable
+                            //Right now it's loading another thumbnail
                             if (!isFromMemoryCache) {
-                                Log.e("ViewerPager", "Image not from cache:" + model);
+                                Log.e("ViewerPager", "Image not from cache:" + model + " " + target.toString());
+                            } else {
+                                Log.e("ViewerPager", "Image from cache:" + model + " " + target.toString());
                             }
                             return false;
                         }
@@ -235,7 +268,7 @@ public class ViewerPagerFragment extends Fragment {
             ((ViewerActivity) getActivity()).invalidateTransition();
         }
 
-        if (mIsCurrent) {
+        if (mIsActive) {
             loadFullImage();
         }
     }
@@ -269,11 +302,12 @@ public class ViewerPagerFragment extends Fragment {
                     ViewerActivity act = (ViewerActivity) getActivity();
                     if (act == null)
                         return;
-                    act.getWindow().getEnterTransition().removeListener(this);
+                    act.getWindow().getSharedElementEnterTransition().removeListener(this);
                     act.mFinishedTransition = true;
 
-                    if (isAdded())
-                        loadThumbOrFullIfCurrent();
+                    if (isAdded()) {
+                        loadFullImage();
+                    }
                 }
             });
             return;
@@ -311,21 +345,31 @@ public class ViewerPagerFragment extends Fragment {
                     .into(mImageView);
         } else {
             // Load the full size image into the view from the file
-            Glide.with(this)
+            mFullImageTarget = Glide.with(this)
                     .load(getUri().toString())
                     .asBitmap()
                     .format(DecodeFormat.PREFER_ARGB_8888)
+                    .listener(new RequestListener<String, Bitmap>() {
+                        @Override
+                        public boolean onException(Exception e, String model, Target<Bitmap> target, boolean isFirstResource) {
+                            Utils.showErrorDialog(getActivity(), e);
+                            attachPhotoView();
+                            ((ViewerActivity) getActivity()).invalidateTransition();
+
+                            return false;
+                        }
+
+                        @Override
+                        public boolean onResourceReady(Bitmap resource, String model, Target<Bitmap> target, boolean isFromMemoryCache, boolean isFirstResource) {
+                            return false;
+                        }
+                    })
                     .into(new SimpleTarget<Bitmap>() {
                         @Override
                         public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
                             if (!isAdded()) {
                                 return;
-                            }/* else if (e != null) {
-                                Utils.showErrorDialog(getActivity(), e);
-                                attachPhotoView();
-                                ((ViewerActivity) getActivity()).invalidateTransition();
-                                return;
-                            }*/
+                            }
 
                             if (mLightMode != LIGHT_MODE_LOADING) {
                                 mLightMode = LIGHT_MODE_LOADING;
@@ -343,7 +387,7 @@ public class ViewerPagerFragment extends Fragment {
                                                 } else {
                                                     mLightMode = LIGHT_MODE_OFF;
                                                 }
-                                                ((ViewerActivity) getActivity()).invalidateLightMode(
+                                                ((ViewerActivity) getActivity()).setLightMode(
                                                         mImageZoomedUnderToolbar && mLightMode == LIGHT_MODE_ON);
                                             }
                                         });
@@ -353,6 +397,8 @@ public class ViewerPagerFragment extends Fragment {
 
                             attachPhotoView();
 
+                            mFullImageTarget = null;
+
 //                        if (getView() != null) {
 //                            getView().findViewById(android.R.id.progress)
 //                                    .setVisibility(View.GONE);
@@ -361,6 +407,12 @@ public class ViewerPagerFragment extends Fragment {
                             ((ViewerActivity) getActivity()).invalidateTransition();
                         }
                     });
+        }
+    }
+
+    public void clearFullImageLoading() {
+        if (mFullImageTarget != null) {
+            Glide.clear(mFullImageTarget);
         }
     }
 
@@ -374,7 +426,7 @@ public class ViewerPagerFragment extends Fragment {
         ViewerActivity act = (ViewerActivity) getActivity();
         if (act == null)
             return;
-        else if (!act.mFinishedTransition && mIsCurrent && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+        else if (!act.mFinishedTransition && mIsActive && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             // If the activity transition didn't finish yet, wait for it to do so
             // So that the photo view attacher attaches correctly.
             act.getWindow().getSharedElementEnterTransition().addListener(new Transition.TransitionListener() {
@@ -430,12 +482,12 @@ public class ViewerPagerFragment extends Fragment {
                 if (mImageZoomedUnderToolbar) {
                     // Use detected value
                     if (mLightMode == LIGHT_MODE_LOADING)
-                        act.invalidateLightMode(false);
+                        act.setLightMode(false);
                     else
-                        act.invalidateLightMode(mLightMode == LIGHT_MODE_ON);
+                        act.setLightMode(mLightMode == LIGHT_MODE_ON);
                 } else {
                     // Force dark mode for black space above image
-                    act.invalidateLightMode(false);
+                    act.setLightMode(false);
                 }
             }
         });

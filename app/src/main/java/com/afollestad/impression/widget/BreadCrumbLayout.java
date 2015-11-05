@@ -133,8 +133,7 @@ public class BreadCrumbLayout extends HorizontalScrollView implements View.OnCli
         iv.setImageDrawable(arrow);
         iv.setVisibility(View.GONE);
 
-        mChildFrame.addView(view, new ViewGroup.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        mChildFrame.addView(view);
         mCrumbs.add(crumb);
         if (refreshLayout) {
             mActive = mCrumbs.size() - 1;

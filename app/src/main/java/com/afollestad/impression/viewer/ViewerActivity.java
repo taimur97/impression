@@ -25,8 +25,15 @@ import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.print.PrintHelper;
 import android.support.v4.view.ViewPager;
+import android.support.v4.view.animation.FastOutSlowInInterpolator;
 import android.support.v7.widget.Toolbar;
 import android.text.Html;
+import android.transition.ArcMotion;
+import android.transition.ChangeBounds;
+import android.transition.ChangeClipBounds;
+import android.transition.ChangeImageTransform;
+import android.transition.ChangeTransform;
+import android.transition.TransitionSet;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -105,6 +112,9 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
         int previousState;
         boolean userScrollChange;
 
+        private ViewerPagerFragment mActive;
+        private boolean mInitialized;
+
         @Override
         public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
         }
@@ -113,28 +123,37 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
         public void onPageSelected(int position) {
             if (userScrollChange)
                 stopSlideshow();
-            ViewerPagerFragment oldCurrent = getCurrentViewerPagerFragment();
-            if (oldCurrent != null)
-                oldCurrent.setIsCurrent(false);
 
             mCurrentPosition = position;
-            ViewerPagerFragment active = getCurrentViewerPagerFragment();
-            if (active != null) {
-                active.setIsCurrent(true);
-                //mLightMode = active.mLightMode == LIGHT_MODE_ON;
-            }
-            //mAdapter.setCurrentPage(position);
+
             invalidateOptionsMenu();
         }
 
         @Override
         public void onPageScrollStateChanged(int state) {
-            if (previousState == ViewPager.SCROLL_STATE_DRAGGING
-                    && state == ViewPager.SCROLL_STATE_SETTLING)
+            if (!mInitialized) {
+                mActive = getViewerPagerFragment(mCurrentPosition);
+
+                mInitialized = true;
+            }
+
+            if (state == ViewPager.SCROLL_STATE_DRAGGING) {
+                if (mActive != null) {
+                    mActive.setIsActive(false);
+                    mActive = null;
+                }
+            } else if (previousState == ViewPager.SCROLL_STATE_DRAGGING
+                    && state == ViewPager.SCROLL_STATE_SETTLING) {
                 userScrollChange = true;
-            else if (previousState == ViewPager.SCROLL_STATE_SETTLING
-                    && state == ViewPager.SCROLL_STATE_IDLE)
+            } else if (previousState == ViewPager.SCROLL_STATE_SETTLING
+                    && state == ViewPager.SCROLL_STATE_IDLE) {
                 userScrollChange = false;
+
+                mActive = getViewerPagerFragment(mCurrentPosition);
+                if (mActive != null) {
+                    mActive.setIsActive(true);
+                }
+            }
 
             previousState = state;
         }
@@ -149,8 +168,8 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
         }
     }
 
-    private ViewerPagerFragment getCurrentViewerPagerFragment() {
-        return (ViewerPagerFragment) getFragmentManager().findFragmentByTag("page:" + mCurrentPosition);
+    private ViewerPagerFragment getViewerPagerFragment(int index) {
+        return (ViewerPagerFragment) getFragmentManager().findFragmentByTag("page:" + index);
     }
 
     @Override
@@ -163,7 +182,7 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
         return R.style.AppTheme_Viewer;
     }
 
-    public void invalidateLightMode(boolean lightMode) {
+    public void setLightMode(boolean lightMode) {
         if (lightMode == mLightMode) return;
         mLightMode = lightMode;
         /*final int darkGray = ContextCompat.getColor(this, R.color.viewer_lightmode_icons);
@@ -187,7 +206,7 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
             @Override
             public void onMapSharedElements(List<String> names, Map<String, View> sharedElements) {
                 if (mIsReturningToMain) {
-                    View sharedView = getCurrentViewerPagerFragment().getSharedElement();
+                    View sharedView = getViewerPagerFragment(mCurrentPosition).getSharedElement();
                     names.clear();
                     sharedElements.clear();
 
@@ -197,7 +216,7 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
                         sharedElements.put(transName, sharedView);
                     }
 
-                    invalidateLightMode(false);
+                    setLightMode(false);
                 }
 
                 View decor = getWindow().getDecorView();
@@ -315,8 +334,9 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
             postponeEnterTransition();
         }
         super.onCreate(savedInstanceState);
-
         setContentView(R.layout.activity_viewer);
+
+        setTransition();
 
         mToolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(mToolbar);
@@ -451,6 +471,28 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
                 getNavigationBarHeight(false, true),
                 mToolbar.getPaddingBottom()
         );
+    }
+
+    private void setTransition() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+            return;
+        }
+
+        final TransitionSet transition = new TransitionSet();
+
+        transition.addTransition(new ChangeBounds());
+        transition.addTransition(new ChangeTransform());
+        transition.addTransition(new ChangeClipBounds());
+        transition.addTransition(new ChangeImageTransform());
+
+        transition.setDuration(150);
+        transition.setInterpolator(new FastOutSlowInInterpolator());
+        final ArcMotion pathMotion = new ArcMotion();
+        pathMotion.setMaximumAngle(50);
+        transition.setPathMotion(pathMotion);
+
+        getWindow().setSharedElementEnterTransition(transition);
+        getWindow().setSharedElementReturnTransition(transition);
     }
 
     @Override
@@ -861,6 +903,8 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     @Override
     public void finishAfterTransition() {
+        getViewerPagerFragment(mCurrentPosition).clearFullImageLoading();
+
         mIsReturningToMain = true;
         Intent data = new Intent();
         if (getIntent() != null)

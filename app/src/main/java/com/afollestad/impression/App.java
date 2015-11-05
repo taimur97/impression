@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.Application;
 
 import com.afollestad.impression.accounts.base.Account;
+import com.squareup.leakcanary.LeakCanary;
 
 public class App extends Application {
 
@@ -32,5 +33,11 @@ public class App extends Application {
                 callback.onAccount(mCurrentAccount);
             }
         });
+    }
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        LeakCanary.install(this);
     }
 }

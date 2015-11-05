@@ -34,9 +34,6 @@ public class ImpressionImageView extends ImageView {
     private int mPlayOverlay;
     private int mSelectedColor;
     private boolean mIsGif;
-    private int mOriginalWidth;
-    private int mOriginalHeight;
-    private int mResourceId;
 
     public ImpressionImageView(Context context) {
         super(context);
@@ -46,14 +43,6 @@ public class ImpressionImageView extends ImageView {
     public ImpressionImageView(Context context, AttributeSet attrs) {
         super(context, attrs);
         init(context);
-    }
-
-    public int getOriginalWidth() {
-        return mOriginalWidth;
-    }
-
-    public int getOriginalHeight() {
-        return mOriginalHeight;
     }
 
     private void init(Context context) {
@@ -66,9 +55,7 @@ public class ImpressionImageView extends ImageView {
         mSelectedColor = ContextCompat.getColor(context, R.color.picture_activated_overlay);
     }
 
-    //TODO Method seems to be called a million times when transitioning
     public void load(MediaEntry entry, View progress) {
-        mResourceId = -1;
         if (isInEditMode()) return;
         mEntry = entry;
         if (mEntry == null) return;
@@ -92,23 +79,11 @@ public class ImpressionImageView extends ImageView {
                 .into(this);
     }
 
-    private void load(int resourceId) {
-        mResourceId = resourceId;
-        if (getMeasuredWidth() == 0) return;
-        setImageDrawable(null);
-        Glide.with(getContext())
-                .load("android.resource://" + getContext().getPackageName() + "/" + resourceId)
-                .centerCrop()
-                .into(this);
-    }
-
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         //noinspection SuspiciousNameCombination
         super.onMeasure(widthMeasureSpec, widthMeasureSpec);
-        if (mResourceId != -1)
-            load(mResourceId);
-        /*else load(mEntry, null);*/
+        setMeasuredDimension(widthMeasureSpec, widthMeasureSpec);
     }
 
     @Override

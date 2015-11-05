@@ -44,9 +44,12 @@ public class ViewerPagerAdapter extends FragmentStatePagerAdapter {
     @Override
     public Fragment getItem(int position) {
         int gridPosition = translateToGridIndex(position);
-        final ViewerPagerFragment viewerPagerFragment = ViewerPagerFragment.create(mMedia.get(position), gridPosition, mThumbWidth, mThumbHeight)
-                .setIsCurrent(mInitialCurrent == position);
-        mInitialCurrent = -1;
+        final ViewerPagerFragment viewerPagerFragment = ViewerPagerFragment.create(mMedia.get(position), gridPosition, mThumbWidth, mThumbHeight);
+        final boolean active = mInitialCurrent == position;
+        if (active) {
+            viewerPagerFragment.setIsActive(true);
+            mInitialCurrent = -1;
+        }
         return viewerPagerFragment;
     }
 
