@@ -1,14 +1,14 @@
 # Impression
 A material design gallery app for Android 4.1+
 
-Developed by Aidan Follestad and Daniel Ciao.
+Developed by Aidan Follestad, Daniel Ciao, and Marlon Jones.
 
 Project in progress of revival. "Watch" the repo for updates.
 
 ##License
 ```
 Impression: A material design gallery app for Android 4.1+
-Copyright (C) 2015  Aidan Follestad and Daniel Ciao
+Copyright (C) 2015  Aidan Follestad, Daniel Ciao, and Marlon Jones
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
