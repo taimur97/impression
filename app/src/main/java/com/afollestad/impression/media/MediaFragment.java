@@ -43,7 +43,7 @@ import static android.app.Activity.RESULT_OK;
 /**
  * @author Aidan Follestad (afollestad)
  */
-public class MediaFragment extends Fragment implements MediaView, Account.EntriesCallback {
+public class MediaFragment extends Fragment implements MediaView{
 
     protected MediaAdapter.SortMode sortCache;
     protected BreadCrumbLayout.Crumb crumb;
@@ -234,18 +234,24 @@ public class MediaFragment extends Fragment implements MediaView, Account.Entrie
 
         if (getAdapter() != null)
             getAdapter().clear();
-        getAllEntries(this);
-    }
+        getAllEntries(new Account.EntriesCallback() {
+            @Override
+            public void onEntries(MediaEntry[] entries) {
+                if (!isAdded())
+                    return;
+                else if (getAdapter() != null)
+                    getAdapter().addAll(entries);
+                setListShown(true);
+                restoreScrollPosition();
+                invalidateSubtitle(entries);
+            }
 
-    @Override
-    public void onEntries(MediaEntry[] entries) {
-        if (!isAdded())
-            return;
-        else if (getAdapter() != null)
-            getAdapter().addAll(entries);
-        setListShown(true);
-        restoreScrollPosition();
-        invalidateSubtitle(entries);
+            @Override
+            public void onError(Exception e) {
+                if (getActivity() == null) return;
+                Utils.showErrorDialog(getActivity(), e);
+            }
+        });
     }
 
     private void invalidateSubtitle(MediaEntry[] entries) {
@@ -301,12 +307,6 @@ public class MediaFragment extends Fragment implements MediaView, Account.Entrie
                 act.getSupportActionBar().setSubtitle(null);
             }
         }
-    }
-
-    @Override
-    public void onError(Exception e) {
-        if (getActivity() == null) return;
-        Utils.showErrorDialog(getActivity(), e);
     }
 
     @Override

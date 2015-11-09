@@ -18,6 +18,8 @@ import com.afollestad.impression.api.base.MediaEntry;
 import com.afollestad.impression.utils.Utils;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.bumptech.glide.load.engine.bitmap_recycle.BitmapPool;
+import com.bumptech.glide.load.resource.bitmap.FitCenter;
 
 import java.lang.ref.WeakReference;
 
@@ -75,7 +77,35 @@ public class ImpressionImageView extends ImageView {
 
         Glide.with(getContext())
                 .load(pathToLoad)
+                .asBitmap()
                 .diskCacheStrategy(DiskCacheStrategy.RESULT)
+                .transform(new FitCenter(getContext()) {
+                    @Override
+                    protected Bitmap transform(BitmapPool pool, Bitmap toTransform, int outWidth, int outHeight) {
+                        if (toTransform.getWidth() > toTransform.getHeight()) {
+                            outHeight = outHeight;
+                            outWidth = (int) (((float) toTransform.getHeight() / outHeight) * toTransform.getWidth());
+                        }
+
+                        return super.transform(pool, toTransform, outWidth, outHeight);
+                    }
+
+                    @Override
+                    public String getId() {
+                        return "Octopus";
+                    }
+                })
+                /*.listener(new RequestListener<String, Bitmap>() {
+                    @Override
+                    public boolean onException(Exception e, String model, Target<Bitmap> target, boolean isFirstResource) {
+                        return false;
+                    }
+
+                    @Override
+                    public boolean onResourceReady(Bitmap resource, String model, Target<Bitmap> target, boolean isFromMemoryCache, boolean isFirstResource) {
+                        return false;
+                    }
+                })*/
                 .into(this);
     }
 

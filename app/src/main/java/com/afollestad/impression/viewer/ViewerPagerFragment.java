@@ -9,10 +9,10 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.view.ViewCompat;
-import android.support.v7.graphics.Palette;
 import android.transition.Transition;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
@@ -27,14 +27,15 @@ import com.afollestad.impression.widget.ImpressionVideoView;
 import com.afollestad.impression.widget.ScaleListenerImageView;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.Priority;
-import com.bumptech.glide.load.DecodeFormat;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
-import com.bumptech.glide.load.resource.drawable.GlideDrawable;
-import com.bumptech.glide.load.resource.gif.GifDrawable;
+import com.bumptech.glide.load.engine.bitmap_recycle.BitmapPool;
+import com.bumptech.glide.load.resource.bitmap.FitCenter;
 import com.bumptech.glide.request.RequestListener;
 import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.target.SimpleTarget;
 import com.bumptech.glide.request.target.Target;
+import com.davemorrissey.labs.subscaleview.ImageSource;
+import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView;
 
 import java.io.File;
 
@@ -64,8 +65,8 @@ public class ViewerPagerFragment extends Fragment {
 
     private boolean mIsVideo;
 
-    private int mWidth;
-    private int mHeight;
+    private int mThumbWidth;
+    private int mThumbHeight;
 
     private boolean mImageZoomedUnderToolbar;
 
@@ -75,8 +76,13 @@ public class ViewerPagerFragment extends Fragment {
     private SimpleTarget<Bitmap> mFullImageTarget;
 
     private PhotoViewAttacher mAttacher;
-    private ScaleListenerImageView mImageView;
+    private ScaleListenerImageView mThumb;
+    private SubsamplingScaleImageView mImageView;
     private ImpressionVideoView mVideo;
+
+    private Bitmap mThumbnailBitmap;
+    private int mFullWidth;
+    private int mFullHeight;
 
     public static ViewerPagerFragment create(MediaEntry entry, int index, int width, int height) {
         ViewerPagerFragment frag = new ViewerPagerFragment();
@@ -93,8 +99,8 @@ public class ViewerPagerFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        mWidth = getArguments().getInt(INIT_WIDTH);
-        mHeight = getArguments().getInt(INIT_HEIGHT);
+        mThumbWidth = getArguments().getInt(INIT_WIDTH);
+        mThumbHeight = getArguments().getInt(INIT_HEIGHT);
 
         mIndex = getArguments().getInt(INIT_INDEX);
         if (getArguments().containsKey(INIT_MEDIA)) {
@@ -117,8 +123,11 @@ public class ViewerPagerFragment extends Fragment {
             ViewCompat.setTransitionName(mVideo, "view_" + mIndex);
         } else {
             view = inflater.inflate(R.layout.fragment_viewer, container, false);
-            mImageView = (ScaleListenerImageView) view.findViewById(R.id.photo);
-            ViewCompat.setTransitionName(mImageView, "view_" + mIndex);
+            mImageView = (SubsamplingScaleImageView) view.findViewById(R.id.photo);
+
+            mThumb = (ScaleListenerImageView) view.findViewById(R.id.thumb);
+
+            ViewCompat.setTransitionName(mThumb, "view_" + mIndex);
         }
         return view;
     }
@@ -192,8 +201,8 @@ public class ViewerPagerFragment extends Fragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        if (mAttacher != null)
-            mAttacher.cleanup();
+        /*if (mAttacher != null)
+            mAttacher.cleanup();*/
     }
 
     private void loadThumbAndFullIfCurrent() {
@@ -205,6 +214,9 @@ public class ViewerPagerFragment extends Fragment {
         }
 
         if (!isGif()) {
+            mThumb.setVisibility(View.VISIBLE);
+            mImageView.recycle();
+            mImageView.setVisibility(View.INVISIBLE);
             // Sets the initial cached thumbnail while the rest of loading takes place
             Glide.with(this)
                     /*.using(new StreamModelLoader<String>() {
@@ -234,20 +246,35 @@ public class ViewerPagerFragment extends Fragment {
                         }
                     })*/
                     .load(mEntry.data())
+                    .asBitmap()
                     .diskCacheStrategy(DiskCacheStrategy.RESULT)
                     .priority(Priority.IMMEDIATE)
                     .dontAnimate()
-                    .override(mWidth, mHeight)
-                    .listener(new RequestListener<String, GlideDrawable>() {
+                    .override(mThumbWidth, mThumbHeight)
+                    .transform(new FitCenter(getActivity()) {
                         @Override
-                        public boolean onException(Exception e, String model, Target<GlideDrawable> target, boolean isFirstResource) {
+                        protected Bitmap transform(BitmapPool pool, Bitmap toTransform, int outWidth, int outHeight) {
+                            if (toTransform.getWidth() > toTransform.getHeight()) {
+                                outHeight = outHeight;
+                                outWidth = (int) (((float) toTransform.getHeight() / outHeight) * toTransform.getWidth());
+                            }
+
+                            return super.transform(pool, toTransform, outWidth, outHeight);
+                        }
+
+                        @Override
+                        public String getId() {
+                            return "Octopus";
+                        }
+                    })
+                    .listener(new RequestListener<String, Bitmap>() {
+                        @Override
+                        public boolean onException(Exception e, String model, Target<Bitmap> target, boolean isFirstResource) {
                             return false;
                         }
 
                         @Override
-                        public boolean onResourceReady(GlideDrawable resource, String model, Target<GlideDrawable> target, boolean isFromMemoryCache, boolean isFirstResource) {
-                            //TODO: Look into how to make it load from a cached, scaled-down, non-cropped version of the drawable
-                            //Right now it's loading another thumbnail
+                        public boolean onResourceReady(Bitmap resource, String model, Target<Bitmap> target, boolean isFromMemoryCache, boolean isFirstResource) {
                             if (!isFromMemoryCache) {
                                 Log.e("ViewerPager", "Image not from cache:" + model + " " + target.toString());
                             } else {
@@ -256,12 +283,15 @@ public class ViewerPagerFragment extends Fragment {
                             return false;
                         }
                     })
-                    .into(new SimpleTarget<GlideDrawable>() {
+                    .into(new SimpleTarget<Bitmap>() {
                         @Override
-                        public void onResourceReady(GlideDrawable resource, GlideAnimation<? super GlideDrawable> glideAnimation) {
+                        public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
                             ((ViewerActivity) getActivity()).invalidateTransition();
-                            mImageView.setImageDrawable(resource);
-                            mImageView.setScaleType(ImageView.ScaleType.FIT_CENTER);
+
+                            /*mThumbnailBitmap = resource;*/
+
+                            mThumb.setImageBitmap(resource);
+                            mThumb.setScaleType(ImageView.ScaleType.FIT_CENTER);
                         }
                     });
         } else {
@@ -274,7 +304,7 @@ public class ViewerPagerFragment extends Fragment {
     }
 
     private void loadFullImage() {
-        ViewerActivity act = (ViewerActivity) getActivity();
+        final ViewerActivity act = (ViewerActivity) getActivity();
 
         // If the activity transition didn't finish yet, wait for it to do so
         // So that the photo view attacher attaches correctly.
@@ -318,7 +348,7 @@ public class ViewerPagerFragment extends Fragment {
 //        }
 
         if (isGif()) {
-            // GIFs can't be loaded as a Bitmap
+            /*// GIFs can't be loaded as a Bitmap
             mLightMode = LIGHT_MODE_OFF;
             Glide.with(this)
                     .load(getUri().toString())
@@ -342,10 +372,50 @@ public class ViewerPagerFragment extends Fragment {
                             return false;
                         }
                     })
-                    .into(mImageView);
+                    .into(mImageView);*/
         } else {
             // Load the full size image into the view from the file
-            mFullImageTarget = Glide.with(this)
+            mImageView.setVisibility(View.VISIBLE);
+            mImageView.setImage(ImageSource.uri(mEntry.data())/*.dimensions(300, 400), ImageSource.bitmap(mThumbnailBitmap)*/);
+            mImageView.setOnImageEventListener(new SubsamplingScaleImageView.OnImageEventListener() {
+                @Override
+                public void onReady() {
+
+                }
+
+                @Override
+                public void onImageLoaded() {
+                    final ViewerActivity activity = (ViewerActivity) getActivity();
+                    if (activity != null)
+                        activity.invalidateTransition();
+                    mThumb.setVisibility(View.INVISIBLE);
+                }
+
+                @Override
+                public void onPreviewLoadError(Exception e) {
+
+                }
+
+                @Override
+                public void onImageLoadError(Exception e) {
+
+                }
+
+                @Override
+                public void onTileLoadError(Exception e) {
+
+                }
+            });
+
+            mImageView.setDebug(true);
+            mImageView.setOnTouchListener(new View.OnTouchListener() {
+                @Override
+                public boolean onTouch(View v, MotionEvent event) {
+                    return false;
+                }
+            });
+
+            /*mFullImageTarget = Glide.with(this)
                     .load(getUri().toString())
                     .asBitmap()
                     .format(DecodeFormat.PREFER_ARGB_8888)
@@ -406,14 +476,17 @@ public class ViewerPagerFragment extends Fragment {
                             // If no cached image was loaded, finish the transition now that there is an image displayed
                             ((ViewerActivity) getActivity()).invalidateTransition();
                         }
-                    });
+                    });*/
         }
     }
 
-    public void clearFullImageLoading() {
-        if (mFullImageTarget != null) {
+    public void finish() {
+        /*if (mFullImageTarget != null) {
             Glide.clear(mFullImageTarget);
-        }
+        }*/
+        mImageView.recycle();
+        mImageView.setVisibility(View.INVISIBLE);
+        mThumb.setVisibility(View.VISIBLE);
     }
 
     private void loadVideo() {
@@ -472,7 +545,7 @@ public class ViewerPagerFragment extends Fragment {
     }
 
     private void attachPhotoView() {
-        mAttacher = mImageView.attachPhotoView();
+        /*mAttacher = mImageView.attachPhotoView();
         mAttacher.setOnMatrixChangeListener(new PhotoViewAttacher.OnMatrixChangedListener() {
             @Override
             public void onMatrixChanged(RectF rectF) {
@@ -503,7 +576,7 @@ public class ViewerPagerFragment extends Fragment {
             public void onPhotoTap(View view, float v, float v2) {
                 invokeToolbar();
             }
-        });
+        });*/
     }
 
     private void invokeToolbar() {
@@ -523,7 +596,7 @@ public class ViewerPagerFragment extends Fragment {
         if (mIsVideo) {
             return mVideo;
         } else {
-            return mImageView;
+            return mThumb;
         }
     }
 }

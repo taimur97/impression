@@ -903,7 +903,7 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     @Override
     public void finishAfterTransition() {
-        getViewerPagerFragment(mCurrentPosition).clearFullImageLoading();
+        getViewerPagerFragment(mCurrentPosition).finish();
 
         mIsReturningToMain = true;
         Intent data = new Intent();

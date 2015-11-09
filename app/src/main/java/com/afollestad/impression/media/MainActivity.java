@@ -79,11 +79,10 @@ public class MainActivity extends ThemedActivity
     public static final String EXTRA_OLD_ITEM_POSITION = "com.afollestad.impression.extra_old_item_position";
 
     public static final String ACTION_SELECT_ALBUM = BuildConfig.APPLICATION_ID + ".SELECT_FOLDER";
+    public static final String NAV_DRAWER_FRAGMENT = "NAV_DRAWER";
     private static final int SETTINGS_REQUEST = 9000;
-
     private static final String TAG = "MainActivity";
     private static final boolean DEBUG = true;
-
     private DrawerLayout mDrawerLayout;
     private AnimatedDrawerToggle mAnimatedDrawerToggle;
     private boolean mPickMode;
@@ -142,12 +141,12 @@ public class MainActivity extends ThemedActivity
         }
     }
 
-    public void animateDrawerArrow(boolean closed) {
+    public void animateDrawerArrow(boolean close) {
         float currentOffset;
-        if (mAnimatedDrawerToggle == null || (currentOffset = mAnimatedDrawerToggle.getOffset()) == (closed ? 0 : 1))
+        if (mAnimatedDrawerToggle == null || (currentOffset = mAnimatedDrawerToggle.getOffset()) == (close ? 0 : 1))
             return;
         ValueAnimator anim;
-        if (closed) {
+        if (close) {
             anim = ValueAnimator.ofFloat(currentOffset, 0f);
         } else {
             anim = ValueAnimator.ofFloat(currentOffset, 1f);
@@ -318,9 +317,8 @@ public class MainActivity extends ThemedActivity
                         }
                     }).show();
         } else {
-            MediaFragment content = findMediaFragment();
-            if (content != null) content.reload();
-            NavDrawerFragment nav = (NavDrawerFragment) getFragmentManager().findFragmentByTag("NAV_DRAWER");
+            switchAlbum(null);
+            NavDrawerFragment nav = (NavDrawerFragment) getFragmentManager().findFragmentByTag(NAV_DRAWER_FRAGMENT);
             if (nav != null) nav.reloadAccounts();
         }
     }
@@ -353,7 +351,7 @@ public class MainActivity extends ThemedActivity
                 @Override
                 public void onDrawerClosed(View drawerView) {
                     super.onDrawerClosed(drawerView);
-                    Fragment nav = getFragmentManager().findFragmentByTag("NAV_DRAWER");
+                    Fragment nav = getFragmentManager().findFragmentByTag(NAV_DRAWER_FRAGMENT);
                     if (nav != null)
                         ((NavDrawerFragment) nav).notifyClosed();
                 }
@@ -522,8 +520,6 @@ public class MainActivity extends ThemedActivity
                 public boolean onPreDraw() {
                     recyclerView.getViewTreeObserver().removeOnPreDrawListener(this);
 
-                    //TODO
-                    // mRecyclerView.requestLayout();
                     startPostponedEnterTransition();
                     return true;
                 }
@@ -672,7 +668,7 @@ public class MainActivity extends ThemedActivity
     }
 
     public void reloadNavDrawerAlbums() {
-        NavDrawerFragment nav = (NavDrawerFragment) getFragmentManager().findFragmentByTag("NAV_DRAWER");
+        NavDrawerFragment nav = (NavDrawerFragment) getFragmentManager().findFragmentByTag(NAV_DRAWER_FRAGMENT);
         if (nav != null) {
             if (nav.mCurrentAccount == null)
                 nav.reloadAccounts();

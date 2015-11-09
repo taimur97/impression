@@ -201,8 +201,8 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
                         act.switchAlbum(pic.data());
                     } else {
                         ImpressionImageView iv = (ImpressionImageView) view.findViewById(R.id.image);
-                        int width = iv.getDrawable().getIntrinsicWidth();
-                        int height = iv.getDrawable().getIntrinsicHeight();
+                        int width = iv.getWidth();
+                        int height = iv.getHeight();
                         ViewerActivity.MediaWrapper wrapper = getView().getAdapter().getMedia();
                         final Intent intent = new Intent(act, ViewerActivity.class)
                                 .putExtra(ViewerActivity.EXTRA_MEDIA_ENTRIES, wrapper)

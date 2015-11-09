@@ -3,8 +3,13 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <com.afollestad.impression.widget.ScaleListenerImageView
+    <com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView
         android:id="@+id/photo"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <com.afollestad.impression.widget.ScaleListenerImageView
+        android:id="@+id/thumb"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_gravity="center"
