@@ -85,6 +85,9 @@ public class ImpressionImageView extends ImageView {
                         if (toTransform.getWidth() > toTransform.getHeight()) {
                             outHeight = outHeight;
                             outWidth = (int) (((float) toTransform.getHeight() / outHeight) * toTransform.getWidth());
+                        }else{
+                            outWidth = outWidth;
+                            outHeight = (int) (((float) toTransform.getWidth() / outWidth) * toTransform.getHeight());
                         }
 
                         return super.transform(pool, toTransform, outWidth, outHeight);

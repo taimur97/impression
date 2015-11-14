@@ -21,9 +21,9 @@ import android.support.v4.view.animation.FastOutSlowInInterpolator;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBarDrawerToggle;
-import android.support.v7.internal.view.menu.ListMenuItemView;
-import android.support.v7.internal.view.menu.MenuPopupHelper;
-import android.support.v7.widget.ActionMenuPresenter;
+import android.support.v7.view.menu.BaseMenuPresenter;
+import android.support.v7.view.menu.ListMenuItemView;
+import android.support.v7.view.menu.MenuPopupHelper;
 import android.support.v7.widget.ActionMenuView;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
@@ -693,7 +693,9 @@ public class MainActivity extends ThemedActivity
 
                     Field f2 = ActionMenuView.class.getDeclaredField("mPresenter");
                     f2.setAccessible(true);
-                    ActionMenuPresenter presenter = (ActionMenuPresenter) f2.get(actionMenuView);
+
+                    //Actually ActionMenuPresenter
+                    BaseMenuPresenter presenter = (BaseMenuPresenter) f2.get(actionMenuView);
 
                     Field f3 = presenter.getClass().getDeclaredField("mOverflowPopup");
                     f3.setAccessible(true);

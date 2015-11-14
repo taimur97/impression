@@ -2,7 +2,9 @@ package com.afollestad.impression.viewer;
 
 import android.annotation.TargetApi;
 import android.app.Fragment;
+import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.RectF;
 import android.net.Uri;
 import android.os.Build;
@@ -11,13 +13,14 @@ import android.support.annotation.Nullable;
 import android.support.v4.view.ViewCompat;
 import android.transition.Transition;
 import android.util.Log;
+import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
-import android.widget.ImageView;
 
+import com.afollestad.impression.BuildConfig;
 import com.afollestad.impression.R;
 import com.afollestad.impression.api.PhotoEntry;
 import com.afollestad.impression.api.VideoEntry;
@@ -38,7 +41,17 @@ import com.davemorrissey.labs.subscaleview.ImageSource;
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
 
+import rx.Single;
+import rx.SingleSubscriber;
+import rx.Subscription;
+import rx.android.schedulers.AndroidSchedulers;
+import rx.functions.Action1;
+import rx.schedulers.Schedulers;
 import uk.co.senab.photoview.PhotoViewAttacher;
 
 /**
@@ -73,16 +86,15 @@ public class ViewerPagerFragment extends Fragment {
     private int mIndex;
     private boolean mIsActive;
 
-    private SimpleTarget<Bitmap> mFullImageTarget;
-
     private PhotoViewAttacher mAttacher;
     private ScaleListenerImageView mThumb;
     private SubsamplingScaleImageView mImageView;
     private ImpressionVideoView mVideo;
 
     private Bitmap mThumbnailBitmap;
-    private int mFullWidth;
-    private int mFullHeight;
+    private int mFullWidth = -1;
+    private int mFullHeight = -1;
+    private Subscription mFullSizeSubscription;
 
     public static ViewerPagerFragment create(MediaEntry entry, int index, int width, int height) {
         ViewerPagerFragment frag = new ViewerPagerFragment();
@@ -93,6 +105,15 @@ public class ViewerPagerFragment extends Fragment {
         args.putInt(INIT_HEIGHT, height);
         frag.setArguments(args);
         return frag;
+    }
+
+    public static InputStream openStream(Context context, Uri uri) throws FileNotFoundException {
+        if (uri == null) return null;
+        if (uri.getScheme() == null || uri.getScheme().equalsIgnoreCase("file")) {
+            return new FileInputStream(uri.getPath());
+        } else {
+            return context.getContentResolver().openInputStream(uri);
+        }
     }
 
     @Override
@@ -124,6 +145,9 @@ public class ViewerPagerFragment extends Fragment {
         } else {
             view = inflater.inflate(R.layout.fragment_viewer, container, false);
             mImageView = (SubsamplingScaleImageView) view.findViewById(R.id.photo);
+            if (BuildConfig.DEBUG) {
+                mImageView.setDebug(true);
+            }
 
             mThumb = (ScaleListenerImageView) view.findViewById(R.id.thumb);
 
@@ -133,17 +157,18 @@ public class ViewerPagerFragment extends Fragment {
     }
 
     public void setIsActive(boolean active) {
-        boolean old = mIsActive;
+        boolean wasActive = mIsActive;
         mIsActive = active;
+
         if (!mIsActive) {
             if (mVideo != null) {
                 mVideo.pause(false);
             }
-            if (old != mIsActive && isAdded()) {
+            if (wasActive != mIsActive && isAdded()) {
                 loadThumbAndFullIfCurrent();
             }
         } else {
-            if (!old && isAdded()) {
+            if (!wasActive && isAdded()) {
                 loadFullImage();
             }
         }
@@ -201,8 +226,21 @@ public class ViewerPagerFragment extends Fragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+        recycleFullImageShowThumbnail();
         /*if (mAttacher != null)
             mAttacher.cleanup();*/
+    }
+
+    private BitmapFactory.Options getBitmapOptions(String uri) throws IOException {
+        InputStream is;
+        BitmapFactory.Options options;
+        is = openStream(getActivity(), Uri.parse(uri));
+        options = new BitmapFactory.Options();
+        //Only the properties, so we can get the width/height
+        options.inJustDecodeBounds = true;
+        BitmapFactory.decodeStream(is, null, options);
+        is.close();
+        return options;
     }
 
     private void loadThumbAndFullIfCurrent() {
@@ -214,37 +252,9 @@ public class ViewerPagerFragment extends Fragment {
         }
 
         if (!isGif()) {
-            mThumb.setVisibility(View.VISIBLE);
-            mImageView.recycle();
-            mImageView.setVisibility(View.INVISIBLE);
+
             // Sets the initial cached thumbnail while the rest of loading takes place
             Glide.with(this)
-                    /*.using(new StreamModelLoader<String>() {
-                        @Override
-                        public DataFetcher<InputStream> getResourceFetcher(final String model, int i, int i1) {
-                            return new DataFetcher<InputStream>() {
-                                @Override
-                                public InputStream loadData(Priority priority) throws Exception {
-                                    throw new IOException();
-                                }
-
-                                @Override
-                                public void cleanup() {
-
-                                }
-
-                                @Override
-                                public String getId() {
-                                    return model;
-                                }
-
-                                @Override
-                                public void cancel() {
-
-                                }
-                            };
-                        }
-                    })*/
                     .load(mEntry.data())
                     .asBitmap()
                     .diskCacheStrategy(DiskCacheStrategy.RESULT)
@@ -257,6 +267,9 @@ public class ViewerPagerFragment extends Fragment {
                             if (toTransform.getWidth() > toTransform.getHeight()) {
                                 outHeight = outHeight;
                                 outWidth = (int) (((float) toTransform.getHeight() / outHeight) * toTransform.getWidth());
+                            } else {
+                                outWidth = outWidth;
+                                outHeight = (int) (((float) toTransform.getWidth() / outWidth) * toTransform.getHeight());
                             }
 
                             return super.transform(pool, toTransform, outWidth, outHeight);
@@ -286,12 +299,16 @@ public class ViewerPagerFragment extends Fragment {
                     .into(new SimpleTarget<Bitmap>() {
                         @Override
                         public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
-                            ((ViewerActivity) getActivity()).invalidateTransition();
+                            final ViewerActivity activity = (ViewerActivity) getActivity();
 
-                            /*mThumbnailBitmap = resource;*/
+                            recycleFullImageShowThumbnail();
+
+                            mThumbnailBitmap = resource;
 
                             mThumb.setImageBitmap(resource);
-                            mThumb.setScaleType(ImageView.ScaleType.FIT_CENTER);
+                            Log.e("HI", "mThumb set imagebitmap" + mThumb.toString());
+
+                            activity.invalidateTransition();
                         }
                     });
         } else {
@@ -303,12 +320,29 @@ public class ViewerPagerFragment extends Fragment {
         }
     }
 
+    private void recycleFullImageShowThumbnail() {
+        if (mFullSizeSubscription != null) {
+            mFullSizeSubscription.unsubscribe();
+            mFullSizeSubscription = null;
+        }
+
+        if (mImageView != null) {
+            mImageView.setOnImageEventListener(null);
+            mImageView.recycle();
+            mImageView.setVisibility(View.INVISIBLE);
+        }
+
+        if (mThumb != null) {
+            mThumb.setVisibility(View.VISIBLE);
+        }
+    }
+
     private void loadFullImage() {
         final ViewerActivity act = (ViewerActivity) getActivity();
 
         // If the activity transition didn't finish yet, wait for it to do so
         // So that the photo view attacher attaches correctly.
-        if (!act.mFinishedTransition && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+        if (!act.isFinishedTransition() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             act.getWindow().getSharedElementEnterTransition().addListener(new Transition.TransitionListener() {
                 @Override
                 public void onTransitionStart(Transition transition) {
@@ -333,7 +367,7 @@ public class ViewerPagerFragment extends Fragment {
                     if (act == null)
                         return;
                     act.getWindow().getSharedElementEnterTransition().removeListener(this);
-                    act.mFinishedTransition = true;
+                    act.setFinishedTransition(true);
 
                     if (isAdded()) {
                         loadFullImage();
@@ -374,46 +408,33 @@ public class ViewerPagerFragment extends Fragment {
                     })
                     .into(mImageView);*/
         } else {
-            // Load the full size image into the view from the file
-            mImageView.setVisibility(View.VISIBLE);
-            mImageView.setImage(ImageSource.uri(mEntry.data())/*.dimensions(300, 400), ImageSource.bitmap(mThumbnailBitmap)*/);
-            mImageView.setOnImageEventListener(new SubsamplingScaleImageView.OnImageEventListener() {
-                @Override
-                public void onReady() {
 
-                }
-
-                @Override
-                public void onImageLoaded() {
-                    final ViewerActivity activity = (ViewerActivity) getActivity();
-                    if (activity != null)
-                        activity.invalidateTransition();
-                    mThumb.setVisibility(View.INVISIBLE);
-                }
-
-                @Override
-                public void onPreviewLoadError(Exception e) {
-
-                }
-
-                @Override
-                public void onImageLoadError(Exception e) {
-
-                }
-
-                @Override
-                public void onTileLoadError(Exception e) {
-
-                }
-            });
-
-            mImageView.setDebug(true);
-            mImageView.setOnTouchListener(new View.OnTouchListener() {
-                @Override
-                public boolean onTouch(View v, MotionEvent event) {
-                    return false;
-                }
-            });
+            if (mFullWidth == -1 || mFullHeight == -1) {
+                mFullSizeSubscription = Single.create(new Single.OnSubscribe<Pair<Integer, Integer>>() {
+                    @Override
+                    public void call(SingleSubscriber<? super Pair<Integer, Integer>> singleSubscriber) {
+                        BitmapFactory.Options options;
+                        try {
+                            options = getBitmapOptions(mEntry.data());
+                            singleSubscriber.onSuccess(new Pair<>(options.outWidth, options.outHeight));
+                        } catch (IOException e) {
+                            singleSubscriber.onError(e);
+                        }
+                    }
+                }).subscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(new Action1<Pair<Integer, Integer>>() {
+                            @Override
+                            public void call(Pair<Integer, Integer> size) {
+                                mFullWidth = size.first;
+                                mFullHeight = size.second;
+                                mFullSizeSubscription = null;
+                                onFullSizeReady();
+                            }
+                        });
+            } else {
+                onFullSizeReady();
+            }
 
             /*mFullImageTarget = Glide.with(this)
                     .load(getUri().toString())
@@ -480,13 +501,48 @@ public class ViewerPagerFragment extends Fragment {
         }
     }
 
+    private void onFullSizeReady() {
+        // Load the full size image into the view from the file
+        mImageView.setOnImageEventListener(new SubsamplingScaleImageView.DefaultOnImageEventListener() {
+
+            @Override
+            public void onImageLoaded() {
+                final ViewerActivity activity = (ViewerActivity) getActivity();
+                if (activity != null)
+                    activity.invalidateTransition();
+            }
+
+            @Override
+            public void onPreviewLoaded() {
+                Log.e("HI", "Preview loaded, attempt hide thumb" + mThumb.toString());
+                //TODO: Figure out why just setting visibility doesn't work?
+                mThumb.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (mIsActive) {
+                            mThumb.setVisibility(View.INVISIBLE);
+                        }
+                    }
+                }, 150);
+            }
+        });
+
+        mImageView.setVisibility(View.VISIBLE);
+        mImageView.setImage(ImageSource.uri(mEntry.data()).dimensions(mFullWidth, mFullHeight), ImageSource.cachedBitmap(mThumbnailBitmap));
+
+        mImageView.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                return false;
+            }
+        });
+    }
+
     public void finish() {
         /*if (mFullImageTarget != null) {
             Glide.clear(mFullImageTarget);
         }*/
-        mImageView.recycle();
-        mImageView.setVisibility(View.INVISIBLE);
-        mThumb.setVisibility(View.VISIBLE);
+        recycleFullImageShowThumbnail();
     }
 
     private void loadVideo() {
@@ -499,7 +555,7 @@ public class ViewerPagerFragment extends Fragment {
         ViewerActivity act = (ViewerActivity) getActivity();
         if (act == null)
             return;
-        else if (!act.mFinishedTransition && mIsActive && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+        else if (!act.isFinishedTransition() && mIsActive && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             // If the activity transition didn't finish yet, wait for it to do so
             // So that the photo view attacher attaches correctly.
             act.getWindow().getSharedElementEnterTransition().addListener(new Transition.TransitionListener() {
@@ -526,7 +582,7 @@ public class ViewerPagerFragment extends Fragment {
                     if (act == null)
                         return;
                     act.getWindow().getEnterTransition().removeListener(this);
-                    act.mFinishedTransition = true;
+                    act.setFinishedTransition(true);
                     if (isAdded())
                         loadVideo();
                 }

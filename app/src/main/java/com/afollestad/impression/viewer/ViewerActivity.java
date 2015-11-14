@@ -86,7 +86,7 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
     private static final String STATE_OLD_POSITION = "state_old_position";
 
     public Toolbar mToolbar;
-    public boolean mFinishedTransition;
+    private boolean mFinishedTransition;
     private List<MediaEntry> mEntries;
 
     private ViewPager mPager;
@@ -202,7 +202,7 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     private void setupSharedElementCallback() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) return;
-        final SharedElementCallback mCallback = new SharedElementCallback() {
+        final SharedElementCallback enterCallback = new SharedElementCallback() {
             @Override
             public void onMapSharedElements(List<String> names, Map<String, View> sharedElements) {
                 if (mIsReturningToMain) {
@@ -286,7 +286,7 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
                                            List<View> sharedElementSnapshots) {
             }
         };
-        setEnterSharedElementCallback(mCallback);
+        setEnterSharedElementCallback(enterCallback);
     }
 
     @Override
@@ -498,7 +498,7 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
     @Override
     protected void onPause() {
         super.onPause();
-        mPager.removeOnPageChangeListener(mPagerListener);
+        // mPager.removeOnPageChangeListener(mPagerListener);
     }
 
     private int translateToViewerIndex(int remote) {
@@ -912,6 +912,14 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
         data.putExtra(EXTRA_CURRENT_ITEM_POSITION, mCurrentPosition);
         setResult(RESULT_OK, data);
         super.finishAfterTransition();
+    }
+
+    public boolean isFinishedTransition() {
+        return mFinishedTransition;
+    }
+
+    public void setFinishedTransition(boolean mFinishedTransition) {
+        this.mFinishedTransition = mFinishedTransition;
     }
 
     public interface ToolbarFadeListener {

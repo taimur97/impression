@@ -23,7 +23,6 @@ import android.app.FragmentTransaction;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.support.v13.app.FragmentCompat;
-import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.PagerAdapter;
 import android.util.Log;
 import android.view.View;
@@ -187,7 +186,7 @@ public abstract class FragmentStatePagerAdapter extends PagerAdapter {
         }
         for (int i = 0; i < mFragments.size(); i++) {
             Fragment f = mFragments.get(i);
-            if (f != null) {
+            if (f != null && f.isAdded()) {
                 if (state == null) {
                     state = new Bundle();
                 }
