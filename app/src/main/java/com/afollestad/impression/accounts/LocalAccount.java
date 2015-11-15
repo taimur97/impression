@@ -8,6 +8,8 @@ import android.os.Environment;
 import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
+import android.support.annotation.WorkerThread;
+import android.util.Pair;
 
 import com.afollestad.impression.R;
 import com.afollestad.impression.accounts.base.Account;
@@ -29,10 +31,16 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
+import rx.Single;
+import rx.SingleSubscriber;
+import rx.android.schedulers.AndroidSchedulers;
+import rx.functions.Func1;
+import rx.schedulers.Schedulers;
+
 /**
  * @author Aidan Follestad (afollestad)
  */
-public class LocalAccount extends Account implements AsyncCursor.Callback {
+public class LocalAccount extends Account {
 
     private final LinkedList<AlbumCallback> mAlbumCallbacks;
     private final LinkedList<AlbumCallback> mIncludedFolderCallbacks;
@@ -120,7 +128,25 @@ public class LocalAccount extends Account implements AsyncCursor.Callback {
                         null,
                         null
                 })
-                .query(this);
+                .query().subscribeOn(Schedulers.io())
+                .flatMap(new Func1<Pair<Cursor[], Uri[]>, Single<AlbumEntry[]>>() {
+                    @Override
+                    public Single<AlbumEntry[]> call(Pair<Cursor[], Uri[]> cursors) {
+                        return toEntries(cursors.first, cursors.second);
+                    }
+                })
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new SingleSubscriber<MediaEntry[]>() {
+                    @Override
+                    public void onSuccess(MediaEntry[] value) {
+                        mAlbumCallbacks.poll().onAlbums((AlbumEntry[]) value);
+                    }
+
+                    @Override
+                    public void onError(Throwable error) {
+
+                    }
+                });
     }
 
     @Override
@@ -137,7 +163,26 @@ public class LocalAccount extends Account implements AsyncCursor.Callback {
                 .sorts(new String[]{null})
                 .selections(new String[]{null})
                 .selectionArgs(new String[][]{null})
-                .query(this);
+                .query()
+                .subscribeOn(Schedulers.io())
+                .flatMap(new Func1<Pair<Cursor[], Uri[]>, Single<AlbumEntry[]>>() {
+                    @Override
+                    public Single<AlbumEntry[]> call(Pair<Cursor[], Uri[]> cursors) {
+                        return toEntries(cursors.first, cursors.second);
+                    }
+                })
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new SingleSubscriber<MediaEntry[]>() {
+                    @Override
+                    public void onSuccess(MediaEntry[] value) {
+                        mIncludedFolderCallbacks.poll().onAlbums((AlbumEntry[]) value);
+                    }
+
+                    @Override
+                    public void onError(Throwable error) {
+
+                    }
+                });
     }
 
     private void getOverviewEntries(MediaAdapter.SortMode sort, MediaAdapter.FileFilterMode filter, final EntriesCallback callback) {
@@ -333,83 +378,99 @@ public class LocalAccount extends Account implements AsyncCursor.Callback {
         }
     }
 
-    @Override
-    public void onLoad(Cursor[] cursors, Uri[] from) {
-        if (from[0].toString().equals(IncludedFolderProvider.CONTENT_URI.toString())) {
-            List<AlbumEntry> results = new ArrayList<>();
-            while (cursors[0].moveToNext()) {
-                String path = cursors[0].getString(cursors[0].getColumnIndex("path"));
-                final boolean is = PreferenceManager.getDefaultSharedPreferences(getContext()).getBoolean("include_subfolders_included", true);
-                final List<MediaEntry> contents = Utils.getEntriesFromFolder(getContext(), new File(path), false, is, mFilterMode);
 
-                // Make sure the albums loaded before (which are references here) have the use path ID so they load directory contents when tapped
-                if (mPreEntries != null) {
-                    for (AlbumEntry e : mPreEntries) {
-                        if (e.data().equals(path)) {
-                            e.setBucketId(AlbumEntry.ALBUM_ID_USEPATH);
-                            break;
-                        }
+    public Single<AlbumEntry[]> toEntries(final Cursor[] cursors, final Uri[] from) {
+        return Single.create(new Single.OnSubscribe<AlbumEntry[]>() {
+            @Override
+            @WorkerThread
+            public void call(SingleSubscriber<? super AlbumEntry[]> singleSubscriber) {
+                if (from[0].toString().equals(IncludedFolderProvider.CONTENT_URI.toString())) {
+                    toEntriesForIncludedFolders(singleSubscriber, cursors);
+                } else {
+                    toEntriesForAlbums(singleSubscriber, cursors);
+                }
+                for (int i = 0; i < cursors.length; i++) {
+                    cursors[i].close();
+                    cursors[i] = null;
+                }
+            }
+        });
+    }
+
+    private void toEntriesForAlbums(SingleSubscriber<? super AlbumEntry[]> singleSubscriber, Cursor[] cursors) {
+        final List<AlbumEntry> results = new ArrayList<>();
+        for (Cursor data : cursors) {
+            while (data.moveToNext()) {
+                LoaderEntry entry = LoaderEntry.load(data);
+                if (entry.data() == null || entry.data().isEmpty())
+                    continue;
+                String parentPath = entry.parent();
+                if (ExcludedFolderProvider.contains(getContext(), parentPath))
+                    continue;
+
+                boolean found = false;
+                for (AlbumEntry e : results) {
+                    if (e.data().equals(parentPath)) {
+                        found = true;
+                        e.putLoaded(LoaderEntry.load(data));
+                        break;
                     }
                 }
-
-                if (contents.size() == 0) {
-                    AlbumEntry newEntry = new AlbumEntry(path, AlbumEntry.ALBUM_ID_USEPATH);
+                if (!found) {
+                    AlbumEntry newEntry = new AlbumEntry(parentPath, entry.bucketId());
+                    newEntry.putLoaded(entry);
                     results.add(newEntry);
-                } else {
-                    for (MediaEntry data : contents) {
-                        LoaderEntry entry = LoaderEntry.load(new File(data.data()));
-                        boolean found = false;
-                        for (AlbumEntry e : results) {
-                            if (e.data().equals(path)) {
-                                found = true;
-                                e.putLoaded(entry);
-                                break;
-                            }
-                        }
-                        if (!found) {
-                            AlbumEntry newEntry = new AlbumEntry(path, AlbumEntry.ALBUM_ID_USEPATH);
-                            newEntry.putLoaded(entry);
-                            results.add(newEntry);
-                        }
+                }
+            }
+        }
+        for (AlbumEntry entry : results)
+            entry.processLoaded(getContext());
+
+        singleSubscriber.onSuccess(results.toArray(new AlbumEntry[results.size()]));
+    }
+
+    private void toEntriesForIncludedFolders(SingleSubscriber<? super AlbumEntry[]> singleSubscriber, Cursor[] cursors) {
+        List<AlbumEntry> results = new ArrayList<>();
+        while (cursors[0].moveToNext()) {
+            String path = cursors[0].getString(cursors[0].getColumnIndex("path"));
+            final boolean is = PreferenceManager.getDefaultSharedPreferences(getContext()).getBoolean("include_subfolders_included", true);
+            final List<MediaEntry> contents = Utils.getEntriesFromFolder(getContext(), new File(path), false, is, mFilterMode);
+
+            // Make sure the albums loaded before (which are references here) have the use path ID so they load directory contents when tapped
+            if (mPreEntries != null) {
+                for (AlbumEntry e : mPreEntries) {
+                    if (e.data().equals(path)) {
+                        e.setBucketId(AlbumEntry.ALBUM_ID_USEPATH);
+                        break;
                     }
                 }
             }
-            for (AlbumEntry entry : results)
-                entry.processLoaded(getContext());
-            mIncludedFolderCallbacks.poll().onAlbums(results.toArray(new AlbumEntry[results.size()]));
-        } else {
-            final List<AlbumEntry> results = new ArrayList<>();
-            for (Cursor data : cursors) {
-                while (data.moveToNext()) {
-                    LoaderEntry entry = LoaderEntry.load(data);
-                    if (entry.data() == null || entry.data().isEmpty())
-                        continue;
-                    String parentPath = entry.parent();
-                    if (ExcludedFolderProvider.contains(getContext(), parentPath))
-                        continue;
 
+            if (contents.size() == 0) {
+                AlbumEntry newEntry = new AlbumEntry(path, AlbumEntry.ALBUM_ID_USEPATH);
+                results.add(newEntry);
+            } else {
+                for (MediaEntry data : contents) {
+                    LoaderEntry entry = LoaderEntry.load(new File(data.data()));
                     boolean found = false;
                     for (AlbumEntry e : results) {
-                        if (e.data().equals(parentPath)) {
+                        if (e.data().equals(path)) {
                             found = true;
-                            e.putLoaded(LoaderEntry.load(data));
+                            e.putLoaded(entry);
                             break;
                         }
                     }
                     if (!found) {
-                        AlbumEntry newEntry = new AlbumEntry(parentPath, entry.bucketId());
+                        AlbumEntry newEntry = new AlbumEntry(path, AlbumEntry.ALBUM_ID_USEPATH);
                         newEntry.putLoaded(entry);
                         results.add(newEntry);
                     }
                 }
             }
-            for (AlbumEntry entry : results)
-                entry.processLoaded(getContext());
-            mAlbumCallbacks.poll().onAlbums(results.toArray(new AlbumEntry[results.size()]));
         }
-        for (int i = 0; i < cursors.length; i++) {
-            cursors[i].close();
-            cursors[i] = null;
-        }
+        for (AlbumEntry entry : results)
+            entry.processLoaded(getContext());
+
+        singleSubscriber.onSuccess(results.toArray(new AlbumEntry[results.size()]));
     }
 }

@@ -65,7 +65,7 @@ public class ViewerPagerFragment extends Fragment {
     public static final String INIT_HEIGHT = "height";
 
     public static final String INIT_INDEX = "index";
-    public static final String INIT_MEDIA = "media";
+    public static final String INIT_MEDIA_ENTRY = "media";
     public static final String INIT_MEDIA_PATH = "media_path";
 
     private static final short LIGHT_MODE_UNLOADED = 0;
@@ -89,7 +89,7 @@ public class ViewerPagerFragment extends Fragment {
     private PhotoViewAttacher mAttacher;
     private ScaleListenerImageView mThumb;
     private SubsamplingScaleImageView mImageView;
-    private ImpressionVideoView mVideo;
+    private ImpressionVideoView mVideoView;
 
     private Bitmap mThumbnailBitmap;
     private int mFullWidth = -1;
@@ -99,7 +99,7 @@ public class ViewerPagerFragment extends Fragment {
     public static ViewerPagerFragment create(MediaEntry entry, int index, int width, int height) {
         ViewerPagerFragment frag = new ViewerPagerFragment();
         Bundle args = new Bundle();
-        args.putSerializable(INIT_MEDIA, entry);
+        args.putSerializable(INIT_MEDIA_ENTRY, entry);
         args.putInt(INIT_INDEX, index);
         args.putInt(INIT_WIDTH, width);
         args.putInt(INIT_HEIGHT, height);
@@ -124,8 +124,8 @@ public class ViewerPagerFragment extends Fragment {
         mThumbHeight = getArguments().getInt(INIT_HEIGHT);
 
         mIndex = getArguments().getInt(INIT_INDEX);
-        if (getArguments().containsKey(INIT_MEDIA)) {
-            mEntry = (MediaEntry) getArguments().getSerializable(INIT_MEDIA);
+        if (getArguments().containsKey(INIT_MEDIA_ENTRY)) {
+            mEntry = (MediaEntry) getArguments().getSerializable(INIT_MEDIA_ENTRY);
             mIsVideo = mEntry.isVideo();
         } else if (getArguments().containsKey(INIT_MEDIA_PATH)) {
             mMediaPath = getArguments().getString(INIT_MEDIA_PATH);
@@ -140,16 +140,17 @@ public class ViewerPagerFragment extends Fragment {
         final View view;
         if (mIsVideo) {
             view = inflater.inflate(R.layout.fragment_viewer_video, container, false);
-            mVideo = (ImpressionVideoView) view.findViewById(R.id.video);
-            ViewCompat.setTransitionName(mVideo, "view_" + mIndex);
+            mVideoView = (ImpressionVideoView) view.findViewById(R.id.video);
+            ViewCompat.setTransitionName(mVideoView, "view_" + mIndex);
         } else {
             view = inflater.inflate(R.layout.fragment_viewer, container, false);
+
             mImageView = (SubsamplingScaleImageView) view.findViewById(R.id.photo);
+            mThumb = (ScaleListenerImageView) view.findViewById(R.id.thumb);
+
             if (BuildConfig.DEBUG) {
                 mImageView.setDebug(true);
             }
-
-            mThumb = (ScaleListenerImageView) view.findViewById(R.id.thumb);
 
             ViewCompat.setTransitionName(mThumb, "view_" + mIndex);
         }
@@ -161,14 +162,15 @@ public class ViewerPagerFragment extends Fragment {
         mIsActive = active;
 
         if (!mIsActive) {
-            if (mVideo != null) {
-                mVideo.pause(false);
-            }
-            if (wasActive != mIsActive && isAdded()) {
+            if (mIsVideo) {
+                if (mVideoView != null) {
+                    mVideoView.pause(false);
+                }
+            } else if (wasActive && isAdded()) {
                 loadThumbAndFullIfCurrent();
             }
         } else {
-            if (!wasActive && isAdded()) {
+            if (!mIsVideo && !wasActive && isAdded()) {
                 loadFullImage();
             }
         }
@@ -206,13 +208,13 @@ public class ViewerPagerFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         if (mIsVideo) {
             if ((mEntry == null || mEntry.data() == null) && mMediaPath == null) return;
-            mVideo.setVideoURI(getUri());
+            mVideoView.setVideoURI(getUri());
             View playFrame = view.findViewById(R.id.playFrame);
             View seekFrame = view.findViewById(R.id.seekerFrame);
             FrameLayout.LayoutParams p = (FrameLayout.LayoutParams) seekFrame.getLayoutParams();
             p.rightMargin = ((ViewerActivity) getActivity()).getNavigationBarHeight(false, true);
             p.bottomMargin = ((ViewerActivity) getActivity()).getNavigationBarHeight(true, false);
-            mVideo.hookViews(this, playFrame);
+            mVideoView.hookViews(this, playFrame);
             loadVideo();
             ((ViewerActivity) getActivity()).invalidateTransition();
         } else {
@@ -590,8 +592,8 @@ public class ViewerPagerFragment extends Fragment {
             return;
         }
 
-        mVideo.start();
-        mVideo.pause();
+        mVideoView.start();
+        mVideoView.pause();
     }
 
     private void invalidateUnderToolbar(RectF rectF) {
@@ -650,7 +652,7 @@ public class ViewerPagerFragment extends Fragment {
     @Nullable
     public View getSharedElement() {
         if (mIsVideo) {
-            return mVideo;
+            return mVideoView;
         } else {
             return mThumb;
         }

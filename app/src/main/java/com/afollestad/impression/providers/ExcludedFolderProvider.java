@@ -6,6 +6,7 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Environment;
 import android.preference.PreferenceManager;
+import android.support.annotation.WorkerThread;
 
 import com.afollestad.impression.BuildConfig;
 import com.afollestad.impression.providers.base.ProviderBase;
@@ -34,6 +35,7 @@ public class ExcludedFolderProvider extends ProviderBase {
         context.getContentResolver().delete(CONTENT_URI, "path = ?", new String[]{path});
     }
 
+    @WorkerThread
     public static boolean contains(Context context, String path) {
         String selection;
         String[] args;

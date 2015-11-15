@@ -3,7 +3,10 @@ package com.afollestad.impression.api;
 import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
-import android.os.Handler;
+import android.util.Pair;
+
+import rx.Single;
+import rx.SingleSubscriber;
 
 /**
  * @author Aidan Follestad (afollestad)
@@ -11,7 +14,6 @@ import android.os.Handler;
 public class AsyncCursor {
 
     private final Context mContext;
-    private final Handler mHandler;
     private Uri[] mUris;
     private String[][] mProjections;
     private String[] mSelections;
@@ -21,7 +23,6 @@ public class AsyncCursor {
 
     public AsyncCursor(Context context) {
         mContext = context;
-        mHandler = new Handler();
     }
 
     public AsyncCursor uris(Uri[] uris) {
@@ -54,12 +55,11 @@ public class AsyncCursor {
         return this;
     }
 
-    public void query(final Callback callback) {
-        if (callback == null)
-            throw new IllegalArgumentException("Callback cannot be null.");
-        new Thread(new Runnable() {
+    public Single<Pair<Cursor[], Uri[]>> query() {
+        //TODO: Better Rx modularity
+        return Single.create(new Single.OnSubscribe<Pair<Cursor[], Uri[]>>() {
             @Override
-            public void run() {
+            public void call(SingleSubscriber<? super Pair<Cursor[], Uri[]>> singleSubscriber) {
                 final Cursor[] results = new Cursor[mUris.length];
                 for (int i = 0; i < mUris.length; i++) {
                     String sortMode = mSorts != null ? mSorts[i] : null;
@@ -77,17 +77,8 @@ public class AsyncCursor {
                             mSelectionArgs != null ? mSelectionArgs[i] : null,
                             sortMode);
                 }
-                mHandler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        callback.onLoad(results, mUris);
-                    }
-                });
+                singleSubscriber.onSuccess(new Pair<>(results, mUris));
             }
-        }).start();
-    }
-
-    public interface Callback {
-        void onLoad(Cursor[] data, Uri[] from);
+        });
     }
 }
