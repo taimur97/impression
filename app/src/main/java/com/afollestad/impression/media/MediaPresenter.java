@@ -27,20 +27,22 @@ import java.io.File;
 
 public class MediaPresenter extends MvpPresenter<MediaView> {
 
-    public static final String INIT_ALBUM_PATH = "albumPath";
+    public static final String INIT_PATH = "path";
+    private static final String STATE_PATH = "state_path";
 
-    private String mAlbumPath;
+    private String mPath;
     private boolean mLastDarkTheme;
 
     public static MediaFragment newInstance(String albumPath) {
         MediaFragment frag = new MediaFragment();
         Bundle args = new Bundle();
-        args.putString(INIT_ALBUM_PATH, albumPath);
+        args.putString(INIT_PATH, albumPath);
         frag.setArguments(args);
         return frag;
     }
 
     public void setGridModeOn(boolean gridMode) {
+        //noinspection ConstantConditions
         if (!isViewAttached() || getView().getContextCompat() == null) return;
 
         PrefUtils.setGridMode(getView().getContextCompat(), gridMode);
@@ -53,6 +55,7 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
     }
 
     protected final void setGridColumns(int width) {
+        //noinspection ConstantConditions
         if (!isViewAttached() || getView().getContextCompat() == null) return;
         final Resources r = getView().getContextCompat().getResources();
         final int orientation = r.getConfiguration().orientation;
@@ -64,10 +67,11 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
 
     public void onViewCreated() {
         if (isViewAttached()) {
+            //noinspection ConstantConditions
             final boolean gridMode = PrefUtils.isGridMode(getView().getContextCompat());
             getView().initializeRecyclerView(gridMode, PrefUtils.getGridColumns(getView().getContextCompat()), createAdapter());
 
-            setAlbumPath(mAlbumPath);
+            setPath(mPath);
         }
     }
 
@@ -77,10 +81,16 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
         }
     }
 
-    protected void onCreate() {
+    protected void onCreate(Bundle savedInstanceState) {
         if (isViewAttached()) {
             //noinspection ConstantConditions
-            mAlbumPath = getView().getArguments().getString(INIT_ALBUM_PATH);
+            if (savedInstanceState == null) {
+                //noinspection ConstantConditions
+                mPath = getView().getArguments().getString(INIT_PATH);
+            } else {
+                mPath = savedInstanceState.getString(STATE_PATH);
+            }
+            //noinspection ConstantConditions
             mLastDarkTheme = PrefUtils.isDarkTheme(getView().getContextCompat());
         }
     }
@@ -98,12 +108,12 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
             }
 
             //TODO: reload more efficiently
-            //setAlbumPath(mAlbumPath);
+            //setPath(mPath);
         }
     }
 
-    protected void createOptionsMenu() {
-
+    protected void onSaveInstanceState(Bundle bundle) {
+        bundle.putString(STATE_PATH, mPath);
     }
 
     String getTitle() {
@@ -111,11 +121,11 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
             if (PrefUtils.isExplorerMode(getView().getContextCompat())) {
                 // In explorer mode, the path is displayed in the bread crumbs so the name is shown instead
                 return getView().getContextCompat().getString(R.string.app_name);
-            } else if (mAlbumPath == null || mAlbumPath.equals(AlbumEntry.ALBUM_OVERVIEW) ||
-                    mAlbumPath.equals(Environment.getExternalStorageDirectory().getAbsolutePath())) {
+            } else if (mPath == null || mPath.equals(AlbumEntry.ALBUM_OVERVIEW) ||
+                    mPath.equals(Environment.getExternalStorageDirectory().getAbsolutePath())) {
                 return getView().getContextCompat().getString(R.string.overview);
             }
-            return new File(mAlbumPath).getName();
+            return new File(mPath).getName();
         }
         return null;
     }
@@ -125,23 +135,23 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
     }
 
     public String getAlbumPath() {
-        return mAlbumPath;
+        return mPath;
     }
 
     /**
      * Set the directory (different from the current one).
      */
-    public void setAlbumPath(String directory) {
+    public void setPath(String directory) {
         if (isViewAttached()) {
             getView().saveScrollPosition();
-            mAlbumPath = directory;
+            mPath = directory;
 
             final MainActivity mainActivity = (MainActivity) getView().getContextCompat();
 
             invalidateTitle(mainActivity);
-            mainActivity.invalidateArrow(mAlbumPath);
+            mainActivity.invalidateMenuArrow(mPath);
             mainActivity.supportInvalidateOptionsMenu();
-            getView().setCrumb(mainActivity.getCrumbs().findCrumb(mAlbumPath));
+            getView().setCrumb(mainActivity.getCrumbs().findCrumb(mPath));
             getView().reload();
         }
     }
@@ -150,7 +160,7 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
         if (isViewAttached()) {
             MainActivity act = (MainActivity) getView().getContextCompat();
             MediaAdapter.Callback callback = new MediaCallbackImpl();
-            return new MediaAdapter(act, SortMemoryProvider.getSortMode(act, mAlbumPath), callback, act.isSelectAlbumMode());
+            return new MediaAdapter(act, SortMemoryProvider.getSortMode(act, mPath), callback, act.isSelectAlbumMode());
         } else {
             return null;
         }

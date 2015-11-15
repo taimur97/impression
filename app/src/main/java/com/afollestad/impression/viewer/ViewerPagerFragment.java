@@ -10,12 +10,12 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.support.design.widget.Snackbar;
 import android.support.v4.view.ViewCompat;
 import android.transition.Transition;
 import android.util.Log;
 import android.util.Pair;
 import android.view.LayoutInflater;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
@@ -33,6 +33,7 @@ import com.bumptech.glide.Priority;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.bumptech.glide.load.engine.bitmap_recycle.BitmapPool;
 import com.bumptech.glide.load.resource.bitmap.FitCenter;
+import com.bumptech.glide.load.resource.gif.GifDrawable;
 import com.bumptech.glide.request.RequestListener;
 import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.target.SimpleTarget;
@@ -154,6 +155,12 @@ public class ViewerPagerFragment extends Fragment {
 
             ViewCompat.setTransitionName(mThumb, "view_" + mIndex);
         }
+        view.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                invokeToolbar();
+            }
+        });
         return view;
     }
 
@@ -253,70 +260,65 @@ public class ViewerPagerFragment extends Fragment {
             return;
         }
 
-        if (!isGif()) {
 
-            // Sets the initial cached thumbnail while the rest of loading takes place
-            Glide.with(this)
-                    .load(mEntry.data())
-                    .asBitmap()
-                    .diskCacheStrategy(DiskCacheStrategy.RESULT)
-                    .priority(Priority.IMMEDIATE)
-                    .dontAnimate()
-                    .override(mThumbWidth, mThumbHeight)
-                    .transform(new FitCenter(getActivity()) {
-                        @Override
-                        protected Bitmap transform(BitmapPool pool, Bitmap toTransform, int outWidth, int outHeight) {
-                            if (toTransform.getWidth() > toTransform.getHeight()) {
-                                outHeight = outHeight;
-                                outWidth = (int) (((float) toTransform.getHeight() / outHeight) * toTransform.getWidth());
-                            } else {
-                                outWidth = outWidth;
-                                outHeight = (int) (((float) toTransform.getWidth() / outWidth) * toTransform.getHeight());
-                            }
-
-                            return super.transform(pool, toTransform, outWidth, outHeight);
+        // Sets the initial cached thumbnail while the rest of loading takes place
+        Glide.with(this)
+                .load(getUri().toString())
+                .asBitmap()
+                .diskCacheStrategy(DiskCacheStrategy.RESULT)
+                .priority(Priority.IMMEDIATE)
+                .dontAnimate()
+                .override(mThumbWidth, mThumbHeight)
+                .transform(new FitCenter(getActivity()) {
+                    @Override
+                    protected Bitmap transform(BitmapPool pool, Bitmap toTransform, int outWidth, int outHeight) {
+                        if (toTransform.getWidth() > toTransform.getHeight()) {
+                            outHeight = outHeight;
+                            outWidth = (int) (((float) toTransform.getHeight() / outHeight) * toTransform.getWidth());
+                        } else {
+                            outWidth = outWidth;
+                            outHeight = (int) (((float) toTransform.getWidth() / outWidth) * toTransform.getHeight());
                         }
 
-                        @Override
-                        public String getId() {
-                            return "Octopus";
+                        return super.transform(pool, toTransform, outWidth, outHeight);
+                    }
+
+                    @Override
+                    public String getId() {
+                        return "Octopus";
+                    }
+                })
+                .listener(new RequestListener<String, Bitmap>() {
+                    @Override
+                    public boolean onException(Exception e, String model, Target<Bitmap> target, boolean isFirstResource) {
+                        return false;
+                    }
+
+                    @Override
+                    public boolean onResourceReady(Bitmap resource, String model, Target<Bitmap> target, boolean isFromMemoryCache, boolean isFirstResource) {
+                        if (!isFromMemoryCache) {
+                            Log.e("ViewerPager", "Image not from cache:" + model + " " + target.toString());
+                        } else {
+                            Log.e("ViewerPager", "Image from cache:" + model + " " + target.toString());
                         }
-                    })
-                    .listener(new RequestListener<String, Bitmap>() {
-                        @Override
-                        public boolean onException(Exception e, String model, Target<Bitmap> target, boolean isFirstResource) {
-                            return false;
-                        }
+                        return false;
+                    }
+                })
+                .into(new SimpleTarget<Bitmap>() {
+                    @Override
+                    public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
+                        final ViewerActivity activity = (ViewerActivity) getActivity();
 
-                        @Override
-                        public boolean onResourceReady(Bitmap resource, String model, Target<Bitmap> target, boolean isFromMemoryCache, boolean isFirstResource) {
-                            if (!isFromMemoryCache) {
-                                Log.e("ViewerPager", "Image not from cache:" + model + " " + target.toString());
-                            } else {
-                                Log.e("ViewerPager", "Image from cache:" + model + " " + target.toString());
-                            }
-                            return false;
-                        }
-                    })
-                    .into(new SimpleTarget<Bitmap>() {
-                        @Override
-                        public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
-                            final ViewerActivity activity = (ViewerActivity) getActivity();
+                        recycleFullImageShowThumbnail();
 
-                            recycleFullImageShowThumbnail();
+                        mThumbnailBitmap = resource;
 
-                            mThumbnailBitmap = resource;
+                        mThumb.setImageBitmap(resource);
+                        Log.e("HI", "mThumb set imagebitmap" + mThumb.toString());
 
-                            mThumb.setImageBitmap(resource);
-                            Log.e("HI", "mThumb set imagebitmap" + mThumb.toString());
-
-                            activity.invalidateTransition();
-                        }
-                    });
-        } else {
-            ((ViewerActivity) getActivity()).invalidateTransition();
-        }
-
+                        activity.invalidateTransition();
+                    }
+                });
         if (mIsActive) {
             loadFullImage();
         }
@@ -384,7 +386,7 @@ public class ViewerPagerFragment extends Fragment {
 //        }
 
         if (isGif()) {
-            /*// GIFs can't be loaded as a Bitmap
+            // GIFs can't be loaded as a Bitmap
             mLightMode = LIGHT_MODE_OFF;
             Glide.with(this)
                     .load(getUri().toString())
@@ -408,7 +410,7 @@ public class ViewerPagerFragment extends Fragment {
                             return false;
                         }
                     })
-                    .into(mImageView);*/
+                    .into(mThumb);
         } else {
 
             if (mFullWidth == -1 || mFullHeight == -1) {
@@ -417,7 +419,7 @@ public class ViewerPagerFragment extends Fragment {
                     public void call(SingleSubscriber<? super Pair<Integer, Integer>> singleSubscriber) {
                         BitmapFactory.Options options;
                         try {
-                            options = getBitmapOptions(mEntry.data());
+                            options = getBitmapOptions(getUri().toString());
                             singleSubscriber.onSuccess(new Pair<>(options.outWidth, options.outHeight));
                         } catch (IOException e) {
                             singleSubscriber.onError(e);
@@ -507,6 +509,28 @@ public class ViewerPagerFragment extends Fragment {
         // Load the full size image into the view from the file
         mImageView.setOnImageEventListener(new SubsamplingScaleImageView.DefaultOnImageEventListener() {
 
+            private void onError(Throwable e) {
+                Snackbar.make(mImageView, e.getLocalizedMessage(), Snackbar.LENGTH_SHORT);
+            }
+
+            @Override
+            public void onImageLoadError(Throwable e) {
+                super.onImageLoadError(e);
+                onError(e);
+            }
+
+            @Override
+            public void onTileLoadError(Throwable e) {
+                super.onTileLoadError(e);
+                onError(e);
+            }
+
+            @Override
+            public void onPreviewLoadError(Throwable e) {
+                super.onPreviewLoadError(e);
+                onError(e);
+            }
+
             @Override
             public void onImageLoaded() {
                 final ViewerActivity activity = (ViewerActivity) getActivity();
@@ -530,21 +554,18 @@ public class ViewerPagerFragment extends Fragment {
         });
 
         mImageView.setVisibility(View.VISIBLE);
-        mImageView.setImage(ImageSource.uri(mEntry.data()).dimensions(mFullWidth, mFullHeight), ImageSource.cachedBitmap(mThumbnailBitmap));
-
-        mImageView.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                return false;
-            }
-        });
+        mImageView.setImage(ImageSource.uri(getUri().toString()).dimensions(mFullWidth, mFullHeight), ImageSource.cachedBitmap(mThumbnailBitmap));
     }
 
     public void finish() {
         /*if (mFullImageTarget != null) {
             Glide.clear(mFullImageTarget);
         }*/
-        recycleFullImageShowThumbnail();
+        if (!isGif()) {
+            recycleFullImageShowThumbnail();
+        } else {
+            loadThumbAndFullIfCurrent();
+        }
     }
 
     private void loadVideo() {

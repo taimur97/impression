@@ -43,20 +43,20 @@ import static android.app.Activity.RESULT_OK;
 /**
  * @author Aidan Follestad (afollestad)
  */
-public class MediaFragment extends Fragment implements MediaView{
+public class MediaFragment extends Fragment implements MediaView {
 
     protected MediaAdapter.SortMode sortCache;
     protected BreadCrumbLayout.Crumb crumb;
     private RecyclerView mRecyclerView;
     private MediaAdapter mAdapter;
     private MediaPresenter mPresenter;
-    private boolean sortRememberDir = false;
+    private boolean mSortRememberDir = false;
 
     RecyclerView getRecyclerView() {
         return mRecyclerView;
     }
 
-    public final void jumpToTop(boolean animateChange) {
+    final void jumpToTop(boolean animateChange) {
         if (animateChange) {
             //stopAnimation();
             mRecyclerView.smoothScrollToPosition(0);
@@ -78,6 +78,12 @@ public class MediaFragment extends Fragment implements MediaView{
             v.findViewById(R.id.empty).setVisibility(View.GONE);
             v.findViewById(R.id.progress).setVisibility(View.VISIBLE);
         }
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        mPresenter.onSaveInstanceState(outState);
     }
 
     @Nullable
@@ -111,11 +117,10 @@ public class MediaFragment extends Fragment implements MediaView{
 
     public void updateGridModeOn(boolean gridMode) {
         int gridSpacing = getResources().getDimensionPixelSize(R.dimen.grid_spacing);
-        int listTopBottomPadding = getResources().getDimensionPixelSize(R.dimen.list_top_bottom_padding);
         if (gridMode) {
             mRecyclerView.setPadding(gridSpacing, 0, 0, gridSpacing);
         } else {
-            mRecyclerView.setPadding(0, listTopBottomPadding, 0, listTopBottomPadding);
+            mRecyclerView.setPadding(0, 0, 0, 0);
         }
     }
 
@@ -327,7 +332,7 @@ public class MediaFragment extends Fragment implements MediaView{
 
         mPresenter = createPresenter();
         mPresenter.attachView(this);
-        mPresenter.onCreate();
+        mPresenter.onCreate(savedInstanceState);
     }
 
     @Override
@@ -380,7 +385,7 @@ public class MediaFragment extends Fragment implements MediaView{
                     menu.findItem(R.id.sortModifiedDesc).setChecked(true);
                     break;
             }
-            menu.findItem(R.id.sortCurrentDir).setChecked(sortRememberDir);
+            menu.findItem(R.id.sortCurrentDir).setChecked(mSortRememberDir);
 
             MediaAdapter.FileFilterMode filterMode = PrefUtils.getFilterMode(getActivity());
             switch (filterMode) {
@@ -454,21 +459,21 @@ public class MediaFragment extends Fragment implements MediaView{
                 setSortMode(MediaAdapter.SortMode.NAME_ASC, mPresenter.getAlbumPath());
                 return true;
             case R.id.sortNameDesc:
-                setSortMode(MediaAdapter.SortMode.NAME_DESC, sortRememberDir ? mPresenter.getAlbumPath() : null);
+                setSortMode(MediaAdapter.SortMode.NAME_DESC, mSortRememberDir ? mPresenter.getAlbumPath() : null);
                 return true;
             case R.id.sortModifiedAsc:
-                setSortMode(MediaAdapter.SortMode.MODIFIED_DATE_ASC, sortRememberDir ? mPresenter.getAlbumPath() : null);
+                setSortMode(MediaAdapter.SortMode.MODIFIED_DATE_ASC, mSortRememberDir ? mPresenter.getAlbumPath() : null);
                 return true;
             case R.id.sortModifiedDesc:
-                setSortMode(MediaAdapter.SortMode.MODIFIED_DATE_DESC, sortRememberDir ? mPresenter.getAlbumPath() : null);
+                setSortMode(MediaAdapter.SortMode.MODIFIED_DATE_DESC, mSortRememberDir ? mPresenter.getAlbumPath() : null);
                 return true;
             case R.id.sortCurrentDir:
                 item.setChecked(!item.isChecked());
                 if (item.isChecked()) {
-                    sortRememberDir = true;
+                    mSortRememberDir = true;
                     setSortMode(sortCache, mPresenter.getAlbumPath());
                 } else {
-                    sortRememberDir = false;
+                    mSortRememberDir = false;
                     SortMemoryProvider.forget(getActivity(), mPresenter.getAlbumPath());
                     setSortMode(SortMemoryProvider.getSortMode(getActivity(), null), null);
                 }

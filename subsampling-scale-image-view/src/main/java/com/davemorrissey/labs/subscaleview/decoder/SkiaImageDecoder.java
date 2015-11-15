@@ -69,7 +69,7 @@ public class SkiaImageDecoder implements ImageDecoder {
                 if (inputStream != null) {
                     try {
                         inputStream.close();
-                    } catch (Exception e) {
+                    } catch (Exception ignored) {
                     }
                 }
             }

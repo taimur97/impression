@@ -2433,7 +2433,12 @@ public class SubsamplingScaleImageView extends View {
                         if (mSRegion != null) {
                             tile.fileSRect.offset(mSRegion.left, mSRegion.top);
                         }
-                        subscriber.onSuccess(decoder.decodeRegion(tile.fileSRect, tile.sampleSize));
+                        try {
+                            Bitmap region = decoder.decodeRegion(tile.fileSRect, tile.sampleSize);
+                            subscriber.onSuccess(region);
+                        } catch (OutOfMemoryError e) {
+                            subscriber.onError(e);
+                        }
                     }
                 } else {
                     tile.loading = false;
@@ -2479,7 +2484,7 @@ public class SubsamplingScaleImageView extends View {
                 Bitmap bitmap;
                 try {
                     bitmap = decoderFactory.make().decode(context, source);
-                } catch (Exception e) {
+                } catch (OutOfMemoryError | Exception e) {
                     subscriber.onError(e);
                     return;
                 }

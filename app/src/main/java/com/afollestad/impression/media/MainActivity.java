@@ -12,8 +12,6 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
-import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.view.GravityCompat;
@@ -57,6 +55,7 @@ import com.afollestad.impression.providers.IncludedFolderProvider;
 import com.afollestad.impression.providers.SortMemoryProvider;
 import com.afollestad.impression.ui.SettingsActivity;
 import com.afollestad.impression.ui.base.ThemedActivity;
+import com.afollestad.impression.utils.PrefUtils;
 import com.afollestad.impression.utils.Utils;
 import com.afollestad.impression.widget.BreadCrumbLayout;
 import com.afollestad.materialdialogs.MaterialDialog;
@@ -80,22 +79,28 @@ public class MainActivity extends ThemedActivity
 
     public static final String ACTION_SELECT_ALBUM = BuildConfig.APPLICATION_ID + ".SELECT_FOLDER";
     public static final String NAV_DRAWER_FRAGMENT = "NAV_DRAWER";
+    public static final String STATE_BREADCRUMBS = "breadcrumbs_state";
     private static final int SETTINGS_REQUEST = 9000;
     private static final String TAG = "MainActivity";
-    private static final boolean DEBUG = true;
     private DrawerLayout mDrawerLayout;
     private AnimatedDrawerToggle mAnimatedDrawerToggle;
+
     private boolean mPickMode;
+
     private SelectAlbumMode mSelectAlbumMode = SelectAlbumMode.NONE;
     private MediaCab mMediaCab;
     private Toolbar mToolbar;
+
     private BreadCrumbLayout mCrumbs;
     private CharSequence mTitle;
+
     private Bundle mTmpState;
     private boolean mIsReenteringFromViewer;
 
+    private String mNavSelectedPath;
+
     private static void LOG(String message, boolean isReentering) {
-        if (DEBUG) {
+        if (BuildConfig.DEBUG) {
             Log.i(TAG, String.format("%s: %s", isReentering ? "REENTERING" : "EXITING", message));
         }
     }
@@ -132,9 +137,8 @@ public class MainActivity extends ThemedActivity
         return mCrumbs;
     }
 
-    public void invalidateArrow(String albumPath) {
-        if (albumPath == null || albumPath.equals(AlbumEntry.ALBUM_OVERVIEW) ||
-                albumPath.equals(Environment.getExternalStorageDirectory().getAbsolutePath())) {
+    public void invalidateMenuArrow(String albumPath) {
+        if (albumPath == null || albumPath.equals(mNavSelectedPath) || PrefUtils.isExplorerMode(this)) {
             animateDrawerArrow(true);
         } else {
             animateDrawerArrow(false);
@@ -414,9 +418,9 @@ public class MainActivity extends ThemedActivity
             mMediaCab = MediaCab.restoreState(savedInstanceState, this);
         }
 
-        if (savedInstanceState != null && savedInstanceState.containsKey("breadcrumbs_state")) {
+        if (savedInstanceState != null && savedInstanceState.containsKey(STATE_BREADCRUMBS)) {
             mCrumbs.restoreFromStateWrapper((BreadCrumbLayout.SavedStateWrapper)
-                    savedInstanceState.getSerializable("breadcrumbs_state"), this);
+                    savedInstanceState.getSerializable(STATE_BREADCRUMBS), this);
         }
 
         SortMemoryProvider.cleanup(this);
@@ -436,14 +440,14 @@ public class MainActivity extends ThemedActivity
     }
 
     public void invalidateCrumbs() {
-        final boolean explorerMode = PreferenceManager.getDefaultSharedPreferences(this).getBoolean("explorer_mode", false);
+        final boolean explorerMode = PrefUtils.isExplorerMode(this);
         mCrumbs.setVisibility(explorerMode ? View.VISIBLE : View.GONE);
     }
 
     @Override
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        outState.putSerializable("breadcrumbs_state", mCrumbs.getStateWrapper());
+        outState.putSerializable(STATE_BREADCRUMBS, mCrumbs.getStateWrapper());
         if (mMediaCab != null)
             mMediaCab.saveState(outState);
     }
@@ -589,6 +593,8 @@ public class MainActivity extends ThemedActivity
     public boolean navDrawerSwitchAlbum(String path) {
         mDrawerLayout.closeDrawers();
 
+        mNavSelectedPath = path;
+
         MediaFragment frag = findMediaFragment();
         if (!path.equals(frag.getPresenter().getAlbumPath())) {
             mCrumbs.clearHistory();
@@ -608,6 +614,7 @@ public class MainActivity extends ThemedActivity
         if (wasNull) {
             // Initial directory
             path = AlbumEntry.ALBUM_OVERVIEW;
+            mNavSelectedPath = path;
         }
 
         BreadCrumbLayout.Crumb crumb = new BreadCrumbLayout.Crumb(this, path);
@@ -641,7 +648,7 @@ public class MainActivity extends ThemedActivity
             MediaPresenter presenter = frag.getPresenter();
             String albumPath = presenter.getAlbumPath();
             if (!albumPath.equals(to)) {
-                presenter.setAlbumPath(to);
+                presenter.setPath(to);
             }
         }
     }
