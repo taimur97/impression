@@ -46,7 +46,7 @@
             android:layout_centerVertical="true"
             android:layout_marginLeft="16dp"
             android:layout_marginStart="16dp"
-            android:src="@drawable/ic_action_add"
+            android:src="@drawable/ic_add_black"
             tools:ignore="ContentDescription" />
 
     </RelativeLayout>

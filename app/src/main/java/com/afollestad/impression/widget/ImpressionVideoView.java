@@ -25,8 +25,8 @@ import java.util.concurrent.TimeUnit;
  */
 public class ImpressionVideoView extends VideoView {
 
-    private static final int FADE_DELAY = ViewerActivity.TOOLBAR_FADE_OFFSET;
-    private static final int FADE_DURATION = ViewerActivity.TOOLBAR_FADE_DURATION;
+    private static final int FADE_DELAY = ViewerActivity.UI_FADE_DELAY;
+    private static final int FADE_DURATION = ViewerActivity.UI_FADE_DURATION;
     private ViewerPagerFragment mFragment;
     private ImageView mIcon;
     private View mOverlay;

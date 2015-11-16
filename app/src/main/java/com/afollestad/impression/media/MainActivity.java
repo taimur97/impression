@@ -76,10 +76,10 @@ public class MainActivity extends ThemedActivity
 
     public static final String EXTRA_CURRENT_ITEM_POSITION = "com.afollestad.impression.extra_current_item_position";
     public static final String EXTRA_OLD_ITEM_POSITION = "com.afollestad.impression.extra_old_item_position";
-
     public static final String ACTION_SELECT_ALBUM = BuildConfig.APPLICATION_ID + ".SELECT_FOLDER";
     public static final String NAV_DRAWER_FRAGMENT = "NAV_DRAWER";
     public static final String STATE_BREADCRUMBS = "breadcrumbs_state";
+    private static final String STATE_NAV_SELECTED_PATH = "state_nav_selected_path";
     private static final int SETTINGS_REQUEST = 9000;
     private static final String TAG = "MainActivity";
     private DrawerLayout mDrawerLayout;
@@ -418,9 +418,10 @@ public class MainActivity extends ThemedActivity
             mMediaCab = MediaCab.restoreState(savedInstanceState, this);
         }
 
-        if (savedInstanceState != null && savedInstanceState.containsKey(STATE_BREADCRUMBS)) {
+        if (savedInstanceState != null) {
             mCrumbs.restoreFromStateWrapper((BreadCrumbLayout.SavedStateWrapper)
                     savedInstanceState.getSerializable(STATE_BREADCRUMBS), this);
+            mNavSelectedPath = savedInstanceState.getString(STATE_NAV_SELECTED_PATH);
         }
 
         SortMemoryProvider.cleanup(this);
@@ -448,6 +449,7 @@ public class MainActivity extends ThemedActivity
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putSerializable(STATE_BREADCRUMBS, mCrumbs.getStateWrapper());
+        outState.putString(STATE_NAV_SELECTED_PATH, mNavSelectedPath);
         if (mMediaCab != null)
             mMediaCab.saveState(outState);
     }

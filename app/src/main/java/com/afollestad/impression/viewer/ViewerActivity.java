@@ -2,6 +2,7 @@ package com.afollestad.impression.viewer;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
+import android.animation.AnimatorSet;
 import android.animation.ArgbEvaluator;
 import android.animation.ObjectAnimator;
 import android.annotation.TargetApi;
@@ -35,6 +36,7 @@ import android.transition.ChangeImageTransform;
 import android.transition.ChangeTransform;
 import android.transition.TransitionSet;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -52,8 +54,10 @@ import com.afollestad.impression.api.base.MediaEntry;
 import com.afollestad.impression.fragments.dialog.SlideshowInitDialog;
 import com.afollestad.impression.ui.base.ThemedActivity;
 import com.afollestad.impression.utils.PrefUtils;
+import com.afollestad.impression.utils.ScrimUtil;
 import com.afollestad.impression.utils.TimeUtils;
 import com.afollestad.impression.utils.Utils;
+import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
 
 import java.io.File;
@@ -78,8 +82,8 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
     public static final String EXTRA_HEIGHT = "com.afollestad.impression.height";
     public static final String EXTRA_MEDIA_ENTRIES = "com.afollestad.impression.media_entries";
 
-    public static final int TOOLBAR_FADE_OFFSET = 2750;
-    public static final int TOOLBAR_FADE_DURATION = 400;
+    public static final int UI_FADE_DELAY = 2750;
+    public static final int UI_FADE_DURATION = 400;
     private static final int EDIT_REQUEST = 1000;
 
     private static final String STATE_CURRENT_POSITION = "state_current_position";
@@ -95,17 +99,23 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
     private Timer mTimer;
     private int mCurrentPosition;
     private boolean mStartedPostponedTransition;
-    private boolean mLightMode;
 
     private int mStatusBarHeight;
     private boolean mIsReturningToMain;
 
     private boolean mAllVideos;
+
     private ImageView mOverflow;
     private boolean mSystemUIFocus = false;
+
     private long mSlideshowDelay;
     private boolean mSlideshowLoop;
     private Timer mSlideshowTimer;
+
+    private View mTopScrim;
+    private View mBottomScrim;
+
+    private AnimatorSet mUiAnimatorSet;
 
     private ViewPager.OnPageChangeListener mPagerListener = new ViewPager.OnPageChangeListener() {
 
@@ -182,15 +192,6 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
         return R.style.AppTheme_Viewer;
     }
 
-    public void setLightMode(boolean lightMode) {
-        if (lightMode == mLightMode) return;
-        mLightMode = lightMode;
-        /*final int darkGray = ContextCompat.getColor(this, R.color.viewer_lightmode_icons);
-        navIcon.setColorFilter(mLightMode ? darkGray : Color.WHITE, PorterDuff.Mode.SRC_ATOP);
-        mToolbar.setNavigationIcon(navIcon);*/
-        invalidateOptionsMenu();
-    }
-
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     public void invalidateTransition() {
         if (mStartedPostponedTransition || Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP)
@@ -215,8 +216,6 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
                         names.add(transName);
                         sharedElements.put(transName, sharedView);
                     }
-
-                    setLightMode(false);
                 }
 
                 View decor = getWindow().getDecorView();
@@ -346,6 +345,18 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
 
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
+        mTopScrim = findViewById(R.id.top_scrim);
+        mTopScrim.setBackground(ScrimUtil.makeCubicGradientScrimDrawable(
+                Color.argb(200, 0, 0, 0), 8, Gravity.TOP));
+
+        mBottomScrim = findViewById(R.id.bottom_scrim);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            mBottomScrim.setBackground(ScrimUtil.makeCubicGradientScrimDrawable(
+                    Color.argb(200, 0, 0, 0), 8, Gravity.BOTTOM));
+        } else {
+            mBottomScrim.setVisibility(View.GONE);
+        }
+
         if (savedInstanceState == null) {
             if (getIntent() != null && getIntent().getExtras() != null) {
                 mCurrentPosition = getIntent().getExtras().getInt(EXTRA_CURRENT_ITEM_POSITION);
@@ -457,7 +468,7 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
             @Override
             public void onSystemUiVisibilityChange(int visibility) {
                 if (visibility == View.VISIBLE) {
-                    invokeToolbar(false);
+                    invokeUi(false);
                     mSystemUIFocus = false; // this is inverted by the method below
                     systemUIFocusChange();
                 }
@@ -569,13 +580,15 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
                         }
                     });
                 }
-            }, TOOLBAR_FADE_OFFSET);
+            }, UI_FADE_DELAY);
         } else hideSystemUI();
     }
 
     @Override
     public boolean onMenuOpened(int featureId, Menu menu) {
-        mToolbar.animate().cancel();
+        if (mUiAnimatorSet != null) {
+            mUiAnimatorSet.cancel();
+        }
         return super.onMenuOpened(featureId, menu);
     }
 
@@ -583,43 +596,61 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
     public void onOptionsMenuClosed(Menu menu) {
         super.onOptionsMenuClosed(menu);
         // Resume the fade animation
-        invokeToolbar(false);
+        invokeUi(false);
     }
 
-    private void invokeToolbar(boolean tapped) {
-        invokeToolbar(tapped, null);
+    private void invokeUi(boolean tapped) {
+        invokeUi(tapped, null);
     }
 
-    public void invokeToolbar(boolean tapped, final ToolbarFadeListener listener) {
-        mToolbar.animate().cancel();
+    public void invokeUi(boolean tapped, final ToolbarFadeListener listener) {
+        if (mUiAnimatorSet != null) {
+            mUiAnimatorSet.cancel();
+        }
+
+        ObjectAnimator toolbar = ObjectAnimator.ofFloat(mToolbar, View.ALPHA, 0f);
+        ObjectAnimator topScrim = ObjectAnimator.ofFloat(mTopScrim, View.ALPHA, 0f);
+        ObjectAnimator bottomScrim = ObjectAnimator.ofFloat(mBottomScrim, View.ALPHA, 0f);
+
+        mUiAnimatorSet = new AnimatorSet()
+                .setDuration(UI_FADE_DURATION);
+
         if (tapped && mToolbar.getAlpha() > 0f) {
             // User tapped to hide the toolbar immediately
-            mToolbar.animate().setDuration(TOOLBAR_FADE_DURATION)
-                    .setListener(new AnimatorListenerAdapter() {
-                        @Override
-                        public void onAnimationEnd(Animator animation) {
-                            super.onAnimationEnd(animation);
-                            if (listener != null) listener.onFade();
-                        }
-                    }).alpha(0f).setStartDelay(0).start();
+
+            mUiAnimatorSet.addListener(new AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    super.onAnimationEnd(animation);
+                    if (listener != null) listener.onFade();
+                }
+            });
         } else {
             mToolbar.setAlpha(1f);
-            mToolbar.animate().setDuration(TOOLBAR_FADE_DURATION).setStartDelay(TOOLBAR_FADE_OFFSET).alpha(0f).start();
+            mTopScrim.setAlpha(1f);
+            mBottomScrim.setAlpha(1f);
+
+            mUiAnimatorSet.setStartDelay(UI_FADE_DELAY);
         }
+
+        mUiAnimatorSet.play(toolbar).with(topScrim).with(bottomScrim);
+        mUiAnimatorSet.start();
     }
 
     @Override
     protected void onStart() {
         super.onStart();
         // Start the toolbar fader
-        invokeToolbar(false);
+        invokeUi(false);
         systemUIFocusChange();
     }
 
     @Override
     protected void onStop() {
         super.onStop();
-        mToolbar.animate().cancel();
+        if (mUiAnimatorSet != null) {
+            mUiAnimatorSet.cancel();
+        }
     }
 
     private Uri getCurrentUri() {
@@ -628,7 +659,7 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.viewer, menu);
+        getMenuInflater().inflate(R.menu.menu_viewer, menu);
         if (mEntries.size() > 0) {
             MediaEntry currentEntry = mEntries.get(mCurrentPosition);
             if (currentEntry == null || currentEntry.isVideo()) {
@@ -642,14 +673,6 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
             }
         }
         menu.findItem(R.id.slideshow).setVisible(!mAllVideos && mSlideshowTimer == null);
-
-        final int darkGray = ContextCompat.getColor(this, R.color.viewer_lightmode_icons);
-        for (int i = 0; i < menu.size(); i++) {
-            MenuItem item = menu.getItem(i);
-            if (item.getIcon() != null)
-                item.getIcon().setColorFilter(mLightMode ? darkGray : Color.WHITE, PorterDuff.Mode.SRC_ATOP);
-        }
-        setOverflowButtonColor(mLightMode ? darkGray : Color.WHITE);
 
         return super.onCreateOptionsMenu(menu);
     }
@@ -758,16 +781,12 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
                     .content(currentEntry.isVideo() ? R.string.delete_confirm_video : R.string.delete_confirm_photo)
                     .positiveText(R.string.yes)
                     .negativeText(R.string.no)
-                    .callback(new MaterialDialog.ButtonCallback() {
+                    .onPositive(new MaterialDialog.SingleButtonCallback() {
                         @Override
-                        public void onPositive(MaterialDialog materialDialog) {
+                        public void onClick(@NonNull MaterialDialog materialDialog, @NonNull DialogAction dialogAction) {
                             mEntries.get(mCurrentPosition).delete(ViewerActivity.this);
                             mAdapter.remove(mCurrentPosition);
                             if (mEntries.size() == 0) finish();
-                        }
-
-                        @Override
-                        public void onNegative(MaterialDialog materialDialog) {
                         }
                     }).build().show();
         } else if (item.getItemId() == R.id.slideshow) {

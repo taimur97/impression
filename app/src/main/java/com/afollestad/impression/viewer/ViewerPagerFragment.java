@@ -5,7 +5,6 @@ import android.app.Fragment;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.RectF;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -49,9 +48,9 @@ import java.io.InputStream;
 
 import rx.Single;
 import rx.SingleSubscriber;
+import rx.Subscriber;
 import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
-import rx.functions.Action1;
 import rx.schedulers.Schedulers;
 import uk.co.senab.photoview.PhotoViewAttacher;
 
@@ -60,19 +59,12 @@ import uk.co.senab.photoview.PhotoViewAttacher;
  */
 public class ViewerPagerFragment extends Fragment {
 
-    public static final short LIGHT_MODE_ON = 2;
-
     public static final String INIT_WIDTH = "width";
     public static final String INIT_HEIGHT = "height";
 
     public static final String INIT_INDEX = "index";
     public static final String INIT_MEDIA_ENTRY = "media";
     public static final String INIT_MEDIA_PATH = "media_path";
-
-    private static final short LIGHT_MODE_UNLOADED = 0;
-    private static final short LIGHT_MODE_LOADING = -1;
-    private static final short LIGHT_MODE_OFF = 1;
-    private short mLightMode = LIGHT_MODE_UNLOADED;
 
     private MediaEntry mEntry;
     private String mMediaPath;
@@ -81,8 +73,6 @@ public class ViewerPagerFragment extends Fragment {
 
     private int mThumbWidth;
     private int mThumbHeight;
-
-    private boolean mImageZoomedUnderToolbar;
 
     private int mIndex;
     private boolean mIsActive;
@@ -149,18 +139,22 @@ public class ViewerPagerFragment extends Fragment {
             mImageView = (SubsamplingScaleImageView) view.findViewById(R.id.photo);
             mThumb = (ScaleListenerImageView) view.findViewById(R.id.thumb);
 
+            final View.OnClickListener click = new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    invokeToolbar();
+                }
+            };
+            mImageView.setOnClickListener(click);
+
+            mThumb.setOnClickListener(click);
+
             if (BuildConfig.DEBUG) {
                 mImageView.setDebug(true);
             }
 
             ViewCompat.setTransitionName(mThumb, "view_" + mIndex);
         }
-        view.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                invokeToolbar();
-            }
-        });
         return view;
     }
 
@@ -316,12 +310,14 @@ public class ViewerPagerFragment extends Fragment {
                         mThumb.setImageBitmap(resource);
                         Log.e("HI", "mThumb set imagebitmap" + mThumb.toString());
 
+                        //Lollipop+: start transition
                         activity.invalidateTransition();
+
+                        if (mIsActive) {
+                            loadFullImage();
+                        }
                     }
                 });
-        if (mIsActive) {
-            loadFullImage();
-        }
     }
 
     private void recycleFullImageShowThumbnail() {
@@ -387,7 +383,6 @@ public class ViewerPagerFragment extends Fragment {
 
         if (isGif()) {
             // GIFs can't be loaded as a Bitmap
-            mLightMode = LIGHT_MODE_OFF;
             Glide.with(this)
                     .load(getUri().toString())
                     .asGif()
@@ -427,85 +422,32 @@ public class ViewerPagerFragment extends Fragment {
                     }
                 }).subscribeOn(Schedulers.io())
                         .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe(new Action1<Pair<Integer, Integer>>() {
+                        .subscribe(new Subscriber<Pair<Integer, Integer>>() {
                             @Override
-                            public void call(Pair<Integer, Integer> size) {
+                            public void onCompleted() {
+
+                            }
+
+                            @Override
+                            public void onError(Throwable e) {
+                                Snackbar.make(mThumb, e.getMessage(), Snackbar.LENGTH_SHORT);
+                            }
+
+                            @Override
+                            public void onNext(Pair<Integer, Integer> size) {
                                 mFullWidth = size.first;
                                 mFullHeight = size.second;
                                 mFullSizeSubscription = null;
-                                onFullSizeReady();
+                                onFullImageSizeKnown();
                             }
                         });
             } else {
-                onFullSizeReady();
+                onFullImageSizeKnown();
             }
-
-            /*mFullImageTarget = Glide.with(this)
-                    .load(getUri().toString())
-                    .asBitmap()
-                    .format(DecodeFormat.PREFER_ARGB_8888)
-                    .listener(new RequestListener<String, Bitmap>() {
-                        @Override
-                        public boolean onException(Exception e, String model, Target<Bitmap> target, boolean isFirstResource) {
-                            Utils.showErrorDialog(getActivity(), e);
-                            attachPhotoView();
-                            ((ViewerActivity) getActivity()).invalidateTransition();
-
-                            return false;
-                        }
-
-                        @Override
-                        public boolean onResourceReady(Bitmap resource, String model, Target<Bitmap> target, boolean isFromMemoryCache, boolean isFirstResource) {
-                            return false;
-                        }
-                    })
-                    .into(new SimpleTarget<Bitmap>() {
-                        @Override
-                        public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
-                            if (!isAdded()) {
-                                return;
-                            }
-
-                            if (mLightMode != LIGHT_MODE_LOADING) {
-                                mLightMode = LIGHT_MODE_LOADING;
-                                new Palette.Builder(resource)
-                                        .generate(new Palette.PaletteAsyncListener() {
-                                            @Override
-                                            public void onGenerated(Palette palette) {
-                                                if (palette.getSwatches().size() > 0) {
-                                                    float total = 0f;
-                                                    for (Palette.Swatch s : palette.getSwatches()) {
-                                                        total += s.getHsl()[2];
-                                                    }
-                                                    total /= palette.getSwatches().size();
-                                                    mLightMode = total > 0.5f ? LIGHT_MODE_ON : LIGHT_MODE_OFF;
-                                                } else {
-                                                    mLightMode = LIGHT_MODE_OFF;
-                                                }
-                                                ((ViewerActivity) getActivity()).setLightMode(
-                                                        mImageZoomedUnderToolbar && mLightMode == LIGHT_MODE_ON);
-                                            }
-                                        });
-                            }
-
-                            mImageView.setImageBitmap(resource);
-
-                            attachPhotoView();
-
-                            mFullImageTarget = null;
-
-//                        if (getView() != null) {
-//                            getView().findViewById(android.R.id.progress)
-//                                    .setVisibility(View.GONE);
-//                        }
-                            // If no cached image was loaded, finish the transition now that there is an image displayed
-                            ((ViewerActivity) getActivity()).invalidateTransition();
-                        }
-                    });*/
         }
     }
 
-    private void onFullSizeReady() {
+    private void onFullImageSizeKnown() {
         // Load the full size image into the view from the file
         mImageView.setOnImageEventListener(new SubsamplingScaleImageView.DefaultOnImageEventListener() {
 
@@ -617,43 +559,19 @@ public class ViewerPagerFragment extends Fragment {
         mVideoView.pause();
     }
 
-    private void invalidateUnderToolbar(RectF rectF) {
-        if (getActivity() == null) return;
-        final ViewerActivity act = (ViewerActivity) getActivity();
-        mImageZoomedUnderToolbar = rectF.top <= act.mToolbar.getBottom() - (act.mToolbar.getHeight() / 2);
-    }
-
     private void attachPhotoView() {
         /*mAttacher = mImageView.attachPhotoView();
-        mAttacher.setOnMatrixChangeListener(new PhotoViewAttacher.OnMatrixChangedListener() {
-            @Override
-            public void onMatrixChanged(RectF rectF) {
-                final ViewerActivity act = (ViewerActivity) getActivity();
-                if (act == null) return;
-                invalidateUnderToolbar(rectF);
-                if (mImageZoomedUnderToolbar) {
-                    // Use detected value
-                    if (mLightMode == LIGHT_MODE_LOADING)
-                        act.setLightMode(false);
-                    else
-                        act.setLightMode(mLightMode == LIGHT_MODE_ON);
-                } else {
-                    // Force dark mode for black space above image
-                    act.setLightMode(false);
-                }
-            }
-        });
         invalidateUnderToolbar(mAttacher.getDisplayRect());
         mAttacher.setOnViewTapListener(new PhotoViewAttacher.OnViewTapListener() {
             @Override
             public void onViewTap(View view, float v, float v2) {
-                invokeToolbar();
+                invokeUi();
             }
         });
         mAttacher.setOnPhotoTapListener(new PhotoViewAttacher.OnPhotoTapListener() {
             @Override
             public void onPhotoTap(View view, float v, float v2) {
-                invokeToolbar();
+                invokeUi();
             }
         });*/
     }
@@ -665,7 +583,7 @@ public class ViewerPagerFragment extends Fragment {
     public void invokeToolbar(ViewerActivity.ToolbarFadeListener callback) {
         if (getActivity() != null) {
             ViewerActivity act = (ViewerActivity) getActivity();
-            act.invokeToolbar(true, callback);
+            act.invokeUi(true, callback);
             act.systemUIFocusChange();
         }
     }
