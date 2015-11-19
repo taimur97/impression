@@ -5,6 +5,7 @@ import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
@@ -16,10 +17,13 @@ import com.afollestad.impression.R;
 import com.afollestad.impression.api.AlbumEntry;
 import com.afollestad.impression.api.base.MediaEntry;
 import com.afollestad.impression.utils.Utils;
+import com.afollestad.impression.viewer.KeepRatio;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
-import com.bumptech.glide.load.engine.bitmap_recycle.BitmapPool;
-import com.bumptech.glide.load.resource.bitmap.FitCenter;
+import com.bumptech.glide.request.RequestListener;
+import com.bumptech.glide.request.animation.DrawableCrossFadeFactory;
+import com.bumptech.glide.request.target.ImageViewTarget;
+import com.bumptech.glide.request.target.Target;
 
 import java.lang.ref.WeakReference;
 
@@ -79,26 +83,8 @@ public class ImpressionImageView extends ImageView {
                 .load(pathToLoad)
                 .asBitmap()
                 .diskCacheStrategy(DiskCacheStrategy.RESULT)
-                .transform(new FitCenter(getContext()) {
-                    @Override
-                    protected Bitmap transform(BitmapPool pool, Bitmap toTransform, int outWidth, int outHeight) {
-                        if (toTransform.getWidth() > toTransform.getHeight()) {
-                            outHeight = outHeight;
-                            outWidth = (int) (((float) toTransform.getHeight() / outHeight) * toTransform.getWidth());
-                        }else{
-                            outWidth = outWidth;
-                            outHeight = (int) (((float) toTransform.getWidth() / outWidth) * toTransform.getHeight());
-                        }
-
-                        return super.transform(pool, toTransform, outWidth, outHeight);
-                    }
-
-                    @Override
-                    public String getId() {
-                        return "Octopus";
-                    }
-                })
-                /*.listener(new RequestListener<String, Bitmap>() {
+                .transform(new KeepRatio(getContext()))
+                .listener(new RequestListener<String, Bitmap>() {
                     @Override
                     public boolean onException(Exception e, String model, Target<Bitmap> target, boolean isFirstResource) {
                         return false;
@@ -106,9 +92,12 @@ public class ImpressionImageView extends ImageView {
 
                     @Override
                     public boolean onResourceReady(Bitmap resource, String model, Target<Bitmap> target, boolean isFromMemoryCache, boolean isFirstResource) {
-                        return false;
+                        ImageViewTarget imTarget = (ImageViewTarget) target;
+                        return new DrawableCrossFadeFactory<>()
+                                .build(isFromMemoryCache, isFirstResource)
+                                .animate(new BitmapDrawable(imTarget.getView().getResources(), resource), imTarget);
                     }
-                })*/
+                })
                 .into(this);
     }
 

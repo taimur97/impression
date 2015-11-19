@@ -2484,7 +2484,7 @@ public class SubsamplingScaleImageView extends View {
                 Bitmap bitmap;
                 try {
                     bitmap = decoderFactory.make().decode(context, source);
-                } catch (OutOfMemoryError | Exception e) {
+                } catch (Throwable e) {
                     subscriber.onError(e);
                     return;
                 }

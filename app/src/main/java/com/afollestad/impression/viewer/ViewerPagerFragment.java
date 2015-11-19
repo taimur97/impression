@@ -5,6 +5,7 @@ import android.app.Fragment;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -26,13 +27,9 @@ import com.afollestad.impression.api.VideoEntry;
 import com.afollestad.impression.api.base.MediaEntry;
 import com.afollestad.impression.utils.Utils;
 import com.afollestad.impression.widget.ImpressionVideoView;
-import com.afollestad.impression.widget.ScaleListenerImageView;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.Priority;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
-import com.bumptech.glide.load.engine.bitmap_recycle.BitmapPool;
-import com.bumptech.glide.load.resource.bitmap.FitCenter;
-import com.bumptech.glide.load.resource.gif.GifDrawable;
 import com.bumptech.glide.request.RequestListener;
 import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.target.SimpleTarget;
@@ -46,13 +43,14 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 
+import pl.droidsonroids.gif.GifDrawable;
+import pl.droidsonroids.gif.GifImageView;
 import rx.Single;
 import rx.SingleSubscriber;
 import rx.Subscriber;
 import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.schedulers.Schedulers;
-import uk.co.senab.photoview.PhotoViewAttacher;
 
 /**
  * @author Aidan Follestad (afollestad)
@@ -77,8 +75,7 @@ public class ViewerPagerFragment extends Fragment {
     private int mIndex;
     private boolean mIsActive;
 
-    private PhotoViewAttacher mAttacher;
-    private ScaleListenerImageView mThumb;
+    private GifImageView mThumbOrGif;
     private SubsamplingScaleImageView mImageView;
     private ImpressionVideoView mVideoView;
 
@@ -137,7 +134,7 @@ public class ViewerPagerFragment extends Fragment {
             view = inflater.inflate(R.layout.fragment_viewer, container, false);
 
             mImageView = (SubsamplingScaleImageView) view.findViewById(R.id.photo);
-            mThumb = (ScaleListenerImageView) view.findViewById(R.id.thumb);
+            mThumbOrGif = (GifImageView) view.findViewById(R.id.thumb);
 
             final View.OnClickListener click = new View.OnClickListener() {
                 @Override
@@ -145,15 +142,15 @@ public class ViewerPagerFragment extends Fragment {
                     invokeToolbar();
                 }
             };
-            mImageView.setOnClickListener(click);
 
-            mThumb.setOnClickListener(click);
+            mImageView.setOnClickListener(click);
+            mThumbOrGif.setOnClickListener(click);
 
             if (BuildConfig.DEBUG) {
                 mImageView.setDebug(true);
             }
 
-            ViewCompat.setTransitionName(mThumb, "view_" + mIndex);
+            ViewCompat.setTransitionName(mThumbOrGif, "view_" + mIndex);
         }
         return view;
     }
@@ -230,8 +227,6 @@ public class ViewerPagerFragment extends Fragment {
     public void onDestroyView() {
         super.onDestroyView();
         recycleFullImageShowThumbnail();
-        /*if (mAttacher != null)
-            mAttacher.cleanup();*/
     }
 
     private BitmapFactory.Options getBitmapOptions(String uri) throws IOException {
@@ -250,7 +245,6 @@ public class ViewerPagerFragment extends Fragment {
         if ((mEntry == null || mEntry.data() == null || mEntry.data().trim().isEmpty()) &&
                 (mMediaPath == null || mMediaPath.trim().isEmpty())) {
             Utils.showErrorDialog(getActivity(), new Exception(getString(R.string.invalid_file_path_error)));
-            attachPhotoView();
             return;
         }
 
@@ -263,25 +257,7 @@ public class ViewerPagerFragment extends Fragment {
                 .priority(Priority.IMMEDIATE)
                 .dontAnimate()
                 .override(mThumbWidth, mThumbHeight)
-                .transform(new FitCenter(getActivity()) {
-                    @Override
-                    protected Bitmap transform(BitmapPool pool, Bitmap toTransform, int outWidth, int outHeight) {
-                        if (toTransform.getWidth() > toTransform.getHeight()) {
-                            outHeight = outHeight;
-                            outWidth = (int) (((float) toTransform.getHeight() / outHeight) * toTransform.getWidth());
-                        } else {
-                            outWidth = outWidth;
-                            outHeight = (int) (((float) toTransform.getWidth() / outWidth) * toTransform.getHeight());
-                        }
-
-                        return super.transform(pool, toTransform, outWidth, outHeight);
-                    }
-
-                    @Override
-                    public String getId() {
-                        return "Octopus";
-                    }
-                })
+                .transform(new KeepRatio(getActivity()))
                 .listener(new RequestListener<String, Bitmap>() {
                     @Override
                     public boolean onException(Exception e, String model, Target<Bitmap> target, boolean isFirstResource) {
@@ -307,8 +283,8 @@ public class ViewerPagerFragment extends Fragment {
 
                         mThumbnailBitmap = resource;
 
-                        mThumb.setImageBitmap(resource);
-                        Log.e("HI", "mThumb set imagebitmap" + mThumb.toString());
+                        mThumbOrGif.setImageBitmap(resource);
+                        Log.e("HI", "mThumbOrGif set imagebitmap" + mThumbOrGif.toString());
 
                         //Lollipop+: start transition
                         activity.invalidateTransition();
@@ -332,8 +308,17 @@ public class ViewerPagerFragment extends Fragment {
             mImageView.setVisibility(View.INVISIBLE);
         }
 
-        if (mThumb != null) {
-            mThumb.setVisibility(View.VISIBLE);
+        if (mThumbOrGif != null) {
+            mThumbOrGif.setVisibility(View.VISIBLE);
+            if (isGif()) {
+                final Drawable drawable = mThumbOrGif.getDrawable();
+                if (drawable != null) {
+                    if (drawable instanceof GifDrawable) {
+                        ((GifDrawable) drawable).seekToFrame(0);
+                        ((GifDrawable) drawable).stop();
+                    }
+                }
+            }
         }
     }
 
@@ -382,32 +367,13 @@ public class ViewerPagerFragment extends Fragment {
 //        }
 
         if (isGif()) {
-            // GIFs can't be loaded as a Bitmap
-            Glide.with(this)
-                    .load(getUri().toString())
-                    .asGif()
-                    .listener(new RequestListener<String, GifDrawable>() {
-                        @Override
-                        public boolean onException(Exception e, String model, Target<GifDrawable> target, boolean isFirstResource) {
-                            Utils.showErrorDialog(getActivity(), e);
-                            attachPhotoView();
-                            ((ViewerActivity) getActivity()).invalidateTransition();
-                            return false;
-                        }
-
-                        @Override
-                        public boolean onResourceReady(GifDrawable resource, String model, Target<GifDrawable> target, boolean isFromMemoryCache, boolean isFirstResource) {
-                            if (!isAdded()) {
-                                return false;
-                            }
-                            attachPhotoView();
-                            ((ViewerActivity) getActivity()).invalidateTransition();
-                            return false;
-                        }
-                    })
-                    .into(mThumb);
+            mThumbOrGif.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    mThumbOrGif.setImageURI(getUri());
+                }
+            }, 150);
         } else {
-
             if (mFullWidth == -1 || mFullHeight == -1) {
                 mFullSizeSubscription = Single.create(new Single.OnSubscribe<Pair<Integer, Integer>>() {
                     @Override
@@ -430,7 +396,7 @@ public class ViewerPagerFragment extends Fragment {
 
                             @Override
                             public void onError(Throwable e) {
-                                Snackbar.make(mThumb, e.getMessage(), Snackbar.LENGTH_SHORT);
+                                Snackbar.make(mThumbOrGif, e.getMessage(), Snackbar.LENGTH_SHORT);
                             }
 
                             @Override
@@ -482,13 +448,13 @@ public class ViewerPagerFragment extends Fragment {
 
             @Override
             public void onPreviewLoaded() {
-                Log.e("HI", "Preview loaded, attempt hide thumb" + mThumb.toString());
+                Log.e("HI", "Preview loaded, attempt hide thumb" + mThumbOrGif.toString());
                 //TODO: Figure out why just setting visibility doesn't work?
-                mThumb.postDelayed(new Runnable() {
+                mThumbOrGif.postDelayed(new Runnable() {
                     @Override
                     public void run() {
                         if (mIsActive) {
-                            mThumb.setVisibility(View.INVISIBLE);
+                            mThumbOrGif.setVisibility(View.INVISIBLE);
                         }
                     }
                 }, 150);
@@ -559,23 +525,6 @@ public class ViewerPagerFragment extends Fragment {
         mVideoView.pause();
     }
 
-    private void attachPhotoView() {
-        /*mAttacher = mImageView.attachPhotoView();
-        invalidateUnderToolbar(mAttacher.getDisplayRect());
-        mAttacher.setOnViewTapListener(new PhotoViewAttacher.OnViewTapListener() {
-            @Override
-            public void onViewTap(View view, float v, float v2) {
-                invokeUi();
-            }
-        });
-        mAttacher.setOnPhotoTapListener(new PhotoViewAttacher.OnPhotoTapListener() {
-            @Override
-            public void onPhotoTap(View view, float v, float v2) {
-                invokeUi();
-            }
-        });*/
-    }
-
     private void invokeToolbar() {
         invokeToolbar(null);
     }
@@ -593,7 +542,7 @@ public class ViewerPagerFragment extends Fragment {
         if (mIsVideo) {
             return mVideoView;
         } else {
-            return mThumb;
+            return mThumbOrGif;
         }
     }
 }

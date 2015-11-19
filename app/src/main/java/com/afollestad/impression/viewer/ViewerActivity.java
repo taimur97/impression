@@ -16,7 +16,6 @@ import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
-import android.graphics.PorterDuff;
 import android.net.Uri;
 import android.nfc.NfcAdapter;
 import android.nfc.NfcEvent;
@@ -41,10 +40,8 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.ViewTreeObserver;
 import android.view.Window;
 import android.widget.FrameLayout;
-import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.afollestad.impression.R;
@@ -52,6 +49,7 @@ import com.afollestad.impression.adapters.MediaAdapter;
 import com.afollestad.impression.api.PhotoEntry;
 import com.afollestad.impression.api.base.MediaEntry;
 import com.afollestad.impression.fragments.dialog.SlideshowInitDialog;
+import com.afollestad.impression.media.MainActivity;
 import com.afollestad.impression.ui.base.ThemedActivity;
 import com.afollestad.impression.utils.PrefUtils;
 import com.afollestad.impression.utils.ScrimUtil;
@@ -69,9 +67,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
-
-import static com.afollestad.impression.media.MainActivity.EXTRA_CURRENT_ITEM_POSITION;
-import static com.afollestad.impression.media.MainActivity.EXTRA_OLD_ITEM_POSITION;
 
 /**
  * @author Aidan Follestad (afollestad)
@@ -105,7 +100,6 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
 
     private boolean mAllVideos;
 
-    private ImageView mOverflow;
     private boolean mSystemUIFocus = false;
 
     private long mSlideshowDelay;
@@ -152,13 +146,17 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
                     mActive.setIsActive(false);
                     mActive = null;
                 }
-            } else if (previousState == ViewPager.SCROLL_STATE_DRAGGING
+            }
+
+            if (previousState == ViewPager.SCROLL_STATE_DRAGGING
                     && state == ViewPager.SCROLL_STATE_SETTLING) {
                 userScrollChange = true;
             } else if (previousState == ViewPager.SCROLL_STATE_SETTLING
                     && state == ViewPager.SCROLL_STATE_IDLE) {
                 userScrollChange = false;
+            }
 
+            if (state == ViewPager.SCROLL_STATE_IDLE) {
                 mActive = getViewerPagerFragment(mCurrentPosition);
                 if (mActive != null) {
                     mActive.setIsActive(true);
@@ -168,15 +166,6 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
             previousState = state;
         }
     };
-
-    @SuppressWarnings("deprecation")
-    private static void removeOnGlobalLayoutListener(View v, ViewTreeObserver.OnGlobalLayoutListener listener) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
-            v.getViewTreeObserver().removeGlobalOnLayoutListener(listener);
-        } else {
-            v.getViewTreeObserver().removeOnGlobalLayoutListener(listener);
-        }
-    }
 
     private ViewerPagerFragment getViewerPagerFragment(int index) {
         return (ViewerPagerFragment) getFragmentManager().findFragmentByTag("page:" + index);
@@ -343,6 +332,7 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
         params.setMargins(0, getStatusBarHeight(), 0, 0);
         mToolbar.setLayoutParams(params);
 
+        //noinspection ConstantConditions
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
         mTopScrim = findViewById(R.id.top_scrim);
@@ -359,7 +349,7 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
 
         if (savedInstanceState == null) {
             if (getIntent() != null && getIntent().getExtras() != null) {
-                mCurrentPosition = getIntent().getExtras().getInt(EXTRA_CURRENT_ITEM_POSITION);
+                mCurrentPosition = getIntent().getExtras().getInt(MainActivity.EXTRA_CURRENT_ITEM_POSITION);
             }
         } else {
             mCurrentPosition = savedInstanceState.getInt(STATE_CURRENT_POSITION);
@@ -677,29 +667,6 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
         return super.onCreateOptionsMenu(menu);
     }
 
-    private void setOverflowButtonColor(final int color) {
-        if (mOverflow != null) {
-            mOverflow.setColorFilter(color, PorterDuff.Mode.SRC_ATOP);
-            return;
-        }
-
-        ViewTreeObserver viewTreeObserver = mToolbar.getViewTreeObserver();
-        viewTreeObserver.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-            @Override
-            public void onGlobalLayout() {
-                final ArrayList<View> outViews = new ArrayList<>();
-                final String overflowDescription = getString(R.string.abc_action_menu_overflow_description);
-                mToolbar.findViewsWithText(outViews, overflowDescription, View.FIND_VIEWS_WITH_CONTENT_DESCRIPTION);
-                if (outViews.isEmpty()) {
-                    return;
-                }
-                mOverflow = (ImageView) outViews.get(0);
-                mOverflow.setColorFilter(color, PorterDuff.Mode.SRC_ATOP);
-                removeOnGlobalLayoutListener(mToolbar, this);
-            }
-        });
-    }
-
     private Bitmap loadBitmap(File file) {
         BitmapFactory.Options options = new BitmapFactory.Options();
         options.inPreferredConfig = Bitmap.Config.ARGB_8888;
@@ -927,8 +894,8 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
         mIsReturningToMain = true;
         Intent data = new Intent();
         if (getIntent() != null)
-            data.putExtra(EXTRA_OLD_ITEM_POSITION, getIntent().getIntExtra(EXTRA_CURRENT_ITEM_POSITION, 0));
-        data.putExtra(EXTRA_CURRENT_ITEM_POSITION, mCurrentPosition);
+            data.putExtra(MainActivity.EXTRA_OLD_ITEM_POSITION, getIntent().getIntExtra(MainActivity.EXTRA_CURRENT_ITEM_POSITION, 0));
+        data.putExtra(MainActivity.EXTRA_CURRENT_ITEM_POSITION, mCurrentPosition);
         setResult(RESULT_OK, data);
         super.finishAfterTransition();
     }

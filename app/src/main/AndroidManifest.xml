@@ -21,6 +21,7 @@
         android:icon="@drawable/ic_launcher"
         android:label="${appName}"
         android:supportsRtl="true"
+        android:theme="@style/AppTheme"
         tools:ignore="UnusedAttribute">
 
         <activity
