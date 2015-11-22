@@ -160,7 +160,7 @@
         <item>@string/dropbox</item>
     </string-array>
 
-    <string name="grid_size">Grid Size</string>
+    <string name="grid_size">Grid Columns</string>
     <string name="one_num">1</string>
     <string name="two_num">2</string>
     <string name="three_num">3</string>

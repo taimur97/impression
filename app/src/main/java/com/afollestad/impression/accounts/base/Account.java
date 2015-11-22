@@ -6,9 +6,9 @@ import android.os.Handler;
 import android.preference.PreferenceManager;
 
 import com.afollestad.impression.accounts.LocalAccount;
-import com.afollestad.impression.adapters.MediaAdapter;
 import com.afollestad.impression.api.AlbumEntry;
 import com.afollestad.impression.api.base.MediaEntry;
+import com.afollestad.impression.media.MediaAdapter;
 import com.afollestad.impression.providers.AccountProvider;
 
 import java.util.ArrayList;

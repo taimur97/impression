@@ -8,7 +8,7 @@ import android.net.Uri;
 import android.preference.PreferenceManager;
 
 import com.afollestad.impression.BuildConfig;
-import com.afollestad.impression.adapters.MediaAdapter;
+import com.afollestad.impression.media.MediaAdapter;
 import com.afollestad.impression.providers.base.ProviderBase;
 
 import java.io.File;

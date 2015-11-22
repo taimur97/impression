@@ -15,7 +15,9 @@ import android.support.v4.view.ViewCompat;
 import android.transition.Transition;
 import android.util.Log;
 import android.util.Pair;
+import android.view.GestureDetector;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
@@ -136,15 +138,34 @@ public class ViewerPagerFragment extends Fragment {
             mImageView = (SubsamplingScaleImageView) view.findViewById(R.id.photo);
             mThumbOrGif = (GifImageView) view.findViewById(R.id.thumb);
 
-            final View.OnClickListener click = new View.OnClickListener() {
+            mImageView.setOnTouchListener(new View.OnTouchListener() {
                 @Override
-                public void onClick(View v) {
+                public boolean onTouch(View v, MotionEvent event) {
+                    return false;
+                }
+            });
+
+            final GestureDetector detector = new GestureDetector(getActivity(), new GestureDetector.SimpleOnGestureListener() {
+                @Override
+                public boolean onDown(MotionEvent e) {
+                    return true;
+                }
+
+                @Override
+                public boolean onSingleTapConfirmed(MotionEvent e) {
                     invokeToolbar();
+                    return true;
+                }
+            });
+            View.OnTouchListener onTouch = new View.OnTouchListener() {
+                @Override
+                public boolean onTouch(View v, MotionEvent event) {
+                    return detector.onTouchEvent(event);
                 }
             };
 
-            mImageView.setOnClickListener(click);
-            mThumbOrGif.setOnClickListener(click);
+            mThumbOrGif.setOnTouchListener(onTouch);
+            mImageView.setOnTouchListener(onTouch);
 
             if (BuildConfig.DEBUG) {
                 mImageView.setDebug(true);
@@ -466,9 +487,6 @@ public class ViewerPagerFragment extends Fragment {
     }
 
     public void finish() {
-        /*if (mFullImageTarget != null) {
-            Glide.clear(mFullImageTarget);
-        }*/
         if (!isGif()) {
             recycleFullImageShowThumbnail();
         } else {

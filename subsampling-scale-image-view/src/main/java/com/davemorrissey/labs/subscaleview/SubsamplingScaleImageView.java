@@ -795,6 +795,7 @@ public class SubsamplingScaleImageView extends View {
                         if (mScale < minScale) {
                             mIsScalingToFit = true;
                             mMaxTouchCount = 0;
+                            mIsPanning = false;
                             new AnimationBuilder(minScale).withEasing(EASE_IN_OUT_QUAD).withInterruptible(false).withDuration(200).start();
                         }
                     }

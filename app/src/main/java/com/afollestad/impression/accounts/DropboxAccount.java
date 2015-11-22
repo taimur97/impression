@@ -3,8 +3,8 @@ package com.afollestad.impression.accounts;
 import android.content.Context;
 
 import com.afollestad.impression.accounts.base.Account;
-import com.afollestad.impression.adapters.MediaAdapter;
 import com.afollestad.impression.api.AlbumEntry;
+import com.afollestad.impression.media.MediaAdapter;
 
 /**
  * @author Aidan Follestad (afollestad)

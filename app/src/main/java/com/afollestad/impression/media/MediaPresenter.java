@@ -13,7 +13,6 @@ import android.view.View;
 
 import com.afollestad.impression.MvpPresenter;
 import com.afollestad.impression.R;
-import com.afollestad.impression.adapters.MediaAdapter;
 import com.afollestad.impression.api.AlbumEntry;
 import com.afollestad.impression.api.base.MediaEntry;
 import com.afollestad.impression.cab.MediaCab;
@@ -75,12 +74,6 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
         }
     }
 
-    private void invalidateTitle(MainActivity act) {
-        if (isViewAttached()) {
-            act.setTitle(getTitle());
-        }
-    }
-
     protected void onCreate(Bundle savedInstanceState) {
         if (isViewAttached()) {
             //noinspection ConstantConditions
@@ -116,18 +109,44 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
         bundle.putString(STATE_PATH, mPath);
     }
 
-    String getTitle() {
-        if (isViewAttached()) {
-            if (PrefUtils.isExplorerMode(getView().getContextCompat())) {
-                // In explorer mode, the path is displayed in the bread crumbs so the name is shown instead
-                return getView().getContextCompat().getString(R.string.app_name);
-            } else if (mPath == null || mPath.equals(AlbumEntry.ALBUM_OVERVIEW) ||
-                    mPath.equals(Environment.getExternalStorageDirectory().getAbsolutePath())) {
-                return getView().getContextCompat().getString(R.string.overview);
-            }
-            return new File(mPath).getName();
+    protected void onOptionsItemSelected(int itemId) {
+        if (!isViewAttached()) {
+            return;
         }
-        return null;
+
+        switch (itemId) {
+            case R.id.viewExplorer:
+                MainActivity act = (MainActivity) getView().getContextCompat();
+                boolean currentExplorerMode = PrefUtils.isExplorerMode(act);
+                PrefUtils.setExplorerMode(act, !currentExplorerMode);
+                getView().reload();
+                updateTitle();
+                act.invalidateOptionsMenu();
+                act.invalidateExplorerMode();
+                break;
+        }
+    }
+
+    private void updateTitle() {
+        if (!isViewAttached()) {
+            return;
+        }
+
+        MainActivity activity = ((MainActivity) getView().getContextCompat());
+
+        String title;
+        if (PrefUtils.isExplorerMode(getView().getContextCompat())) {
+            // In explorer mode, the path is displayed in the bread crumbs so the name is shown instead
+            title = getView().getContextCompat().getString(R.string.app_name);
+        } else if (mPath == null || mPath.equals(AlbumEntry.ALBUM_OVERVIEW_PATH)) {
+            title = getView().getContextCompat().getString(R.string.overview);
+        } else if (mPath.equals(Environment.getExternalStorageDirectory().getAbsolutePath())) {
+            title = getView().getContextCompat().getString(R.string.internal_storage);
+        } else {
+            title = new File(mPath).getName();
+        }
+
+        activity.setTitle(title);
     }
 
     int getEmptyText() {
@@ -148,7 +167,7 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
 
             final MainActivity mainActivity = (MainActivity) getView().getContextCompat();
 
-            invalidateTitle(mainActivity);
+            updateTitle();
             mainActivity.invalidateMenuArrow(mPath);
             mainActivity.supportInvalidateOptionsMenu();
             getView().setCrumb(mainActivity.getCrumbs().findCrumb(mPath));

@@ -6,8 +6,8 @@ import android.graphics.BitmapFactory;
 import android.provider.MediaStore;
 import android.widget.Toast;
 
-import com.afollestad.impression.adapters.MediaAdapter;
 import com.afollestad.impression.api.base.MediaEntry;
+import com.afollestad.impression.media.MediaAdapter;
 import com.afollestad.impression.utils.Utils;
 
 import java.io.File;

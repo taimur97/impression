@@ -24,10 +24,10 @@ import android.widget.Toast;
 
 import com.afollestad.impression.R;
 import com.afollestad.impression.accounts.base.Account;
-import com.afollestad.impression.adapters.MediaAdapter;
 import com.afollestad.impression.adapters.NavDrawerAdapter;
 import com.afollestad.impression.api.AlbumEntry;
 import com.afollestad.impression.media.MainActivity;
+import com.afollestad.impression.media.MediaAdapter;
 import com.afollestad.impression.providers.AccountProvider;
 import com.afollestad.impression.providers.ExcludedFolderProvider;
 import com.afollestad.impression.providers.IncludedFolderProvider;
@@ -236,7 +236,7 @@ public class NavDrawerFragment extends Fragment implements NavDrawerAdapter.Call
         if (account != null)
             mCurrentAccount = account;
         mAdapter.clear();
-        mAdapter.add(new NavDrawerAdapter.Entry(AlbumEntry.ALBUM_OVERVIEW, false, false));
+        mAdapter.add(new NavDrawerAdapter.Entry(AlbumEntry.ALBUM_OVERVIEW_PATH, false, false));
         // TODO clear activity back stack to remove back stack of old account?
         mCurrentAccount.getAlbums(MediaAdapter.SortMode.NAME_DESC, MediaAdapter.FileFilterMode.ALL, new Account.AlbumCallback() {
             @Override
@@ -294,7 +294,7 @@ public class NavDrawerFragment extends Fragment implements NavDrawerAdapter.Call
 
                                 if (getActivity() == null) return;
                                 MainActivity act = (MainActivity) getActivity();
-                                act.notifyFoldersChanged();
+                                /*act.notifyFoldersChanged();*/
 
                                 if (index == mCurrentSelectedPosition) {
                                     if (mCurrentSelectedPosition > mAdapter.getItemCount() - 1)
@@ -320,7 +320,7 @@ public class NavDrawerFragment extends Fragment implements NavDrawerAdapter.Call
                                 mAdapter.notifyDataSetChanged();
                                 if (getActivity() == null) return;
                                 MainActivity act = (MainActivity) getActivity();
-                                act.notifyFoldersChanged();
+                                /*act.notifyFoldersChanged();*/
 
                                 if (index == mCurrentSelectedPosition) {
                                     if (mCurrentSelectedPosition > mAdapter.getItemCount() - 1)

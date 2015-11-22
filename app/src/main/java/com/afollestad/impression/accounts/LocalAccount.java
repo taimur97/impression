@@ -13,7 +13,6 @@ import android.util.Pair;
 
 import com.afollestad.impression.R;
 import com.afollestad.impression.accounts.base.Account;
-import com.afollestad.impression.adapters.MediaAdapter;
 import com.afollestad.impression.api.AlbumEntry;
 import com.afollestad.impression.api.AsyncCursor;
 import com.afollestad.impression.api.FolderEntry;
@@ -21,6 +20,7 @@ import com.afollestad.impression.api.LoaderEntry;
 import com.afollestad.impression.api.PhotoEntry;
 import com.afollestad.impression.api.VideoEntry;
 import com.afollestad.impression.api.base.MediaEntry;
+import com.afollestad.impression.media.MediaAdapter;
 import com.afollestad.impression.providers.ExcludedFolderProvider;
 import com.afollestad.impression.providers.IncludedFolderProvider;
 import com.afollestad.impression.utils.Utils;
@@ -218,7 +218,7 @@ public class LocalAccount extends Account {
     @Override
     public void getEntries(String albumPath, int overviewMode, final boolean explorerMode, final MediaAdapter.FileFilterMode filter, final MediaAdapter.SortMode sort, final EntriesCallback callback) {
         if (explorerMode) {
-            if (albumPath == null || albumPath.trim().equals(AlbumEntry.ALBUM_OVERVIEW))
+            if (albumPath == null || albumPath.trim().equals(AlbumEntry.ALBUM_OVERVIEW_PATH))
                 albumPath = Environment.getExternalStorageDirectory().getAbsolutePath();
             final File dir = new File(albumPath);
             if (!dir.exists()) {
@@ -242,8 +242,8 @@ public class LocalAccount extends Account {
                 }
             }).start();
         } else {
-            if ((albumPath == null || albumPath.equals(AlbumEntry.ALBUM_OVERVIEW) ||
-                    albumPath.equals(Environment.getExternalStorageDirectory().getAbsolutePath()))
+            if ((albumPath == null || albumPath.equals(AlbumEntry.ALBUM_OVERVIEW_PATH) /*||*/
+                    /*albumPath.equals(Environment.getExternalStorageDirectory().getAbsolutePath())*/)
                     && overviewMode == 1) {
                 getOverviewEntries(sort, filter, callback);
                 return;
@@ -265,7 +265,7 @@ public class LocalAccount extends Account {
                             new PhotoEntry().projection(),
                             new VideoEntry().projection()
                     };
-                    if (albumPath != null && !albumPath.equals(AlbumEntry.ALBUM_OVERVIEW)) {
+                    if (albumPath != null && !albumPath.equals(AlbumEntry.ALBUM_OVERVIEW_PATH)) {
                         selections = new String[]{
                                 MediaStore.Images.Media.BUCKET_DISPLAY_NAME + " = ?",
                                 MediaStore.Video.Media.BUCKET_DISPLAY_NAME + " = ?"
@@ -287,7 +287,7 @@ public class LocalAccount extends Account {
                     projections = new String[][]{
                             new PhotoEntry().projection(),
                     };
-                    if (albumPath != null && !albumPath.equals(AlbumEntry.ALBUM_OVERVIEW)) {
+                    if (albumPath != null && !albumPath.equals(AlbumEntry.ALBUM_OVERVIEW_PATH)) {
                         selections = new String[]{
                                 MediaStore.Images.Media.BUCKET_DISPLAY_NAME + " = ?",
                         };
@@ -306,7 +306,7 @@ public class LocalAccount extends Account {
                     projections = new String[][]{
                             new VideoEntry().projection()
                     };
-                    if (albumPath != null && !albumPath.equals(AlbumEntry.ALBUM_OVERVIEW)) {
+                    if (albumPath != null && !albumPath.equals(AlbumEntry.ALBUM_OVERVIEW_PATH)) {
                         selections = new String[]{
                                 MediaStore.Video.Media.BUCKET_DISPLAY_NAME + " = ?"
                         };
@@ -342,7 +342,7 @@ public class LocalAccount extends Account {
                         }
                         data.close();
                     }
-                    if (fAlbumPath != null && !fAlbumPath.equals(AlbumEntry.ALBUM_OVERVIEW)) {
+                    if (fAlbumPath != null && !fAlbumPath.equals(AlbumEntry.ALBUM_OVERVIEW_PATH)) {
                         // Load included folders' contents for overview screen while in 'All Media' mode
                         Cursor data = r.query(IncludedFolderProvider.CONTENT_URI, null, null, null, FolderEntry.sort(sort));
                         if (data != null) {

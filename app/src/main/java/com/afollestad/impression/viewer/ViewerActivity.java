@@ -45,11 +45,11 @@ import android.widget.FrameLayout;
 import android.widget.Toast;
 
 import com.afollestad.impression.R;
-import com.afollestad.impression.adapters.MediaAdapter;
 import com.afollestad.impression.api.PhotoEntry;
 import com.afollestad.impression.api.base.MediaEntry;
 import com.afollestad.impression.fragments.dialog.SlideshowInitDialog;
 import com.afollestad.impression.media.MainActivity;
+import com.afollestad.impression.media.MediaAdapter;
 import com.afollestad.impression.ui.base.ThemedActivity;
 import com.afollestad.impression.utils.PrefUtils;
 import com.afollestad.impression.utils.ScrimUtil;

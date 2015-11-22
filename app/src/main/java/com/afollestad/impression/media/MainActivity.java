@@ -5,13 +5,13 @@ import android.animation.ValueAnimator;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.Fragment;
-import android.app.FragmentManager;
 import android.app.SharedElementCallback;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.view.GravityCompat;
@@ -47,7 +47,6 @@ import android.widget.TextView;
 
 import com.afollestad.impression.BuildConfig;
 import com.afollestad.impression.R;
-import com.afollestad.impression.adapters.MediaAdapter;
 import com.afollestad.impression.api.AlbumEntry;
 import com.afollestad.impression.cab.MediaCab;
 import com.afollestad.impression.fragments.NavDrawerFragment;
@@ -57,7 +56,8 @@ import com.afollestad.impression.ui.SettingsActivity;
 import com.afollestad.impression.ui.base.ThemedActivity;
 import com.afollestad.impression.utils.PrefUtils;
 import com.afollestad.impression.utils.Utils;
-import com.afollestad.impression.widget.BreadCrumbLayout;
+import com.afollestad.impression.widget.breadcrumbs.BreadCrumbLayout;
+import com.afollestad.impression.widget.breadcrumbs.Crumb;
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.afollestad.materialdialogs.folderselector.FolderChooserDialog;
 import com.afollestad.materialdialogs.internal.MDTintHelper;
@@ -76,12 +76,15 @@ public class MainActivity extends ThemedActivity
 
     public static final String EXTRA_CURRENT_ITEM_POSITION = "com.afollestad.impression.extra_current_item_position";
     public static final String EXTRA_OLD_ITEM_POSITION = "com.afollestad.impression.extra_old_item_position";
+
     public static final String ACTION_SELECT_ALBUM = BuildConfig.APPLICATION_ID + ".SELECT_FOLDER";
+
     public static final String NAV_DRAWER_FRAGMENT = "NAV_DRAWER";
-    public static final String STATE_BREADCRUMBS = "breadcrumbs_state";
-    private static final String STATE_NAV_SELECTED_PATH = "state_nav_selected_path";
+
     private static final int SETTINGS_REQUEST = 9000;
+
     private static final String TAG = "MainActivity";
+
     private DrawerLayout mDrawerLayout;
     private AnimatedDrawerToggle mAnimatedDrawerToggle;
 
@@ -91,15 +94,13 @@ public class MainActivity extends ThemedActivity
     private MediaCab mMediaCab;
     private Toolbar mToolbar;
 
-    private BreadCrumbLayout mCrumbs;
+    private BreadCrumbLayout mBreadCrumbLayout;
     private CharSequence mTitle;
 
     private Bundle mTmpState;
     private boolean mIsReenteringFromViewer;
 
-    private String mNavSelectedPath;
-
-    private static void LOG(String message, boolean isReentering) {
+    private static void logSharedElementTransition(String message, boolean isReentering) {
         if (BuildConfig.DEBUG) {
             Log.i(TAG, String.format("%s: %s", isReentering ? "REENTERING" : "EXITING", message));
         }
@@ -134,15 +135,20 @@ public class MainActivity extends ThemedActivity
     }
 
     public BreadCrumbLayout getCrumbs() {
-        return mCrumbs;
+        return mBreadCrumbLayout;
     }
 
-    public void invalidateMenuArrow(String albumPath) {
-        if (albumPath == null || albumPath.equals(mNavSelectedPath) || PrefUtils.isExplorerMode(this)) {
-            animateDrawerArrow(true);
-        } else {
-            animateDrawerArrow(false);
-        }
+    public void invalidateMenuArrow(final String albumPath) {
+        mBreadCrumbLayout.post(new Runnable() {
+            @Override
+            public void run() {
+                if (albumPath == null || albumPath.equals(mBreadCrumbLayout.getTopPath()) || PrefUtils.isExplorerMode(MainActivity.this)) {
+                    animateDrawerArrow(true);
+                } else {
+                    animateDrawerArrow(false);
+                }
+            }
+        });
     }
 
     public void animateDrawerArrow(boolean close) {
@@ -183,7 +189,7 @@ public class MainActivity extends ThemedActivity
         final SharedElementCallback mCallback = new SharedElementCallback() {
             @Override
             public void onMapSharedElements(List<String> names, Map<String, View> sharedElements) {
-                LOG("onMapSharedElements(List<String>, Map<String, View>)", mIsReenteringFromViewer);
+                logSharedElementTransition("onMapSharedElements(List<String>, Map<String, View>)", mIsReenteringFromViewer);
 
 
                 int oldPosition = mTmpState != null ? mTmpState.getInt(EXTRA_OLD_ITEM_POSITION) : 0;
@@ -232,21 +238,21 @@ public class MainActivity extends ThemedActivity
                     sharedElements.put(Window.STATUS_BAR_BACKGROUND_TRANSITION_NAME, statusBar);
                 }
 
-                LOG("=== names: " + names.toString(), mIsReenteringFromViewer);
-                LOG("=== sharedElements: " + Utils.setToString(sharedElements.keySet()), mIsReenteringFromViewer);
+                logSharedElementTransition("=== names: " + names.toString(), mIsReenteringFromViewer);
+                logSharedElementTransition("=== sharedElements: " + Utils.setToString(sharedElements.keySet()), mIsReenteringFromViewer);
             }
 
             @Override
             public void onSharedElementStart(List<String> sharedElementNames, List<View> sharedElements,
                                              List<View> sharedElementSnapshots) {
-                LOG("onSharedElementStart(List<String>, List<View>, List<View>)", mIsReenteringFromViewer);
+                logSharedElementTransition("onSharedElementStart(List<String>, List<View>, List<View>)", mIsReenteringFromViewer);
                 logSharedElementsInfo(sharedElementNames, sharedElements);
             }
 
             @Override
             public void onSharedElementEnd(List<String> sharedElementNames, List<View> sharedElements,
                                            List<View> sharedElementSnapshots) {
-                LOG("onSharedElementEnd(List<String>, List<View>, List<View>)", mIsReenteringFromViewer);
+                logSharedElementTransition("onSharedElementEnd(List<String>, List<View>, List<View>)", mIsReenteringFromViewer);
                 logSharedElementsInfo(sharedElementNames, sharedElements);
 
                 if (mIsReenteringFromViewer) {
@@ -264,7 +270,7 @@ public class MainActivity extends ThemedActivity
             }
 
             private void logSharedElementsInfo(List<String> names, List<View> sharedElements) {
-                LOG("=== names: " + names.toString(), mIsReenteringFromViewer);
+                logSharedElementTransition("=== names: " + names.toString(), mIsReenteringFromViewer);
                 for (View view : sharedElements) {
                     int[] loc = new int[2];
                     //noinspection ResourceType
@@ -296,13 +302,6 @@ public class MainActivity extends ThemedActivity
 
         getWindow().setSharedElementExitTransition(transition);
         getWindow().setSharedElementReenterTransition(transition);
-    }
-
-    private void saveScrollPosition() {
-        Fragment frag = getFragmentManager().findFragmentById(R.id.content_frame);
-        if (frag != null) {
-            ((MediaFragment) frag).saveScrollPosition();
-        }
     }
 
     @Override
@@ -388,17 +387,16 @@ public class MainActivity extends ThemedActivity
             }
         }
 
-        mCrumbs = (BreadCrumbLayout) findViewById(R.id.breadCrumbs);
-        mCrumbs.setFragmentManager(getFragmentManager());
-        mCrumbs.setCallback(new BreadCrumbLayout.SelectionCallback() {
+        mBreadCrumbLayout = (BreadCrumbLayout) findViewById(R.id.breadCrumbs);
+        mBreadCrumbLayout.setCallback(new BreadCrumbLayout.SelectionCallback() {
             @Override
-            public void onCrumbSelection(BreadCrumbLayout.Crumb crumb, int index) {
+            public void onCrumbSelection(Crumb crumb, int index) {
                 if (index == -1) {
                     onBackPressed();
                 } else {
                     String activeFile = null;
-                    if (mCrumbs.getActiveIndex() > -1)
-                        activeFile = mCrumbs.getCrumb(mCrumbs.getActiveIndex()).getPath();
+                    if (mBreadCrumbLayout.getActiveIndex() > -1)
+                        activeFile = mBreadCrumbLayout.getCrumb(mBreadCrumbLayout.getActiveIndex()).getPath();
                     if (crumb.getPath() != null && activeFile != null &&
                             crumb.getPath().equals(activeFile)) {
                         Fragment frag = getFragmentManager().findFragmentById(R.id.content_frame);
@@ -413,15 +411,11 @@ public class MainActivity extends ThemedActivity
         if (savedInstanceState == null) {
             // Show initial page (overview)
             switchAlbum(null);
-        } else if (!isSelectAlbumMode()) {
-            if (mTitle != null) getSupportActionBar().setTitle(mTitle);
-            mMediaCab = MediaCab.restoreState(savedInstanceState, this);
-        }
-
-        if (savedInstanceState != null) {
-            mCrumbs.restoreFromStateWrapper((BreadCrumbLayout.SavedStateWrapper)
-                    savedInstanceState.getSerializable(STATE_BREADCRUMBS), this);
-            mNavSelectedPath = savedInstanceState.getString(STATE_NAV_SELECTED_PATH);
+        } else {
+            if (!isSelectAlbumMode()) {
+                if (mTitle != null) getSupportActionBar().setTitle(mTitle);
+                mMediaCab = MediaCab.restoreState(savedInstanceState, this);
+            }
         }
 
         SortMemoryProvider.cleanup(this);
@@ -431,25 +425,17 @@ public class MainActivity extends ThemedActivity
     @Override
     protected void onResume() {
         super.onResume();
-        invalidateCrumbs();
+        invalidateExplorerMode();
     }
 
-    @Override
-    protected void onPause() {
-        super.onPause();
-        saveScrollPosition();
-    }
-
-    public void invalidateCrumbs() {
+    public void invalidateExplorerMode() {
         final boolean explorerMode = PrefUtils.isExplorerMode(this);
-        mCrumbs.setVisibility(explorerMode ? View.VISIBLE : View.GONE);
+        mBreadCrumbLayout.setVisibility(explorerMode ? View.VISIBLE : View.GONE);
     }
 
     @Override
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        outState.putSerializable(STATE_BREADCRUMBS, mCrumbs.getStateWrapper());
-        outState.putString(STATE_NAV_SELECTED_PATH, mNavSelectedPath);
         if (mMediaCab != null)
             mMediaCab.saveState(outState);
     }
@@ -541,9 +527,9 @@ public class MainActivity extends ThemedActivity
         } else {
             if (mDrawerLayout != null && mDrawerLayout.isDrawerOpen(GravityCompat.START)) {
                 mDrawerLayout.closeDrawer(GravityCompat.START);
-            } else if (mCrumbs.popHistory()) {
+            } else if (mBreadCrumbLayout.popHistory()) {
                 // Go to previous crumb in history
-                final BreadCrumbLayout.Crumb crumb = mCrumbs.lastHistory();
+                final Crumb crumb = mBreadCrumbLayout.lastHistory();
                 switchAlbum(crumb, false, false);
             } else {
                 super.onBackPressed();
@@ -595,12 +581,13 @@ public class MainActivity extends ThemedActivity
     public boolean navDrawerSwitchAlbum(String path) {
         mDrawerLayout.closeDrawers();
 
-        mNavSelectedPath = path;
+        mBreadCrumbLayout.setTopPath(path);
 
         MediaFragment frag = findMediaFragment();
         if (!path.equals(frag.getPresenter().getAlbumPath())) {
-            mCrumbs.clearHistory();
-            switchAlbum(path);
+            mBreadCrumbLayout.clearHistory();
+            Crumb crumb = new Crumb(this, path);
+            switchAlbum(crumb, true, true);
             return true;
         }
         return false;
@@ -612,33 +599,35 @@ public class MainActivity extends ThemedActivity
             return;
         }
 
-        boolean wasNull = (path == null);
-        if (wasNull) {
+        boolean initialCreate = (path == null);
+        if (initialCreate) {
             // Initial directory
-            path = AlbumEntry.ALBUM_OVERVIEW;
-            mNavSelectedPath = path;
+            path = PrefUtils.isExplorerMode(this) ?
+                    Environment.getExternalStorageDirectory().getAbsolutePath() :
+                    AlbumEntry.ALBUM_OVERVIEW_PATH;
+            mBreadCrumbLayout.setTopPath(path);
         }
 
-        BreadCrumbLayout.Crumb crumb = new BreadCrumbLayout.Crumb(this, path);
-        switchAlbum(crumb, wasNull, true);
+        Crumb crumb = new Crumb(this, path);
+        switchAlbum(crumb, initialCreate, true);
     }
 
-    public void switchAlbum(BreadCrumbLayout.Crumb crumb, boolean forceRecreate, boolean addToHistory) {
+    public void switchAlbum(Crumb crumb, boolean forceRecreate, boolean addToHistory) {
         if (forceRecreate) {
             // Rebuild artificial history, most likely first time load
-            mCrumbs.clearHistory();
+            mBreadCrumbLayout.clearHistory();
             String path = crumb.getPath();
             while (path != null) {
-                mCrumbs.addHistory(new BreadCrumbLayout.Crumb(this, path));
-                if (BreadCrumbLayout.isStorage(path))
+                mBreadCrumbLayout.addHistory(new Crumb(this, path));
+                if (mBreadCrumbLayout.isTopPath(path))
                     break;
                 path = new File(path).getParent();
             }
-            mCrumbs.reverseHistory();
+            mBreadCrumbLayout.reverseHistory();
         } else if (addToHistory) {
-            mCrumbs.addHistory(crumb);
+            mBreadCrumbLayout.addHistory(crumb);
         }
-        mCrumbs.setActiveOrAdd(crumb, forceRecreate);
+        mBreadCrumbLayout.setActiveOrAdd(crumb, forceRecreate);
 
         final String to = crumb.getPath();
         MediaFragment frag = findMediaFragment();
@@ -655,25 +644,10 @@ public class MainActivity extends ThemedActivity
         }
     }
 
-    public void notifyFoldersChanged() {
-        FragmentManager fm = getFragmentManager();
-        Fragment frag = fm.findFragmentByTag("[root]");
-        if (frag != null)
-            ((MediaFragment) frag).reload();
-        for (int i = 0; i < fm.getBackStackEntryCount(); i++) {
-            final String name = fm.getBackStackEntryAt(i).getName();
-            if (name != null) {
-                frag = fm.findFragmentByTag(name);
-                if (frag != null) ((MediaFragment) frag).reload();
-            }
-        }
-    }
-
     @Override
     public void onFolderSelection(File folder) {
         IncludedFolderProvider.add(this, folder);
         reloadNavDrawerAlbums();
-        notifyFoldersChanged();
     }
 
     public void reloadNavDrawerAlbums() {

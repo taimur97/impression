@@ -42,7 +42,7 @@ public class NavDrawerAdapter extends RecyclerView.Adapter<NavDrawerAdapter.View
 
     public void setItemChecked(String path) {
         if (path == null)
-            path = AlbumEntry.ALBUM_OVERVIEW;
+            path = AlbumEntry.ALBUM_OVERVIEW_PATH;
         for (int i = 0; i < mEntries.size(); i++) {
             String entryPath = mEntries.get(i).getPath();
             if (entryPath.equals(path)) {
@@ -121,7 +121,7 @@ public class NavDrawerAdapter extends RecyclerView.Adapter<NavDrawerAdapter.View
             holder.icon.setVisibility(View.VISIBLE);
             holder.icon.getDrawable().mutate().setColorFilter(
                     Utils.resolveColor(mContext, android.R.attr.textColorPrimary), PorterDuff.Mode.SRC_ATOP);
-        } else if (entry.getPath().equals(AlbumEntry.ALBUM_OVERVIEW)) {
+        } else if (entry.getPath().equals(AlbumEntry.ALBUM_OVERVIEW_PATH)) {
             holder.textView.setText(R.string.overview);
             holder.vivider.setVisibility(View.GONE);
             holder.icon.setVisibility(View.GONE);
@@ -185,8 +185,8 @@ public class NavDrawerAdapter extends RecyclerView.Adapter<NavDrawerAdapter.View
                 return 1;
             } else if (rhs.isAdd()) {
                 return -1;
-            } else if (lhs.getPath().equals(AlbumEntry.ALBUM_OVERVIEW)) return -1;
-            else if (rhs.getPath().equals(AlbumEntry.ALBUM_OVERVIEW)) return 1;
+            } else if (lhs.getPath().equals(AlbumEntry.ALBUM_OVERVIEW_PATH)) return -1;
+            else if (rhs.getPath().equals(AlbumEntry.ALBUM_OVERVIEW_PATH)) return 1;
             else if (lhs.isIncluded() && !rhs.isIncluded()) {
                 return 1;
             } else if (!lhs.isIncluded() && rhs.isIncluded()) {

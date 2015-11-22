@@ -1,4 +1,4 @@
-package com.afollestad.impression.adapters;
+package com.afollestad.impression.media;
 
 import android.content.Context;
 import android.database.Cursor;

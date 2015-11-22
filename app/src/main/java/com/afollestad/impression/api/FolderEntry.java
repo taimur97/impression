@@ -3,8 +3,8 @@ package com.afollestad.impression.api;
 import android.app.Activity;
 import android.database.Cursor;
 
-import com.afollestad.impression.adapters.MediaAdapter;
 import com.afollestad.impression.api.base.MediaEntry;
+import com.afollestad.impression.media.MediaAdapter;
 import com.afollestad.impression.utils.Utils;
 
 import java.io.File;
@@ -61,6 +61,7 @@ public class FolderEntry implements MediaEntry<FolderEntry> {
     }
 
     @Override
+    //TODO: Internal storage, root, etc.
     public String displayName() {
         return mFile.getName();
     }

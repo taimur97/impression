@@ -3,7 +3,7 @@ package com.afollestad.impression.api;
 import android.database.Cursor;
 import android.provider.MediaStore;
 
-import com.afollestad.impression.adapters.MediaAdapter;
+import com.afollestad.impression.media.MediaAdapter;
 
 import java.io.File;
 import java.io.Serializable;

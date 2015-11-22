@@ -19,10 +19,10 @@ import android.view.MenuItem;
 import android.widget.Toast;
 
 import com.afollestad.impression.R;
-import com.afollestad.impression.adapters.MediaAdapter;
 import com.afollestad.impression.api.AlbumEntry;
 import com.afollestad.impression.api.base.MediaEntry;
 import com.afollestad.impression.media.MainActivity;
+import com.afollestad.impression.media.MediaAdapter;
 import com.afollestad.impression.media.MediaFragment;
 import com.afollestad.impression.providers.ExcludedFolderProvider;
 import com.afollestad.impression.utils.TimeUtils;
@@ -397,7 +397,6 @@ public class MediaCab implements Serializable, MaterialCab.Callback {
                 mContext.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        mContext.notifyFoldersChanged();
                         mContext.reloadNavDrawerAlbums();
                         mDialog.dismiss();
                         finish();

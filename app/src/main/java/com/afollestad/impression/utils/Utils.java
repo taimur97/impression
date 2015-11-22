@@ -11,11 +11,11 @@ import android.view.WindowManager;
 import android.webkit.MimeTypeMap;
 
 import com.afollestad.impression.R;
-import com.afollestad.impression.adapters.MediaAdapter;
 import com.afollestad.impression.api.FolderEntry;
 import com.afollestad.impression.api.PhotoEntry;
 import com.afollestad.impression.api.VideoEntry;
 import com.afollestad.impression.api.base.MediaEntry;
+import com.afollestad.impression.media.MediaAdapter;
 import com.afollestad.impression.providers.ExcludedFolderProvider;
 import com.afollestad.materialdialogs.MaterialDialog;
 

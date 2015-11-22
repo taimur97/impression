@@ -4,8 +4,8 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.support.v7.widget.RecyclerView;
 
-import com.afollestad.impression.adapters.MediaAdapter;
 import com.afollestad.impression.api.base.MediaEntry;
+import com.afollestad.impression.media.MediaAdapter;
 
 import java.io.File;
 

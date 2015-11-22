@@ -3,7 +3,6 @@ package com.afollestad.impression.media;
 import android.Manifest;
 import android.app.Activity;
 import android.app.Fragment;
-import android.app.FragmentManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -27,14 +26,13 @@ import android.widget.TextView;
 import com.afollestad.impression.App;
 import com.afollestad.impression.R;
 import com.afollestad.impression.accounts.base.Account;
-import com.afollestad.impression.adapters.MediaAdapter;
 import com.afollestad.impression.api.AlbumEntry;
 import com.afollestad.impression.api.base.MediaEntry;
 import com.afollestad.impression.cab.MediaCab;
 import com.afollestad.impression.providers.SortMemoryProvider;
 import com.afollestad.impression.utils.PrefUtils;
 import com.afollestad.impression.utils.Utils;
-import com.afollestad.impression.widget.BreadCrumbLayout;
+import com.afollestad.impression.widget.breadcrumbs.Crumb;
 
 import java.io.File;
 
@@ -46,7 +44,7 @@ import static android.app.Activity.RESULT_OK;
 public class MediaFragment extends Fragment implements MediaView {
 
     protected MediaAdapter.SortMode sortCache;
-    protected BreadCrumbLayout.Crumb crumb;
+    protected Crumb crumb;
     private RecyclerView mRecyclerView;
     private MediaAdapter mAdapter;
     private MediaPresenter mPresenter;
@@ -175,18 +173,6 @@ public class MediaFragment extends Fragment implements MediaView {
         mAdapter.setSortMode(mode);
         reload();
         getActivity().invalidateOptionsMenu();
-    }
-
-    protected final void setExplorerMode(final boolean explorerMode) {
-        MainActivity act = (MainActivity) getActivity();
-        if (act == null) return;
-        PreferenceManager.getDefaultSharedPreferences(act).edit()
-                .putBoolean("explorer_mode", explorerMode).commit();
-        reload();
-        act.getFragmentManager().popBackStack(null, FragmentManager.POP_BACK_STACK_INCLUSIVE);
-        act.setTitle(mPresenter.getTitle());
-        act.invalidateOptionsMenu();
-        act.invalidateCrumbs();
     }
 
 
@@ -341,7 +327,7 @@ public class MediaFragment extends Fragment implements MediaView {
         mPresenter.onResume();
     }
 
-    public void setCrumb(BreadCrumbLayout.Crumb crumb) {
+    public void setCrumb(Crumb crumb) {
         this.crumb = crumb;
     }
 
@@ -364,7 +350,7 @@ public class MediaFragment extends Fragment implements MediaView {
         inflater.inflate(R.menu.fragment, menu);
 
         if (getActivity() != null) {
-            boolean isMain = mPresenter.getAlbumPath() == null || mPresenter.getAlbumPath().equals(AlbumEntry.ALBUM_OVERVIEW);
+            boolean isMain = mPresenter.getAlbumPath() == null || mPresenter.getAlbumPath().equals(AlbumEntry.ALBUM_OVERVIEW_PATH);
             boolean isAlbumSelect = ((MainActivity) getActivity()).isSelectAlbumMode();
             menu.findItem(R.id.choose).setVisible(!isMain && isAlbumSelect);
             menu.findItem(R.id.viewMode).setVisible(!isAlbumSelect);
@@ -444,7 +430,7 @@ public class MediaFragment extends Fragment implements MediaView {
                 mPresenter.setGridModeOn(!PrefUtils.isGridMode(getActivity()));
                 return true;
             case R.id.viewExplorer:
-                setExplorerMode(!PrefUtils.isExplorerMode(getActivity()));
+                mPresenter.onOptionsItemSelected(item.getItemId());
                 return true;
             case R.id.filterAll:
                 setFilterMode(MediaAdapter.FileFilterMode.ALL);

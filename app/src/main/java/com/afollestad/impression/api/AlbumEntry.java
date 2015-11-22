@@ -3,12 +3,11 @@ package com.afollestad.impression.api;
 import android.app.Activity;
 import android.content.Context;
 import android.database.Cursor;
-import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 
-import com.afollestad.impression.adapters.MediaAdapter;
 import com.afollestad.impression.api.base.MediaEntry;
+import com.afollestad.impression.media.MediaAdapter;
 import com.afollestad.impression.providers.SortMemoryProvider;
 import com.afollestad.impression.utils.Utils;
 
@@ -24,7 +23,8 @@ import java.util.Map;
  */
 public class AlbumEntry implements MediaEntry<AlbumEntry> {
 
-    public static final String ALBUM_OVERVIEW = Environment.getExternalStorageDirectory().getAbsolutePath();
+    public static final String ALBUM_OVERVIEW_PATH = "OVERVIEW";
+
     public static final long ALBUM_ID_USEPATH = -1;
     private static final long ALBUM_ID_ROOT = -2;
     private final File mFile;

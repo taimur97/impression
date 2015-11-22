@@ -5,7 +5,7 @@ import android.content.res.Resources;
 import android.preference.PreferenceManager;
 
 import com.afollestad.impression.R;
-import com.afollestad.impression.adapters.MediaAdapter;
+import com.afollestad.impression.media.MediaAdapter;
 
 public abstract class PrefUtils {
     public static final String DARK_THEME = "dark_theme";
@@ -18,6 +18,10 @@ public abstract class PrefUtils {
 
     public static boolean isDarkTheme(Context context) {
         return PreferenceManager.getDefaultSharedPreferences(context).getBoolean(DARK_THEME, false);
+    }
+
+    public static void setExplorerMode(Context context, boolean explorerMode) {
+        PreferenceManager.getDefaultSharedPreferences(context).edit().putBoolean(EXPLORER_MODE, explorerMode).apply();
     }
 
     public static boolean isExplorerMode(Context context) {

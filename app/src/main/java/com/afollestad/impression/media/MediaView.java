@@ -4,8 +4,7 @@ import android.content.Context;
 import android.os.Bundle;
 
 import com.afollestad.impression.MvpView;
-import com.afollestad.impression.adapters.MediaAdapter;
-import com.afollestad.impression.widget.BreadCrumbLayout;
+import com.afollestad.impression.widget.breadcrumbs.Crumb;
 
 interface MediaView extends MvpView {
 
@@ -21,7 +20,7 @@ interface MediaView extends MvpView {
 
     Bundle getArguments();
 
-    void setCrumb(BreadCrumbLayout.Crumb crumb);
+    void setCrumb(Crumb crumb);
 
     void reload();
 

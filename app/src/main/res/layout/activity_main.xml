@@ -42,7 +42,7 @@
 
             </FrameLayout>
 
-            <com.afollestad.impression.widget.BreadCrumbLayout
+            <com.afollestad.impression.widget.breadcrumbs.BreadCrumbLayout
                 android:id="@+id/breadCrumbs"
                 android:layout_width="match_parent"
                 android:layout_height="@dimen/breadcrumb_height"
