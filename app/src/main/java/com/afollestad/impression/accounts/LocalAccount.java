@@ -229,7 +229,6 @@ public class LocalAccount extends Account {
             new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    final boolean is = PreferenceManager.getDefaultSharedPreferences(getContext()).getBoolean("include_subfolders_included", true);
                     final List<MediaEntry> results = Utils.getEntriesFromFolder(getContext(), dir, true, false, filter);
                     if (callback != null) {
                         mHandler.post(new Runnable() {
@@ -242,8 +241,7 @@ public class LocalAccount extends Account {
                 }
             }).start();
         } else {
-            if ((albumPath == null || albumPath.equals(AlbumEntry.ALBUM_OVERVIEW_PATH) /*||*/
-                    /*albumPath.equals(Environment.getExternalStorageDirectory().getAbsolutePath())*/)
+            if ((albumPath == null || albumPath.equals(AlbumEntry.ALBUM_OVERVIEW_PATH))
                     && overviewMode == 1) {
                 getOverviewEntries(sort, filter, callback);
                 return;

@@ -5,7 +5,6 @@ import android.app.Fragment;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -21,6 +20,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 
 import com.afollestad.impression.BuildConfig;
 import com.afollestad.impression.R;
@@ -47,11 +47,13 @@ import java.io.InputStream;
 
 import pl.droidsonroids.gif.GifDrawable;
 import pl.droidsonroids.gif.GifImageView;
+import rx.Observable;
 import rx.Single;
 import rx.SingleSubscriber;
 import rx.Subscriber;
 import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
+import rx.functions.Action1;
 import rx.schedulers.Schedulers;
 
 /**
@@ -77,7 +79,8 @@ public class ViewerPagerFragment extends Fragment {
     private int mIndex;
     private boolean mIsActive;
 
-    private GifImageView mThumbOrGif;
+    private GifImageView mGifImageView;
+    private ImageView mThumbImageView;
     private SubsamplingScaleImageView mImageView;
     private ImpressionVideoView mVideoView;
 
@@ -136,7 +139,8 @@ public class ViewerPagerFragment extends Fragment {
             view = inflater.inflate(R.layout.fragment_viewer, container, false);
 
             mImageView = (SubsamplingScaleImageView) view.findViewById(R.id.photo);
-            mThumbOrGif = (GifImageView) view.findViewById(R.id.thumb);
+            mThumbImageView = (ImageView) view.findViewById(R.id.thumb);
+            mGifImageView = (GifImageView) view.findViewById(R.id.gif);
 
             mImageView.setOnTouchListener(new View.OnTouchListener() {
                 @Override
@@ -164,14 +168,15 @@ public class ViewerPagerFragment extends Fragment {
                 }
             };
 
-            mThumbOrGif.setOnTouchListener(onTouch);
+            mThumbImageView.setOnTouchListener(onTouch);
             mImageView.setOnTouchListener(onTouch);
+            mGifImageView.setOnTouchListener(onTouch);
 
             if (BuildConfig.DEBUG) {
                 mImageView.setDebug(true);
             }
 
-            ViewCompat.setTransitionName(mThumbOrGif, "view_" + mIndex);
+            ViewCompat.setTransitionName(mThumbImageView, "view_" + mIndex);
         }
         return view;
     }
@@ -304,8 +309,8 @@ public class ViewerPagerFragment extends Fragment {
 
                         mThumbnailBitmap = resource;
 
-                        mThumbOrGif.setImageBitmap(resource);
-                        Log.e("HI", "mThumbOrGif set imagebitmap" + mThumbOrGif.toString());
+                        mThumbImageView.setImageBitmap(resource);
+                        Log.e("HI", "mThumbImageView set imagebitmap" + mThumbImageView.toString());
 
                         //Lollipop+: start transition
                         activity.invalidateTransition();
@@ -329,17 +334,12 @@ public class ViewerPagerFragment extends Fragment {
             mImageView.setVisibility(View.INVISIBLE);
         }
 
-        if (mThumbOrGif != null) {
-            mThumbOrGif.setVisibility(View.VISIBLE);
-            if (isGif()) {
-                final Drawable drawable = mThumbOrGif.getDrawable();
-                if (drawable != null) {
-                    if (drawable instanceof GifDrawable) {
-                        ((GifDrawable) drawable).seekToFrame(0);
-                        ((GifDrawable) drawable).stop();
-                    }
-                }
-            }
+        if (mGifImageView != null) {
+            mGifImageView.setVisibility(View.INVISIBLE);
+        }
+
+        if (mThumbImageView != null) {
+            mThumbImageView.setVisibility(View.VISIBLE);
         }
     }
 
@@ -388,10 +388,34 @@ public class ViewerPagerFragment extends Fragment {
 //        }
 
         if (isGif()) {
-            mThumbOrGif.postDelayed(new Runnable() {
+            mImageView.setVisibility(View.INVISIBLE);
+            mGifImageView.postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    mThumbOrGif.setImageURI(getUri());
+                    mGifImageView.setImageURI(getUri());
+                    mGifImageView.setVisibility(View.VISIBLE);
+
+                    Observable.create(new Observable.OnSubscribe<Object>() {
+                        @Override
+                        public void call(Subscriber<? super Object> subscriber) {
+                            while (!((GifDrawable) mGifImageView.getDrawable()).isRunning()) {
+                                try {
+                                    Thread.sleep(16);
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                            subscriber.onNext(null);
+                        }
+                    }).subscribeOn(Schedulers.io())
+                            .observeOn(AndroidSchedulers.mainThread())
+                            .subscribe(new Action1<Object>() {
+                                @Override
+                                public void call(Object o) {
+                                    mThumbImageView.setVisibility(View.INVISIBLE);
+                                }
+                            });
+
                 }
             }, 150);
         } else {
@@ -417,7 +441,7 @@ public class ViewerPagerFragment extends Fragment {
 
                             @Override
                             public void onError(Throwable e) {
-                                Snackbar.make(mThumbOrGif, e.getMessage(), Snackbar.LENGTH_SHORT);
+                                Snackbar.make(mThumbImageView, e.getMessage(), Snackbar.LENGTH_SHORT);
                             }
 
                             @Override
@@ -469,13 +493,13 @@ public class ViewerPagerFragment extends Fragment {
 
             @Override
             public void onPreviewLoaded() {
-                Log.e("HI", "Preview loaded, attempt hide thumb" + mThumbOrGif.toString());
+                Log.e("HI", "Preview loaded, attempt hide thumb" + mThumbImageView.toString());
                 //TODO: Figure out why just setting visibility doesn't work?
-                mThumbOrGif.postDelayed(new Runnable() {
+                mThumbImageView.postDelayed(new Runnable() {
                     @Override
                     public void run() {
                         if (mIsActive) {
-                            mThumbOrGif.setVisibility(View.INVISIBLE);
+                            mThumbImageView.setVisibility(View.INVISIBLE);
                         }
                     }
                 }, 150);
@@ -487,11 +511,7 @@ public class ViewerPagerFragment extends Fragment {
     }
 
     public void finish() {
-        if (!isGif()) {
-            recycleFullImageShowThumbnail();
-        } else {
-            loadThumbAndFullIfCurrent();
-        }
+        recycleFullImageShowThumbnail();
     }
 
     private void loadVideo() {
@@ -560,7 +580,7 @@ public class ViewerPagerFragment extends Fragment {
         if (mIsVideo) {
             return mVideoView;
         } else {
-            return mThumbOrGif;
+            return mThumbImageView;
         }
     }
 }
