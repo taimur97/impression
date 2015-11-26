@@ -1,9 +1,11 @@
 package com.afollestad.impression.media;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 import android.provider.MediaStore;
+import android.support.annotation.IntDef;
 import android.support.v4.view.ViewCompat;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -12,43 +14,49 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import com.afollestad.impression.R;
-import com.afollestad.impression.adapters.base.HybridCursorAdapter;
-import com.afollestad.impression.api.AlbumEntry;
-import com.afollestad.impression.api.FolderEntry;
-import com.afollestad.impression.api.PhotoEntry;
-import com.afollestad.impression.api.VideoEntry;
-import com.afollestad.impression.api.base.MediaEntry;
+import com.afollestad.impression.api.MediaEntry;
+import com.afollestad.impression.api.OldAlbumEntry;
 import com.afollestad.impression.utils.PrefUtils;
 import com.afollestad.impression.utils.Utils;
 import com.afollestad.impression.viewer.ViewerActivity;
 import com.afollestad.impression.widget.ImpressionImageView;
 
 import java.io.File;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 
 /**
  * @author Aidan Follestad (afollestad)
  */
-public class MediaAdapter extends HybridCursorAdapter<MediaAdapter.ViewHolder> {
+public class MediaAdapter extends RecyclerView.Adapter<MediaAdapter.ViewHolder> {
 
+    public static final int SORT_NAME_ASC = 0;
+    public static final int SORT_NAME_DESC = 1;
+    public static final int SORT_MODIFIED_DATE_ASC = 2;
+    public static final int SORT_MODIFIED_DATE_DESC = 3;
+    public static final int SORT_DEFAULT = SORT_MODIFIED_DATE_ASC;
+    public static final int FILTER_ALL = 0;
+    public static final int FILTER_PHOTOS = 1;
+    public static final int FILTER_VIDEOS = 2;
     public static final int VIEW_TYPE_GRID = 0;
     public static final int VIEW_TYPE_GRID_FOLDER = 1;
     public static final int VIEW_TYPE_LIST = 2;
-
     private final Context mContext;
     private final Callback mCallback;
     private final List<MediaEntry> mEntries;
     private final List<String> mCheckedPaths;
     private final boolean mSelectAlbumMode;
-    private SortMode mSortMode;
+    private
+    @SortMode
+    int mSortMode;
     private boolean mGridMode;
     private int mDefaultImageBackground;
     private int mEmptyImageBackground;
 
-    public MediaAdapter(Context context, SortMode sort, Callback callback, boolean selectAlbumMode) {
+    public MediaAdapter(Context context, @SortMode int sort, Callback callback, boolean selectAlbumMode) {
         mContext = context;
         mSortMode = sort;
         mGridMode = PrefUtils.isGridMode(context);
@@ -65,7 +73,7 @@ public class MediaAdapter extends HybridCursorAdapter<MediaAdapter.ViewHolder> {
     public int getItemViewType(int position) {
         if (!mGridMode) {
             return VIEW_TYPE_LIST;
-        } else if (mEntries.get(position).isFolder()) {
+        } else if (false/*mEntries.get(position).isExplorerFolder()*/) {//TODO
             return VIEW_TYPE_GRID_FOLDER;
         } else {
             return VIEW_TYPE_GRID;
@@ -104,13 +112,12 @@ public class MediaAdapter extends HybridCursorAdapter<MediaAdapter.ViewHolder> {
         return new ViewerActivity.MediaWrapper(mEntries, false);
     }
 
-    @Override
     public void clear() {
         mEntries.clear();
     }
 
     private void add(MediaEntry e) {
-        if (e instanceof AlbumEntry) {
+        if (e instanceof OldAlbumEntry) {
             synchronized (mEntries) {
                 boolean found = false;
                 for (int i = 0; i < mEntries.size(); i++) {
@@ -129,28 +136,14 @@ public class MediaAdapter extends HybridCursorAdapter<MediaAdapter.ViewHolder> {
         }
     }
 
-    @Override
     public void addAll(MediaEntry[] entries) {
         if (entries != null) {
             for (MediaEntry e : entries)
                 add(e);
         }
         if (mEntries.size() > 0)
-            Collections.sort(mEntries, getSorter());
+            Collections.sort(mEntries, PrefUtils.getSortComparator(mSortMode));
         notifyDataSetChanged();
-    }
-
-    private Comparator<MediaEntry> getSorter() {
-        switch (mSortMode) {
-            default:
-                return new MediaNameSorter(false);
-            case NAME_DESC:
-                return new MediaNameSorter(true);
-            case MODIFIED_DATE_ASC:
-                return new MediaModifiedSorter(false);
-            case MODIFIED_DATE_DESC:
-                return new MediaModifiedSorter(true);
-        }
     }
 
     public void updateGridModeOn() {
@@ -162,7 +155,7 @@ public class MediaAdapter extends HybridCursorAdapter<MediaAdapter.ViewHolder> {
         notifyDataSetChanged();
     }
 
-    public void setSortMode(SortMode mode) {
+    public void setSortMode(@SortMode int mode) {
         mSortMode = mode;
     }
 
@@ -172,7 +165,6 @@ public class MediaAdapter extends HybridCursorAdapter<MediaAdapter.ViewHolder> {
         notifyDataSetChanged();
     }
 
-    @Override
     public void changeContent(Cursor cursor, Uri from, boolean clear, boolean explorerMode) {
         if (cursor == null || from == null) {
             mEntries.clear();
@@ -181,35 +173,36 @@ public class MediaAdapter extends HybridCursorAdapter<MediaAdapter.ViewHolder> {
         if (clear) mEntries.clear();
         final boolean photos = from.toString().equals(MediaStore.Images.Media.EXTERNAL_CONTENT_URI.toString());
         while (cursor.moveToNext()) {
-            MediaEntry pic = (photos ? new PhotoEntry().load(cursor) : new VideoEntry().load(cursor));
-            mEntries.add(pic);
+            //TODO
+            /*MediaEntry pic = (photos ? new PhotoEntry().load(cursor) : new VideoEntry().load(cursor));
+            mEntries.add(pic);*/
         }
         cursor.close();
-        Collections.sort(mEntries, getSorter());
+        Collections.sort(mEntries, PrefUtils.getSortComparator(mSortMode));
     }
 
-    @Override
     public void changeContent(File[] content, boolean explorerMode, FileFilterMode mode) {
         mEntries.clear();
         if (content == null || content.length == 0) return;
-        for (File fi : content) {
+        //TODO
+        /*for (File fi : content) {
             if (!fi.isHidden()) {
                 if (fi.isDirectory()) {
                     if (explorerMode)
-                        mEntries.add(new FolderEntry(fi));
+                        mEntries.add(new OldFolderEntry(fi));
                 } else {
                     String mime = Utils.getMimeType(Utils.getExtension(fi.getName()));
                     if (mime != null) {
-                        if (mime.startsWith("image/") && mode != FileFilterMode.VIDEOS) {
+                        if (mime.startsWith("image/") && mode != FileFilterMode.FILTER_VIDEOS) {
                             mEntries.add(new PhotoEntry().load(fi));
-                        } else if (mime.startsWith("video/") && mode != FileFilterMode.PHOTOS) {
+                        } else if (mime.startsWith("video/") && mode != FileFilterMode.FILTER_PHOTOS) {
                             mEntries.add(new VideoEntry().load(fi));
                         }
                     }
                 }
             }
-        }
-        Collections.sort(mEntries, getSorter());
+        }*/
+        Collections.sort(mEntries, PrefUtils.getSortComparator(mSortMode));
     }
 
     @Override
@@ -235,14 +228,16 @@ public class MediaAdapter extends HybridCursorAdapter<MediaAdapter.ViewHolder> {
     public void onBindViewHolder(final ViewHolder holder, int position) {
         MediaEntry entry = mEntries.get(position);
 
-        if (!mSelectAlbumMode || (entry.isFolder() || entry.isAlbum())) {
+        if (!mSelectAlbumMode || (entry.isFolder()/*|| entry.isAlbum()*/)) {
             holder.view.setActivated(mCheckedPaths.contains(entry.data()));
             if (!mSelectAlbumMode) {
                 holder.view.setOnLongClickListener(new View.OnLongClickListener() {
                     @Override
                     public boolean onLongClick(View v) {
                         int index = holder.getAdapterPosition();
-                        mCallback.onItemClick(index, v, mEntries.get(index), true);
+                        if (index != RecyclerView.NO_POSITION) {
+                            mCallback.onItemClick(index, v, mEntries.get(index), true);
+                        }
                         return true;
                     }
                 });
@@ -251,7 +246,9 @@ public class MediaAdapter extends HybridCursorAdapter<MediaAdapter.ViewHolder> {
                 @Override
                 public void onClick(View v) {
                     int index = holder.getAdapterPosition();
-                    mCallback.onItemClick(index, v, mEntries.get(index), false);
+                    if (index != RecyclerView.NO_POSITION) {
+                        mCallback.onItemClick(index, v, mEntries.get(index), false);
+                    }
                 }
             });
             holder.image.setBackgroundColor(mDefaultImageBackground);
@@ -260,19 +257,21 @@ public class MediaAdapter extends HybridCursorAdapter<MediaAdapter.ViewHolder> {
             holder.view.setBackground(null);
         }
 
-        if (entry.isAlbum()) {
+        if (entry.isFolder()) {
             holder.titleFrame.setVisibility(View.VISIBLE);
             holder.title.setText(entry.displayName());
-            if (((AlbumEntry) entry).mFirstPath == null) {
+            if (entry.data() == null) {
                 holder.image.setBackgroundColor(mEmptyImageBackground);
                 if (holder.subTitle != null)
                     holder.subTitle.setText("0");
-            } else if (entry.size() == 1) {
+            }
+            //TODO
+            /*else if (entry.size() == 1) {
                 if (holder.subTitle != null)
                     holder.subTitle.setText("1");
             } else if (holder.subTitle != null) {
-                holder.subTitle.setText("" + entry.size());
-            }
+                holder.subTitle.setText(String.valueOf(entry.size()));
+            }*/
             holder.image.load(entry, holder.imageProgress);
         } else if (entry.isFolder()) {
             holder.image.setBackground(null);
@@ -310,113 +309,20 @@ public class MediaAdapter extends HybridCursorAdapter<MediaAdapter.ViewHolder> {
         return mEntries.size();
     }
 
-    public enum FileFilterMode {
-        ALL(0),
-        PHOTOS(1),
-        VIDEOS(2);
-
-        private final int value;
-
-        FileFilterMode(int value) {
-            this.value = value;
-        }
-
-        public static FileFilterMode valueOf(int value) {
-            switch (value) {
-                default:
-                    return ALL;
-                case 1:
-                    return PHOTOS;
-                case 2:
-                    return VIDEOS;
-            }
-        }
-
-        public int value() {
-            return value;
-        }
+    @SuppressLint("UniqueConstants")
+    @IntDef({SORT_NAME_ASC, SORT_NAME_DESC, SORT_MODIFIED_DATE_ASC, SORT_MODIFIED_DATE_DESC, SORT_DEFAULT})
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface SortMode {
     }
 
-    public enum SortMode {
-        NAME_ASC(0),
-        NAME_DESC(1),
-        MODIFIED_DATE_ASC(2),
-        MODIFIED_DATE_DESC(3);
-
-        public static final int DEFAULT = 2;
-        private final int value;
-
-        SortMode(int value) {
-            this.value = value;
-        }
-
-        public static SortMode valueOf(int value) {
-            switch (value) {
-                default:
-                    return NAME_ASC;
-                case 1:
-                    return NAME_DESC;
-                case 2:
-                    return MODIFIED_DATE_ASC;
-                case 3:
-                    return MODIFIED_DATE_DESC;
-            }
-        }
-
-        public int value() {
-            return value;
-        }
+    @IntDef({FILTER_ALL, FILTER_PHOTOS, FILTER_VIDEOS})
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface FileFilterMode {
     }
+
 
     public interface Callback {
         void onItemClick(int index, View view, MediaEntry pic, boolean longClick);
-    }
-
-    public static class MediaNameSorter implements Comparator<MediaEntry> {
-
-        private final boolean desc;
-
-        public MediaNameSorter(boolean desc) {
-            this.desc = desc;
-        }
-
-        @Override
-        public int compare(MediaEntry lhs, MediaEntry rhs) {
-            String right = rhs.displayName();
-            String left = lhs.displayName();
-            if (right == null) right = "";
-            if (left == null) left = "";
-            if (desc) {
-                return right.compareTo(left);
-            } else {
-                return left.compareTo(right);
-            }
-        }
-    }
-
-    public static class MediaModifiedSorter implements Comparator<MediaEntry> {
-
-        private final boolean desc;
-
-        public MediaModifiedSorter(boolean desc) {
-            this.desc = desc;
-        }
-
-        @Override
-        public int compare(MediaEntry lhs, MediaEntry rhs) {
-            Long right;
-            Long left;
-            if (rhs != null) right = rhs.dateModified();
-            else right = 0l;
-            if (lhs != null) left = lhs.dateModified();
-            else left = 0l;
-
-            if (desc) {
-                return left.compareTo(right);
-            } else {
-                return right.compareTo(left);
-            }
-        }
     }
 
     public class ViewHolder extends RecyclerView.ViewHolder {

@@ -14,8 +14,7 @@ import android.view.View;
 import android.widget.ImageView;
 
 import com.afollestad.impression.R;
-import com.afollestad.impression.api.AlbumEntry;
-import com.afollestad.impression.api.base.MediaEntry;
+import com.afollestad.impression.api.MediaEntry;
 import com.afollestad.impression.utils.Utils;
 import com.afollestad.impression.viewer.KeepRatio;
 import com.bumptech.glide.Glide;
@@ -74,8 +73,8 @@ public class ImpressionImageView extends ImageView {
             mProgress.get().setVisibility(View.VISIBLE);
         }
         String pathToLoad = entry.data();
-        if (entry.isAlbum())
-            pathToLoad = ((AlbumEntry) entry).mFirstPath;
+       /* if (entry.isAlbum())
+            pathToLoad = ((OldAlbumEntry) entry).mFirstPath;*/
         String ext = Utils.getExtension(entry.data());
         mIsGif = ext != null && ext.equalsIgnoreCase("gif");
 
@@ -101,9 +100,9 @@ public class ImpressionImageView extends ImageView {
                 .into(this);
     }
 
+    @SuppressWarnings("SuspiciousNameCombination")
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        //noinspection SuspiciousNameCombination
         super.onMeasure(widthMeasureSpec, widthMeasureSpec);
         setMeasuredDimension(widthMeasureSpec, widthMeasureSpec);
     }

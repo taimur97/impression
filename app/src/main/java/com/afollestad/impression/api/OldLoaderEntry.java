@@ -1,30 +1,21 @@
 package com.afollestad.impression.api;
 
-import android.database.Cursor;
-import android.provider.MediaStore;
-
-import com.afollestad.impression.media.MediaAdapter;
-
-import java.io.File;
-import java.io.Serializable;
-import java.util.Comparator;
-
 /**
  * @author Aidan Follestad (afollestad)
  */
-public class LoaderEntry implements Serializable {
-
+public class OldLoaderEntry/* implements Serializable */ {
+/*
     private String _displayName;
     private String _data;
     private long _size;
     private long _dateModified;
     private long _bucketId;
 
-    private LoaderEntry() {
+    private OldLoaderEntry() {
     }
 
-    public static LoaderEntry load(Cursor from) {
-        LoaderEntry a = new LoaderEntry();
+    public static OldLoaderEntry load(Cursor from) {
+        OldLoaderEntry a = new OldLoaderEntry();
         a._displayName = from.getString(from.getColumnIndex(MediaStore.Images.Media.DISPLAY_NAME));
         a._data = from.getString(from.getColumnIndex(MediaStore.Images.Media.DATA));
         a._size = from.getLong(from.getColumnIndex(MediaStore.Images.Media.SIZE));
@@ -33,8 +24,8 @@ public class LoaderEntry implements Serializable {
         return a;
     }
 
-    public static LoaderEntry load(File from) {
-        LoaderEntry a = new LoaderEntry();
+    public static OldLoaderEntry load(File from) {
+        OldLoaderEntry a = new OldLoaderEntry();
         a._displayName = from.getName();
         a._data = from.getAbsolutePath();
         a._size = from.length();
@@ -67,16 +58,16 @@ public class LoaderEntry implements Serializable {
         return new File(data()).getParent();
     }
 
-    public static class Sorter implements Comparator<LoaderEntry> {
+    public static class Sorter implements Comparator<OldLoaderEntry> {
 
         private final MediaAdapter.SortMode mSort;
 
-        public Sorter(MediaAdapter.SortMode sort) {
-            mSort = sort;
+        public Sorter(@MediaAdapter.SortMode int getSortQueryFromSortMode) {
+            mSort = getSortQueryFromSortMode;
         }
 
         @Override
-        public int compare(LoaderEntry lhs, LoaderEntry rhs) {
+        public int compare(OldLoaderEntry lhs, OldLoaderEntry rhs) {
             String leftName;
             String rightName;
             Long leftTime;
@@ -103,7 +94,7 @@ public class LoaderEntry implements Serializable {
             switch (mSort) {
                 default:
                     return rightName.compareTo(leftName);
-                case NAME_ASC:
+                case SORT_NAME_ASC:
                     return leftName.compareTo(rightName);
                 case MODIFIED_DATE_DESC:
                     return leftTime.compareTo(rightTime);
@@ -111,5 +102,5 @@ public class LoaderEntry implements Serializable {
                     return rightTime.compareTo(leftTime);
             }
         }
-    }
+    }*/
 }

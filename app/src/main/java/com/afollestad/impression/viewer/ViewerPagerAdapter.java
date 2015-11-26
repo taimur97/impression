@@ -3,7 +3,7 @@ package com.afollestad.impression.viewer;
 import android.app.Fragment;
 import android.app.FragmentManager;
 
-import com.afollestad.impression.api.base.MediaEntry;
+import com.afollestad.impression.api.MediaEntry;
 import com.afollestad.impression.utils.FragmentStatePagerAdapter;
 
 import java.util.List;
@@ -37,14 +37,13 @@ public class ViewerPagerAdapter extends FragmentStatePagerAdapter {
         notifyDataSetChanged();
     }
 
-    private int translateToGridIndex(int local) {
+    /*private int translateToGridIndex(int local) {
         return mMedia.get(local).realIndex();
-    }
+    }*/
 
     @Override
     public Fragment getItem(int position) {
-        int gridPosition = translateToGridIndex(position);
-        final ViewerPagerFragment viewerPagerFragment = ViewerPagerFragment.create(mMedia.get(position), gridPosition, mThumbWidth, mThumbHeight);
+        final ViewerPagerFragment viewerPagerFragment = ViewerPagerFragment.create(mMedia.get(position), position, mThumbWidth, mThumbHeight);
         final boolean active = mInitialCurrent == position;
         if (active) {
             viewerPagerFragment.setIsActive(true);

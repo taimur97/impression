@@ -13,8 +13,8 @@ import android.view.View;
 
 import com.afollestad.impression.MvpPresenter;
 import com.afollestad.impression.R;
-import com.afollestad.impression.api.AlbumEntry;
-import com.afollestad.impression.api.base.MediaEntry;
+import com.afollestad.impression.api.FolderEntry;
+import com.afollestad.impression.api.MediaEntry;
 import com.afollestad.impression.cab.MediaCab;
 import com.afollestad.impression.providers.SortMemoryProvider;
 import com.afollestad.impression.utils.PrefUtils;
@@ -138,7 +138,7 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
         if (PrefUtils.isExplorerMode(getView().getContextCompat())) {
             // In explorer mode, the path is displayed in the bread crumbs so the name is shown instead
             title = getView().getContextCompat().getString(R.string.app_name);
-        } else if (mPath == null || mPath.equals(AlbumEntry.ALBUM_OVERVIEW_PATH)) {
+        } else if (mPath == null || mPath.equals(FolderEntry.OVERVIEW_PATH)) {
             title = getView().getContextCompat().getString(R.string.overview);
         } else if (mPath.equals(Environment.getExternalStorageDirectory().getAbsolutePath())) {
             title = getView().getContextCompat().getString(R.string.internal_storage);
@@ -153,7 +153,7 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
         return R.string.no_photosorvideos;
     }
 
-    public String getAlbumPath() {
+    public String getPath() {
         return mPath;
     }
 
@@ -193,6 +193,7 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
                 return;
             }
 
+            //noinspection ConstantConditions
             final MainActivity act = (MainActivity) getView().getContextCompat();
 
             if (act == null) {
@@ -205,8 +206,9 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
             act.getTmpState().putInt(MainActivity.EXTRA_OLD_ITEM_POSITION, index);
 
             if (act.isPickMode() || act.isSelectAlbumMode()) {
-                if (pic.isFolder() || pic.isAlbum()) {
-                    act.switchAlbum(pic.data());
+                //TODO
+                if (pic.isFolder() && pic instanceof FolderEntry) {
+                    act.switchAlbum(((FolderEntry) pic).folderPath());
                 } else {
                     // This will never be called for album selection mode, only pick mode
                     final File file = new File(pic.data());
@@ -226,8 +228,9 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
                     act.getMediaCab().setFragment((MediaFragment) getView(), false);
                     act.getMediaCab().toggleEntry(pic);
                 } else {
-                    if (pic.isFolder() || pic.isAlbum()) {
-                        act.switchAlbum(pic.data());
+                    //TODO
+                    if (pic.isFolder() && pic instanceof FolderEntry) {
+                        act.switchAlbum(((FolderEntry) pic).folderPath());
                     } else {
                         ImpressionImageView iv = (ImpressionImageView) view.findViewById(R.id.image);
                         int width = iv.getWidth();
@@ -235,7 +238,7 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
                         ViewerActivity.MediaWrapper wrapper = getView().getAdapter().getMedia();
                         final Intent intent = new Intent(act, ViewerActivity.class)
                                 .putExtra(ViewerActivity.EXTRA_MEDIA_ENTRIES, wrapper)
-                                .putExtra(MainActivity.EXTRA_CURRENT_ITEM_POSITION, index)
+                                .putExtra(ViewerActivity.EXTRA_CURRENT_ITEM_POSITION, index)
                                 .putExtra(ViewerActivity.EXTRA_WIDTH, width)
                                 .putExtra(ViewerActivity.EXTRA_HEIGHT, height);
                         final String transName = "view_" + index;

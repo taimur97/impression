@@ -3,8 +3,14 @@ package com.afollestad.impression.accounts;
 import android.content.Context;
 
 import com.afollestad.impression.accounts.base.Account;
-import com.afollestad.impression.api.AlbumEntry;
+import com.afollestad.impression.api.FolderEntry;
+import com.afollestad.impression.api.MediaEntry;
 import com.afollestad.impression.media.MediaAdapter;
+
+import java.util.List;
+import java.util.Set;
+
+import rx.Single;
 
 /**
  * @author Aidan Follestad (afollestad)
@@ -36,20 +42,40 @@ public class GoogleDriveAccount extends Account {
     }
 
     @Override
-    public boolean hasIncludedFolders() {
+    public boolean supportsIncludedFolders() {
         return false;
     }
 
     @Override
-    public void getAlbums(MediaAdapter.SortMode sort, MediaAdapter.FileFilterMode filter, AlbumCallback callback) {
-        callback.onAlbums(null);
+    public Single<Set<FolderEntry>> getAlbums(@MediaAdapter.SortMode int sort, @MediaAdapter.FileFilterMode int filter) {
+        return null;
     }
 
     @Override
-    public void getIncludedFolders(AlbumEntry[] preEntries, AlbumCallback callback) {
+    public Single<List<FolderEntry>> getIncludedFolders(@MediaAdapter.FileFilterMode int filter) {
+        return null;
+    }
+/*
+    @Override
+    public Single<List<FolderEntry>> getOverviewFolders(@MediaAdapter.SortMode int sort, @MediaAdapter.FileFilterMode int filter) {
+        return null;
+    }*/
+
+    @Override
+    public Single<List<? extends MediaEntry>> getEntries(String albumPath, boolean explorerMode, @MediaAdapter.FileFilterMode int filter, @MediaAdapter.SortMode int sort) {
+        return null;
+    }
+
+/*    @Override
+public Single<List<FolderEntry>> getAlbums(@MediaAdapter.SortMode int getSortQueryFromSortMode, MediaAdapter.FileFilterMode filter, AlbumCallback callback) {
+    callback.onAlbums(null);
+}
+
+    @Override
+    public void getIncludedFolders(OldAlbumEntry[] preEntries, AlbumCallback callback) {
     }
 
     @Override
-    public void getEntries(String albumPath, int overviewMode, boolean explorerMode, MediaAdapter.FileFilterMode filter, MediaAdapter.SortMode sort, EntriesCallback callback) {
-    }
+    public void getEntries(String albumPath, int overviewMode, boolean explorerMode, MediaAdapter.FileFilterMode filter, MediaAdapter.SortMode getSortQueryFromSortMode, EntriesCallback callback) {
+    }*/
 }

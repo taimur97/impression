@@ -25,19 +25,25 @@ import android.widget.Toast;
 import com.afollestad.impression.R;
 import com.afollestad.impression.accounts.base.Account;
 import com.afollestad.impression.adapters.NavDrawerAdapter;
-import com.afollestad.impression.api.AlbumEntry;
+import com.afollestad.impression.api.FolderEntry;
 import com.afollestad.impression.media.MainActivity;
 import com.afollestad.impression.media.MediaAdapter;
 import com.afollestad.impression.providers.AccountProvider;
 import com.afollestad.impression.providers.ExcludedFolderProvider;
 import com.afollestad.impression.providers.IncludedFolderProvider;
 import com.afollestad.impression.ui.base.ThemedActivity;
+import com.afollestad.impression.utils.PrefUtils;
 import com.afollestad.impression.utils.Utils;
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.afollestad.materialdialogs.folderselector.FolderChooserDialog;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+
+import rx.SingleSubscriber;
+import rx.android.schedulers.AndroidSchedulers;
+import rx.functions.Action1;
 
 /**
  * @author Aidan Follestad (afollestad)
@@ -205,19 +211,20 @@ public class NavDrawerFragment extends Fragment implements NavDrawerAdapter.Call
         View addAccountFrame = mAccountsFrame.findViewById(R.id.addAccountFrame);
         mAccountsFrame.removeAllViews();
         mAccountsFrame.addView(addAccountFrame);
-        int mCurrent = Account.getActive(getActivity());
+        int mCurrent = PrefUtils.getActiveAccountId(getActivity());
 
         if (mCurrent == -1) {
             Account acc = AccountProvider.add(getActivity(), null, Account.TYPE_LOCAL);
             mAccounts.add(acc);
-            Account.setActive(getActivity(), acc);
+            PrefUtils.setActiveAccountId(getActivity(), acc.id());
             mCurrent = acc.id();
         }
 
         final int fCurrent = mCurrent;
-        Account.getAll(getActivity(), new Account.AccountsCallback() {
+        Account.getAll(getActivity()).observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Action1<Account[]>() {
             @Override
-            public void onAccounts(Account[] accounts) {
+            public void call(Account[] accounts) {
                 if (accounts == null || !isAdded()) return;
                 for (int i = 0; i < accounts.length; i++) {
                     Account a = accounts[i];
@@ -236,31 +243,37 @@ public class NavDrawerFragment extends Fragment implements NavDrawerAdapter.Call
         if (account != null)
             mCurrentAccount = account;
         mAdapter.clear();
-        mAdapter.add(new NavDrawerAdapter.Entry(AlbumEntry.ALBUM_OVERVIEW_PATH, false, false));
-        // TODO clear activity back stack to remove back stack of old account?
-        mCurrentAccount.getAlbums(MediaAdapter.SortMode.NAME_DESC, MediaAdapter.FileFilterMode.ALL, new Account.AlbumCallback() {
+        mAdapter.add(new NavDrawerAdapter.Entry(FolderEntry.OVERVIEW_PATH, false, false));
+
+        mCurrentAccount.getAlbums(MediaAdapter.SORT_NAME_DESC, MediaAdapter.FILTER_ALL)
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new SingleSubscriber<Set<FolderEntry>>() {
             @Override
-            public void onAlbums(AlbumEntry[] albums) {
-                for (AlbumEntry a : albums)
-                    mAdapter.add(new NavDrawerAdapter.Entry(a.data(), false, false));
-                if (mCurrentAccount.hasIncludedFolders()) {
-                    getIncludedFolders(albums);
-                } else mAdapter.notifyDataSetChangedAndSort();
+            public void onSuccess(Set<FolderEntry> folderEntries) {
+                for (FolderEntry f : folderEntries) {
+                    mAdapter.add(new NavDrawerAdapter.Entry(f.folderPath(), false, false));
+                }
+                if (mCurrentAccount.supportsIncludedFolders()) {
+                    getIncludedFolders();
+                } else {
+                    mAdapter.notifyDataSetChangedAndSort();
+                }
             }
 
             @Override
-            public void onError(Exception e) {
+            public void onError(Throwable error) {
                 if (getActivity() == null) return;
-                Utils.showErrorDialog(getActivity(), e);
+                Utils.showErrorDialog(getActivity(), error);
             }
         });
     }
 
-    private void getIncludedFolders(AlbumEntry[] preAlbums) {
-        mCurrentAccount.getIncludedFolders(preAlbums, new Account.AlbumCallback() {
+    private void getIncludedFolders() {
+        //TODO
+        /*mCurrentAccount.getIncludedFolders(preAlbums, new Account.AlbumCallback() {
             @Override
-            public void onAlbums(AlbumEntry[] albums) {
-                for (AlbumEntry a : albums)
+            public void onAlbums(OldAlbumEntry[] albums) {
+                for (OldAlbumEntry a : albums)
                     mAdapter.update(new NavDrawerAdapter.Entry(a.data(), false, true));
                 mAdapter.add(new NavDrawerAdapter.Entry("", true, false));
                 mAdapter.notifyDataSetChangedAndSort();
@@ -271,7 +284,11 @@ public class NavDrawerFragment extends Fragment implements NavDrawerAdapter.Call
                 if (getActivity() == null) return;
                 Utils.showErrorDialog(getActivity(), e);
             }
-        });
+        });*/
+
+
+        //mAdapter.add(new NavDrawerAdapter.Entry("", true, false));
+        mAdapter.notifyDataSetChangedAndSort();
     }
 
     @Override

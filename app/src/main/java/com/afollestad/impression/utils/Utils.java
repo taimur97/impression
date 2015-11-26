@@ -11,19 +11,11 @@ import android.view.WindowManager;
 import android.webkit.MimeTypeMap;
 
 import com.afollestad.impression.R;
-import com.afollestad.impression.api.FolderEntry;
-import com.afollestad.impression.api.PhotoEntry;
-import com.afollestad.impression.api.VideoEntry;
-import com.afollestad.impression.api.base.MediaEntry;
-import com.afollestad.impression.media.MediaAdapter;
-import com.afollestad.impression.providers.ExcludedFolderProvider;
 import com.afollestad.materialdialogs.MaterialDialog;
 
 import java.io.File;
 import java.text.DecimalFormat;
-import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -105,7 +97,7 @@ public abstract class Utils {
         return type;
     }
 
-    public static void showErrorDialog(Context context, Exception e) {
+    public static void showErrorDialog(Context context, Throwable e) {
         try {
             new MaterialDialog.Builder(context)
                     .title(R.string.error)
@@ -138,7 +130,7 @@ public abstract class Utils {
         folder.delete();
     }
 
-    public static List<MediaEntry> getEntriesFromFolder(Context context, File dir, boolean includeFolders, boolean includeFoldersContents, MediaAdapter.FileFilterMode filter) {
+    /*public static List<MediaEntry> getEntriesFromFolder(Context context, File dir, boolean includeFolders, boolean includeFoldersContents, MediaAdapter.FileFilterMode filter) {
         final File[] content = dir.listFiles();
         final List<MediaEntry> results = new ArrayList<>();
         if (content != null) {
@@ -152,7 +144,7 @@ public abstract class Utils {
                                 final List<MediaEntry> subContents = Utils.getEntriesFromFolder(context, fi, includeFolders, true, filter);
                                 results.addAll(subContents);
                             } else {
-                                results.add(new FolderEntry(fi));
+                                results.add(new OldFolderEntry(fi));
                             }
                         }
                     } else {
@@ -169,7 +161,7 @@ public abstract class Utils {
             }
         }
         return results;
-    }
+    }*/
 
     /**
      * Returns a string representation of {@param set}. Used only for debugging purposes.

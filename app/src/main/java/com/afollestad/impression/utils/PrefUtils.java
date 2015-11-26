@@ -5,7 +5,12 @@ import android.content.res.Resources;
 import android.preference.PreferenceManager;
 
 import com.afollestad.impression.R;
+import com.afollestad.impression.api.MediaEntry;
 import com.afollestad.impression.media.MediaAdapter;
+import com.afollestad.impression.media.MediaModifiedSorter;
+import com.afollestad.impression.media.MediaNameSorter;
+
+import java.util.Comparator;
 
 public abstract class PrefUtils {
     public static final String DARK_THEME = "dark_theme";
@@ -15,6 +20,9 @@ public abstract class PrefUtils {
     public static final String GRID_SIZE_PREFIX = "grid_size_";
     public static final String OVERVIEW_MODE = "overview_mode";
     public static final String FILTER_MODE = "filter_mode";
+    public static final String INCLUDE_SUBFOLDERS_INCLUDED = "include_subfolders_included";
+    public static final String ACTIVE_ACCOUNT_ID = "active_account";
+    public static final String SORT_MODE = "sort_mode";
 
     public static boolean isDarkTheme(Context context) {
         return PreferenceManager.getDefaultSharedPreferences(context).getBoolean(DARK_THEME, false);
@@ -46,8 +54,7 @@ public abstract class PrefUtils {
         final Resources r = context.getResources();
         final int defaultGrid = r.getInteger(R.integer.default_grid_width);
         final int orientation = r.getConfiguration().orientation;
-        return PreferenceManager.getDefaultSharedPreferences(context)
-                .getInt("grid_size_" + orientation, defaultGrid);
+        return PreferenceManager.getDefaultSharedPreferences(context).getInt(GRID_SIZE_PREFIX + orientation, defaultGrid);
     }
 
     public static void setGridColumns(Context context, int orientation, int gridSize) {
@@ -59,9 +66,50 @@ public abstract class PrefUtils {
         return PreferenceManager.getDefaultSharedPreferences(context).getInt(OVERVIEW_MODE, 1);
     }
 
-    public static MediaAdapter.FileFilterMode getFilterMode(Context context) {
-        if (context == null) return MediaAdapter.FileFilterMode.ALL;
-        int explorerMode = PreferenceManager.getDefaultSharedPreferences(context).getInt(FILTER_MODE, 0);
-        return MediaAdapter.FileFilterMode.valueOf(explorerMode);
+    public static
+    @MediaAdapter.FileFilterMode
+    int getFilterMode(Context context) {
+        if (context == null) return MediaAdapter.FILTER_ALL;
+        //noinspection ResourceType
+        return PreferenceManager.getDefaultSharedPreferences(context).getInt(FILTER_MODE, MediaAdapter.FILTER_ALL);
+    }
+
+    public static void setFilterMode(Context context, @MediaAdapter.FileFilterMode int mode) {
+        PreferenceManager.getDefaultSharedPreferences(context).edit().putInt(FILTER_MODE, mode).apply();
+    }
+
+    public static boolean isSubfoldersIncluded(Context context) {
+        return PreferenceManager.getDefaultSharedPreferences(context).getBoolean(INCLUDE_SUBFOLDERS_INCLUDED, true);
+    }
+
+    public static int getActiveAccountId(Context context) {
+        return PreferenceManager.getDefaultSharedPreferences(context).getInt(ACTIVE_ACCOUNT_ID, -1);
+    }
+
+    public static void setActiveAccountId(Context context, int accountId) {
+        PreferenceManager.getDefaultSharedPreferences(context).edit().putInt(ACTIVE_ACCOUNT_ID, accountId).apply();
+    }
+
+    @MediaAdapter.SortMode
+    public static int getSortMode(Context context) {
+        //noinspection ResourceType
+        return PreferenceManager.getDefaultSharedPreferences(context).getInt(SORT_MODE, MediaAdapter.SORT_DEFAULT);
+    }
+
+    public static void setSortMode(Context context, @MediaAdapter.SortMode int mode) {
+        PreferenceManager.getDefaultSharedPreferences(context).edit().putInt(SORT_MODE, mode).apply();
+    }
+
+    public static Comparator<MediaEntry> getSortComparator(@MediaAdapter.SortMode int mode) {
+        switch (mode) {
+            default:
+                return new MediaNameSorter(false);
+            case MediaAdapter.SORT_NAME_DESC:
+                return new MediaNameSorter(true);
+            case MediaAdapter.SORT_MODIFIED_DATE_ASC:
+                return new MediaModifiedSorter(false);
+            case MediaAdapter.SORT_MODIFIED_DATE_DESC:
+                return new MediaModifiedSorter(true);
+        }
     }
 }

@@ -2,7 +2,6 @@ package com.afollestad.impression.cab;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
-import android.content.ActivityNotFoundException;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
@@ -10,17 +9,14 @@ import android.content.Intent;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Bundle;
-import android.provider.MediaStore;
 import android.support.v4.widget.DrawerLayout;
 import android.text.Html;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.Toast;
 
 import com.afollestad.impression.R;
-import com.afollestad.impression.api.AlbumEntry;
-import com.afollestad.impression.api.base.MediaEntry;
+import com.afollestad.impression.api.MediaEntry;
 import com.afollestad.impression.media.MainActivity;
 import com.afollestad.impression.media.MediaAdapter;
 import com.afollestad.impression.media.MediaFragment;
@@ -40,7 +36,6 @@ import java.io.OutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.GregorianCalendar;
 import java.util.List;
 
@@ -70,7 +65,8 @@ public class MediaCab implements Serializable, MaterialCab.Callback {
         ViewerActivity.MediaWrapper wrapper = (ViewerActivity.MediaWrapper) in.getSerializable(STATE_MEDIACAB_ENTRIES);
         if (wrapper != null) {
             MediaCab cab = new MediaCab(context);
-            cab.mMediaEntries = wrapper.getMedia();
+            //TODO
+            /*cab.mMediaEntries = wrapper.getMedia();*/
             cab.mCab = MaterialCab.restoreState(in, context, cab);
             return cab;
         }
@@ -107,7 +103,7 @@ public class MediaCab implements Serializable, MaterialCab.Callback {
 
     public void saveState(Bundle out) {
         mCab.saveState(out);
-        out.putSerializable(STATE_MEDIACAB_ENTRIES, new ViewerActivity.MediaWrapper(mMediaEntries, true));
+        out.putParcelable(STATE_MEDIACAB_ENTRIES, new ViewerActivity.MediaWrapper(mMediaEntries, true));
     }
 
     public boolean isStarted() {
@@ -117,9 +113,10 @@ public class MediaCab implements Serializable, MaterialCab.Callback {
     private void invalidate() {
         if (mMediaEntries.size() == 0)
             finish();
-        else if (mMediaEntries.size() == 1)
-            mCab.setTitle(mMediaEntries.get(0).title());
-        else
+        else if (mMediaEntries.size() == 1) {
+            //TODO
+            mCab.setTitle(mMediaEntries.get(0).displayName());
+        } else
             mCab.setTitle(mMediaEntries.size() + "");
     }
 
@@ -194,20 +191,21 @@ public class MediaCab implements Serializable, MaterialCab.Callback {
         }).start();
     }
 
+    //TODO
     private void shareEntries() {
-        List<MediaEntry> toSend = new ArrayList<>();
+        /*List<MediaEntry> toSend = new ArrayList<>();
         for (MediaEntry e : mMediaEntries) {
             if (e.isAlbum()) {
-                AlbumEntry album = (AlbumEntry) e;
+                OldAlbumEntry album = (OldAlbumEntry) e;
                 Collections.addAll(toSend, album.getContents(mContext,
-                        album.bucketId() == AlbumEntry.ALBUM_ID_USEPATH));
+                        album.bucketId() == OldAlbumEntry.ALBUM_ID_USEPATH));
             } else {
                 toSend.add(e);
             }
-        }
-        if (toSend.size() > 0) {
+        }*/
+       /* if (toSend.size() > 0) {
             if (toSend.size() == 1) {
-                String mime = toSend.get(0).isVideo() ? "video/*" : "image/*";
+                String mime = toSend.get(0).isVideo() ? "video*//*" : "image*//*";
                 try {
                     Intent intent = new Intent(Intent.ACTION_SEND)
                             .setType(mime)
@@ -224,12 +222,12 @@ public class MediaCab implements Serializable, MaterialCab.Callback {
                     foundPhotos = foundPhotos || !p.isVideo();
                     foundVideos = foundVideos || p.isVideo();
                     uris.add(Uri.fromFile(new File(p.data())));
-                }
+                }*/
                 String mime = "*/*";
-                if (foundPhotos && !foundVideos) {
-                    mime = "image/*";
+                /*if (foundPhotos && !foundVideos) {
+                    mime = "image*//*";
                 } else if (foundVideos && !foundPhotos) {
-                    mime = "video/*";
+                    mime = "video*//*";
                 }
                 try {
                     Intent intent = new Intent(Intent.ACTION_SEND_MULTIPLE)
@@ -241,7 +239,7 @@ public class MediaCab implements Serializable, MaterialCab.Callback {
                 }
             }
         }
-        finish();
+        finish();*/
     }
 
     public void finishCopyMove(File dest, int requestCode) {
@@ -249,15 +247,16 @@ public class MediaCab implements Serializable, MaterialCab.Callback {
     }
 
     private void deleteEntries() {
+        //TODO
         final List<MediaEntry> toDelete = new ArrayList<>();
         for (MediaEntry e : mMediaEntries) {
-            if (e.isAlbum()) {
-                AlbumEntry album = (AlbumEntry) e;
+            /*if (e.isAlbum()) {
+                OldAlbumEntry album = (OldAlbumEntry) e;
                 Collections.addAll(toDelete, album.getContents(mContext,
-                        album.bucketId() == AlbumEntry.ALBUM_ID_USEPATH));
+                        album.bucketId() == OldAlbumEntry.ALBUM_ID_USEPATH));
             } else {
                 toDelete.add(e);
-            }
+            }*/
         }
         if (toDelete.size() == 0) {
             finish();
@@ -275,7 +274,8 @@ public class MediaCab implements Serializable, MaterialCab.Callback {
             public void run() {
                 for (MediaEntry p : toDelete) {
                     if (!mDialog.isShowing()) break;
-                    p.delete(mContext);
+                    //TODO
+                    /*p.delete(mContext);*/
                     mDialog.setProgress(mDialog.getProgress() + 1);
                 }
                 mContext.runOnUiThread(new Runnable() {
@@ -306,7 +306,8 @@ public class MediaCab implements Serializable, MaterialCab.Callback {
         ContentResolver r = context.getContentResolver();
         ContentValues values = new ContentValues();
         if (deleteAfter) {
-            if (src.isVideo()) {
+            //TODO
+            /*if (src.isVideo()) {
                 values.put(MediaStore.Video.VideoColumns.DATA, dst.getAbsolutePath());
                 r.update(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, values,
                         MediaStore.Video.VideoColumns.DATA + " = ?", new String[]{src.data()});
@@ -314,7 +315,7 @@ public class MediaCab implements Serializable, MaterialCab.Callback {
                 values.put(MediaStore.Images.ImageColumns.DATA, dst.getAbsolutePath());
                 r.update(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values,
                         MediaStore.Images.ImageColumns.DATA + " = ?", new String[]{src.data()});
-            }
+            }*/
             new File(src.data()).delete();
         } else {
             Log.i("UpdateMediaDatabase", "Scanning " + dst.getPath());
@@ -353,13 +354,14 @@ public class MediaCab implements Serializable, MaterialCab.Callback {
     private void copyEntries(final File destDir, final boolean deleteAfter) {
         final List<MediaEntry> toMove = new ArrayList<>();
         for (MediaEntry e : mMediaEntries) {
-            if (e.isAlbum()) {
-                AlbumEntry album = (AlbumEntry) e;
+            //TODO
+            /*if (e.isAlbum()) {
+                OldAlbumEntry album = (OldAlbumEntry) e;
                 Collections.addAll(toMove, album.getContents(mContext,
-                        album.bucketId() == AlbumEntry.ALBUM_ID_USEPATH));
+                        album.bucketId() == OldAlbumEntry.ALBUM_ID_USEPATH));
             } else {
                 toMove.add(e);
-            }
+            }*/
         }
         if (toMove.size() == 0) {
             finish();
@@ -418,7 +420,8 @@ public class MediaCab implements Serializable, MaterialCab.Callback {
         boolean foundDir = false;
         boolean allAlbumsOrFolders = true;
         for (MediaEntry e : mMediaEntries) {
-            if (!e.isAlbum() && !e.isFolder()) allAlbumsOrFolders = false;
+            //TODO
+           /* if (!e.isAlbum() && !e.isFolder()) allAlbumsOrFolders = false;*/
             if (e.isFolder()) {
                 foundDir = true;
                 break;
@@ -429,7 +432,8 @@ public class MediaCab implements Serializable, MaterialCab.Callback {
         menu.findItem(R.id.exclude).setVisible(allAlbumsOrFolders);
         if (mMediaEntries.size() > 0) {
             MediaEntry firstEntry = mMediaEntries.get(0);
-            boolean canShow = mMediaEntries.size() == 1 && !firstEntry.isVideo() && !firstEntry.isAlbum();
+            //TODO
+            boolean canShow =/* mMediaEntries.size() == 1 && !firstEntry.isVideo() && !firstEntry.isAlbum();*/true;
             menu.findItem(R.id.edit).setVisible(canShow);
             menu.findItem(R.id.details).setVisible(canShow);
         } else {
@@ -496,7 +500,7 @@ public class MediaCab implements Serializable, MaterialCab.Callback {
                         .title(R.string.details)
                         .content(Html.fromHtml(mContext.getString(R.string.details_contents,
                                 TimeUtils.toStringLong(cal),
-                                entry.width() + " x " + entry.height(),
+                               /* entry.width() + " x " + entry.height()*/"",//TODO
                                 file.getName(),
                                 Utils.readableFileSize(file.length()),
                                 file.getAbsolutePath())))

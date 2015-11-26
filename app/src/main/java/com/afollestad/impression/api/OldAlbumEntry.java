@@ -1,28 +1,10 @@
 package com.afollestad.impression.api;
 
-import android.app.Activity;
-import android.content.Context;
-import android.database.Cursor;
-import android.preference.PreferenceManager;
-import android.provider.MediaStore;
-
-import com.afollestad.impression.api.base.MediaEntry;
-import com.afollestad.impression.media.MediaAdapter;
-import com.afollestad.impression.providers.SortMemoryProvider;
-import com.afollestad.impression.utils.Utils;
-
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 /**
  * @author Aidan Follestad (afollestad)
  */
-public class AlbumEntry implements MediaEntry<AlbumEntry> {
-
+public class OldAlbumEntry {
+/*
     public static final String ALBUM_OVERVIEW_PATH = "OVERVIEW";
 
     public static final long ALBUM_ID_USEPATH = -1;
@@ -31,13 +13,13 @@ public class AlbumEntry implements MediaEntry<AlbumEntry> {
     public String mFirstPath;
     private int mSize;
     private long mAlbumId;
-    private Map<String, LoaderEntry> mLoadedHolder;
+    private Map<String, OldLoaderEntry> mLoadedHolder;
     private int mRealIndex;
 
-    /**
+    *//**
      * Used for cursor albums.
-     */
-    public AlbumEntry(String fromPath, long albumId) {
+     *//*
+    public OldAlbumEntry(String fromPath, long albumId) {
         mFile = new File(fromPath);
         mAlbumId = albumId;
     }
@@ -45,13 +27,13 @@ public class AlbumEntry implements MediaEntry<AlbumEntry> {
     public void processLoaded(Context context) {
         if (mLoadedHolder == null) return;
         mSize = mLoadedHolder.size();
-        MediaAdapter.SortMode sort = SortMemoryProvider.getSortMode(context, mFile.getAbsolutePath());
-        List<LoaderEntry> mEntries = new ArrayList<>(mLoadedHolder.values());
-        Collections.sort(mEntries, new LoaderEntry.Sorter(sort));
+        MediaAdapter.SortMode getSortQueryFromSortMode = SortMemoryProvider.getSortMode(context, mFile.getAbsolutePath());
+        List<OldLoaderEntry> mEntries = new ArrayList<>(mLoadedHolder.values());
+        Collections.getSortQueryFromSortMode(mEntries, new OldLoaderEntry.Sorter(getSortQueryFromSortMode));
         mFirstPath = mEntries.get(0).data();
     }
 
-    public void putLoaded(LoaderEntry entry) {
+    public void putLoaded(OldLoaderEntry entry) {
         if (mLoadedHolder == null)
             mLoadedHolder = new HashMap<>();
         mLoadedHolder.put(entry.data(), entry);
@@ -173,17 +155,17 @@ public class AlbumEntry implements MediaEntry<AlbumEntry> {
     }
 
     @Override
-    public AlbumEntry load(File from) {
+    public OldAlbumEntry load(File from) {
         return null;
     }
 
     @Override
-    public AlbumEntry load(Cursor from) {
+    public OldAlbumEntry load(Cursor from) {
         return null;
     }
 
     @Override
     public String[] projection() {
         return null;
-    }
+    }*/
 }

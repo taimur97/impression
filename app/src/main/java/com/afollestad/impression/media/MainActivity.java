@@ -47,7 +47,7 @@ import android.widget.TextView;
 
 import com.afollestad.impression.BuildConfig;
 import com.afollestad.impression.R;
-import com.afollestad.impression.api.AlbumEntry;
+import com.afollestad.impression.api.FolderEntry;
 import com.afollestad.impression.cab.MediaCab;
 import com.afollestad.impression.fragments.NavDrawerFragment;
 import com.afollestad.impression.providers.IncludedFolderProvider;
@@ -58,6 +58,7 @@ import com.afollestad.impression.utils.PrefUtils;
 import com.afollestad.impression.utils.Utils;
 import com.afollestad.impression.widget.breadcrumbs.BreadCrumbLayout;
 import com.afollestad.impression.widget.breadcrumbs.Crumb;
+import com.afollestad.inquiry.Inquiry;
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.afollestad.materialdialogs.folderselector.FolderChooserDialog;
 import com.afollestad.materialdialogs.internal.MDTintHelper;
@@ -331,6 +332,8 @@ public class MainActivity extends ThemedActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        Inquiry.init(this);
+
         setupSharedElementCallback();
         setTransition();
 
@@ -421,6 +424,11 @@ public class MainActivity extends ThemedActivity
         SortMemoryProvider.cleanup(this);
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        Inquiry.deinit();
+    }
 
     @Override
     protected void onResume() {
@@ -584,7 +592,7 @@ public class MainActivity extends ThemedActivity
         mBreadCrumbLayout.setTopPath(path);
 
         MediaFragment frag = findMediaFragment();
-        if (!path.equals(frag.getPresenter().getAlbumPath())) {
+        if (!path.equals(frag.getPresenter().getPath())) {
             mBreadCrumbLayout.clearHistory();
             Crumb crumb = new Crumb(this, path);
             switchAlbum(crumb, true, true);
@@ -604,7 +612,7 @@ public class MainActivity extends ThemedActivity
             // Initial directory
             path = PrefUtils.isExplorerMode(this) ?
                     Environment.getExternalStorageDirectory().getAbsolutePath() :
-                    AlbumEntry.ALBUM_OVERVIEW_PATH;
+                    FolderEntry.OVERVIEW_PATH;
             mBreadCrumbLayout.setTopPath(path);
         }
 
@@ -637,7 +645,7 @@ public class MainActivity extends ThemedActivity
             getFragmentManager().beginTransaction().replace(R.id.content_frame, frag).commit();
         } else {
             MediaPresenter presenter = frag.getPresenter();
-            String albumPath = presenter.getAlbumPath();
+            String albumPath = presenter.getPath();
             if (!albumPath.equals(to)) {
                 presenter.setPath(to);
             }

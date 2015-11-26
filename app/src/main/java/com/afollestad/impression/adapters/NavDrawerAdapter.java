@@ -10,7 +10,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.afollestad.impression.R;
-import com.afollestad.impression.api.AlbumEntry;
+import com.afollestad.impression.api.FolderEntry;
 import com.afollestad.impression.ui.base.ThemedActivity;
 import com.afollestad.impression.utils.Utils;
 
@@ -40,9 +40,9 @@ public class NavDrawerAdapter extends RecyclerView.Adapter<NavDrawerAdapter.View
         mEntries.clear();
     }
 
-    public void setItemChecked(String path) {
+    /*public void setItemChecked(String path) {
         if (path == null)
-            path = AlbumEntry.ALBUM_OVERVIEW_PATH;
+            path = FolderEntry.OVERVIEW_PATH;
         for (int i = 0; i < mEntries.size(); i++) {
             String entryPath = mEntries.get(i).getPath();
             if (entryPath.equals(path)) {
@@ -50,7 +50,7 @@ public class NavDrawerAdapter extends RecyclerView.Adapter<NavDrawerAdapter.View
                 break;
             }
         }
-    }
+    }*/
 
     public void setItemChecked(int index) {
         mCheckedItem = index;
@@ -121,7 +121,7 @@ public class NavDrawerAdapter extends RecyclerView.Adapter<NavDrawerAdapter.View
             holder.icon.setVisibility(View.VISIBLE);
             holder.icon.getDrawable().mutate().setColorFilter(
                     Utils.resolveColor(mContext, android.R.attr.textColorPrimary), PorterDuff.Mode.SRC_ATOP);
-        } else if (entry.getPath().equals(AlbumEntry.ALBUM_OVERVIEW_PATH)) {
+        } else if (entry.getPath().equals(FolderEntry.OVERVIEW_PATH)) {
             holder.textView.setText(R.string.overview);
             holder.vivider.setVisibility(View.GONE);
             holder.icon.setVisibility(View.GONE);
@@ -155,7 +155,7 @@ public class NavDrawerAdapter extends RecyclerView.Adapter<NavDrawerAdapter.View
 
     public void notifyDataSetChangedAndSort() {
         Collections.sort(mEntries, new NavDrawerSorter());
-        super.notifyDataSetChanged();
+        notifyDataSetChanged();
     }
 
     public interface Callback {
@@ -185,9 +185,11 @@ public class NavDrawerAdapter extends RecyclerView.Adapter<NavDrawerAdapter.View
                 return 1;
             } else if (rhs.isAdd()) {
                 return -1;
-            } else if (lhs.getPath().equals(AlbumEntry.ALBUM_OVERVIEW_PATH)) return -1;
-            else if (rhs.getPath().equals(AlbumEntry.ALBUM_OVERVIEW_PATH)) return 1;
-            else if (lhs.isIncluded() && !rhs.isIncluded()) {
+            } else if (lhs.getPath().equals(FolderEntry.OVERVIEW_PATH)) {
+                return -1;
+            } else if (rhs.getPath().equals(FolderEntry.OVERVIEW_PATH)) {
+                return 1;
+            } else if (lhs.isIncluded() && !rhs.isIncluded()) {
                 return 1;
             } else if (!lhs.isIncluded() && rhs.isIncluded()) {
                 return -1;

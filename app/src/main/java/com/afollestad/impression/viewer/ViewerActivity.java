@@ -21,6 +21,8 @@ import android.nfc.NfcAdapter;
 import android.nfc.NfcEvent;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Parcel;
+import android.os.Parcelable;
 import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.print.PrintHelper;
@@ -45,11 +47,9 @@ import android.widget.FrameLayout;
 import android.widget.Toast;
 
 import com.afollestad.impression.R;
-import com.afollestad.impression.api.PhotoEntry;
-import com.afollestad.impression.api.base.MediaEntry;
+import com.afollestad.impression.api.MediaEntry;
 import com.afollestad.impression.fragments.dialog.SlideshowInitDialog;
 import com.afollestad.impression.media.MainActivity;
-import com.afollestad.impression.media.MediaAdapter;
 import com.afollestad.impression.ui.base.ThemedActivity;
 import com.afollestad.impression.utils.PrefUtils;
 import com.afollestad.impression.utils.ScrimUtil;
@@ -59,7 +59,6 @@ import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
 
 import java.io.File;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
@@ -76,13 +75,13 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
     public static final String EXTRA_WIDTH = "com.afollestad.impression.width";
     public static final String EXTRA_HEIGHT = "com.afollestad.impression.height";
     public static final String EXTRA_MEDIA_ENTRIES = "com.afollestad.impression.media_entries";
+    public static final String EXTRA_CURRENT_ITEM_POSITION = "com.afollestad.impression.extra_current_item_position";
 
     public static final int UI_FADE_DELAY = 2750;
     public static final int UI_FADE_DURATION = 400;
     private static final int EDIT_REQUEST = 1000;
 
     private static final String STATE_CURRENT_POSITION = "state_current_position";
-    private static final String STATE_OLD_POSITION = "state_old_position";
 
     public Toolbar mToolbar;
     private boolean mFinishedTransition;
@@ -349,7 +348,7 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
 
         if (savedInstanceState == null) {
             if (getIntent() != null && getIntent().getExtras() != null) {
-                mCurrentPosition = getIntent().getExtras().getInt(MainActivity.EXTRA_CURRENT_ITEM_POSITION);
+                mCurrentPosition = getIntent().getExtras().getInt(EXTRA_CURRENT_ITEM_POSITION);
             }
         } else {
             mCurrentPosition = savedInstanceState.getInt(STATE_CURRENT_POSITION);
@@ -358,7 +357,7 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
         boolean dontSetPos = false;
         if (getIntent() != null) {
             if (getIntent().hasExtra(EXTRA_MEDIA_ENTRIES)) {
-                mEntries = ((MediaWrapper) getIntent().getSerializableExtra(EXTRA_MEDIA_ENTRIES)).getMedia();
+                mEntries = ((MediaWrapper) getIntent().getParcelableExtra(EXTRA_MEDIA_ENTRIES)).getMedia();
             } else if (getIntent().getData() != null) {
                 mEntries = new ArrayList<>();
                 Uri data = getIntent().getData();
@@ -371,7 +370,8 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
                             path = null;
                         } else {
                             final File file = new File(path);
-                            final List<MediaEntry> brothers = Utils.getEntriesFromFolder(this, file.getParentFile(), false, false, MediaAdapter.FileFilterMode.ALL);
+                            //TODO
+                            final List<MediaEntry> brothers = null/*Utils.getEntriesFromFolder(this, file.getParentFile(), false, false, MediaAdapter.FileFilterMode.FILTER_ALL)*/;
                             mEntries.addAll(brothers);
                             for (int i = 0; i < brothers.size(); i++) {
                                 if (brothers.get(i).data().equals(file.getAbsolutePath())) {
@@ -395,7 +395,8 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
                             // @author Viswanath Lekshmanan
                             // #282 Fix to load all other photos in the same album when loading using URI
                             final File file = new File(tempPath);
-                            final List<MediaEntry> brothers = Utils.getEntriesFromFolder(this, file.getParentFile(), false, false, MediaAdapter.FileFilterMode.ALL);
+                            //TODO
+                            final List<MediaEntry> brothers = null/*Utils.getEntriesFromFolder(this, file.getParentFile(), false, false, MediaAdapter.FileFilterMode.FILTER_ALL)*/;
                             mEntries.addAll(brothers);
                             for (int i = 0; i < brothers.size(); i++) {
                                 if (brothers.get(i).data().equals(file.getAbsolutePath())) {
@@ -427,7 +428,8 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
                 }
             }
 
-            mAdapter = new ViewerPagerAdapter(getFragmentManager(), mEntries,
+            mAdapter = new ViewerPagerAdapter(getFragmentManager(),
+                    mEntries,
                     getIntent().getIntExtra(EXTRA_WIDTH, -1),
                     getIntent().getIntExtra(EXTRA_HEIGHT, -1),
                     mCurrentPosition);
@@ -435,7 +437,8 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
             mPager.setOffscreenPageLimit(1);
             mPager.setAdapter(mAdapter);
 
-            processEntries(dontSetPos);
+            //TODO
+            processEntries(/*dontSetPos*/);
 
             // When the view pager is swiped, fragments are notified if they're active or not
             // And the menu updates based on the color mode (light or dark).
@@ -503,7 +506,8 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
     }
 
     private int translateToViewerIndex(int remote) {
-        for (int i = 0; i < mEntries.size(); i++) {
+        //TODO
+        /*for (int i = 0; i < mEntries.size(); i++) {
             if (mEntries.get(i).realIndex() == remote) {
                 if (mEntries.size() - 1 < i) {
                     return 0;
@@ -511,11 +515,12 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
                     return i;
                 }
             }
-        }
+        }*/
         return 0;
     }
 
-    private void processEntries(boolean dontSetPos) {
+    //TODO
+    private void processEntries(/*boolean dontSetPos*/) {
         mAllVideos = true;
         for (MediaEntry e : mEntries) {
             if (!e.isVideo()) {
@@ -523,8 +528,8 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
                 break;
             }
         }
-        if (!dontSetPos)
-            mCurrentPosition = translateToViewerIndex(mCurrentPosition);
+        /*if (!dontSetPos)
+            mCurrentPosition = translateToViewerIndex(mCurrentPosition);*/
         mPager.setCurrentItem(mCurrentPosition);
     }
 
@@ -652,7 +657,8 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
         getMenuInflater().inflate(R.menu.menu_viewer, menu);
         if (mEntries.size() > 0) {
             MediaEntry currentEntry = mEntries.get(mCurrentPosition);
-            if (currentEntry == null || currentEntry.isVideo()) {
+            //TODO
+            if (currentEntry == null /*|| currentEntry.isVideo()*/) {
                 menu.findItem(R.id.print).setVisible(false);
                 menu.findItem(R.id.edit).setVisible(false);
                 menu.findItem(R.id.set_as).setVisible(false);
@@ -735,7 +741,8 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
                     .title(R.string.details)
                     .content(Html.fromHtml(getString(R.string.details_contents,
                             TimeUtils.toStringLong(cal),
-                            entry.width() + " x " + entry.height(),
+                            //TODO
+                            ""/*entry.width() + " x " + entry.height()*/,
                             file.getName(),
                             Utils.readableFileSize(file.length()),
                             file.getAbsolutePath())))
@@ -751,7 +758,8 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
                     .onPositive(new MaterialDialog.SingleButtonCallback() {
                         @Override
                         public void onClick(@NonNull MaterialDialog materialDialog, @NonNull DialogAction dialogAction) {
-                            mEntries.get(mCurrentPosition).delete(ViewerActivity.this);
+                            //TODO
+                            /*mEntries.get(mCurrentPosition).delete(ViewerActivity.this);*/
                             mAdapter.remove(mCurrentPosition);
                             if (mEntries.size() == 0) finish();
                         }
@@ -854,7 +862,8 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
         if (requestCode == EDIT_REQUEST && resultCode == RESULT_OK) {
             Uri data = intent.getData();
             if (data != null) {
-                if (data.getScheme() == null || data.getScheme().equals("file")) {
+                //TODO
+                /*if (data.getScheme() == null || data.getScheme().equals("file")) {
                     MediaEntry pic = new PhotoEntry().load(new File(data.getPath()));
                     mAdapter.add(pic);
                     mPager.setCurrentItem(mPager.getCurrentItem() + 1);
@@ -881,7 +890,7 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
                                     }
                                 }).show();
                     }
-                }
+                }*/
             }
         }
     }
@@ -912,22 +921,48 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
         void onFade();
     }
 
-    public static class MediaWrapper implements Serializable {
+    public static class MediaWrapper implements Parcelable {
 
+        public static final Creator<MediaWrapper> CREATOR = new Creator<MediaWrapper>() {
+            public MediaWrapper createFromParcel(Parcel source) {
+                return new MediaWrapper(source);
+            }
+
+            public MediaWrapper[] newArray(int size) {
+                return new MediaWrapper[size];
+            }
+        };
         private final List<MediaEntry> mMediaEntries;
 
         public MediaWrapper(List<MediaEntry> mediaEntries, boolean allowFolders) {
             mMediaEntries = new ArrayList<>();
             for (int i = 0; i < mediaEntries.size(); i++) {
                 MediaEntry p = mediaEntries.get(i);
-                p.setRealIndex(i);
+                //TODO
+                /*p.setRealIndex(i);*/
                 if (allowFolders || !p.isFolder())
                     mMediaEntries.add(p);
             }
         }
 
+
+        protected MediaWrapper(Parcel in) {
+            mMediaEntries = new ArrayList<>();
+            in.readList(this.mMediaEntries, MediaEntry.class.getClassLoader());
+        }
+
         public List<MediaEntry> getMedia() {
             return mMediaEntries;
+        }
+
+        @Override
+        public int describeContents() {
+            return 0;
+        }
+
+        @Override
+        public void writeToParcel(Parcel dest, int flags) {
+            dest.writeList(mMediaEntries);
         }
     }
 

@@ -5,11 +5,11 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
-import android.preference.PreferenceManager;
 
 import com.afollestad.impression.BuildConfig;
 import com.afollestad.impression.media.MediaAdapter;
 import com.afollestad.impression.providers.base.ProviderBase;
+import com.afollestad.impression.utils.PrefUtils;
 
 import java.io.File;
 
@@ -43,11 +43,10 @@ public class SortMemoryProvider extends ProviderBase {
         }).start();
     }
 
-    public static void save(Context context, String path, MediaAdapter.SortMode mode) {
+    public static void save(Context context, String path, @MediaAdapter.SortMode int mode) {
         if (context == null) return;
         if (path == null) {
-            PreferenceManager.getDefaultSharedPreferences(context).edit()
-                    .putInt("sort_mode", mode.value()).commit();
+            PrefUtils.setSortMode(context, mode);
         } else {
             final ContentResolver r = context.getContentResolver();
             final Cursor cursor = r.query(CONTENT_URI,
@@ -55,7 +54,7 @@ public class SortMemoryProvider extends ProviderBase {
             boolean found = false;
             final ContentValues values = new ContentValues(2);
             values.put("path", path);
-            values.put("mode", mode.value());
+            values.put("mode", mode);
             if (cursor != null) {
                 if (cursor.moveToFirst()) {
                     found = true;
@@ -68,13 +67,14 @@ public class SortMemoryProvider extends ProviderBase {
         }
     }
 
-    public static MediaAdapter.SortMode getSortMode(Context context, String path) {
+    public static
+    @MediaAdapter.SortMode
+    int getSortMode(Context context, String path) {
         if (context == null) {
-            return MediaAdapter.SortMode.valueOf(MediaAdapter.SortMode.DEFAULT);
+            return MediaAdapter.SORT_DEFAULT;
         } else if (path == null) {
-            final int mode = PreferenceManager.getDefaultSharedPreferences(context)
-                    .getInt("sort_mode", MediaAdapter.SortMode.DEFAULT);
-            return MediaAdapter.SortMode.valueOf(mode);
+            //noinspection ResourceType
+            return PrefUtils.getSortMode(context);
         }
 
         Cursor cursor = context.getContentResolver().query(CONTENT_URI,
@@ -86,10 +86,10 @@ public class SortMemoryProvider extends ProviderBase {
             cursor.close();
         }
         if (mode == -1) {
-            mode = PreferenceManager.getDefaultSharedPreferences(context)
-                    .getInt("sort_mode", MediaAdapter.SortMode.DEFAULT);
+            mode = PrefUtils.getSortMode(context);
         }
-        return MediaAdapter.SortMode.valueOf(mode);
+        //noinspection ResourceType
+        return mode;
     }
 
     public static void forget(Context context, String path) {

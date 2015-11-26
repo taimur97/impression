@@ -24,9 +24,7 @@ import android.widget.ImageView;
 
 import com.afollestad.impression.BuildConfig;
 import com.afollestad.impression.R;
-import com.afollestad.impression.api.PhotoEntry;
-import com.afollestad.impression.api.VideoEntry;
-import com.afollestad.impression.api.base.MediaEntry;
+import com.afollestad.impression.api.MediaEntry;
 import com.afollestad.impression.utils.Utils;
 import com.afollestad.impression.widget.ImpressionVideoView;
 import com.bumptech.glide.Glide;
@@ -92,7 +90,7 @@ public class ViewerPagerFragment extends Fragment {
     public static ViewerPagerFragment create(MediaEntry entry, int index, int width, int height) {
         ViewerPagerFragment frag = new ViewerPagerFragment();
         Bundle args = new Bundle();
-        args.putSerializable(INIT_MEDIA_ENTRY, entry);
+        args.putParcelable(INIT_MEDIA_ENTRY, entry);
         args.putInt(INIT_INDEX, index);
         args.putInt(INIT_WIDTH, width);
         args.putInt(INIT_HEIGHT, height);
@@ -118,7 +116,7 @@ public class ViewerPagerFragment extends Fragment {
 
         mIndex = getArguments().getInt(INIT_INDEX);
         if (getArguments().containsKey(INIT_MEDIA_ENTRY)) {
-            mEntry = (MediaEntry) getArguments().getSerializable(INIT_MEDIA_ENTRY);
+            mEntry = getArguments().getParcelable(INIT_MEDIA_ENTRY);
             mIsVideo = mEntry.isVideo();
         } else if (getArguments().containsKey(INIT_MEDIA_PATH)) {
             mMediaPath = getArguments().getString(INIT_MEDIA_PATH);
@@ -142,13 +140,6 @@ public class ViewerPagerFragment extends Fragment {
             mThumbImageView = (ImageView) view.findViewById(R.id.thumb);
             mGifImageView = (GifImageView) view.findViewById(R.id.gif);
 
-            mImageView.setOnTouchListener(new View.OnTouchListener() {
-                @Override
-                public boolean onTouch(View v, MotionEvent event) {
-                    return false;
-                }
-            });
-
             final GestureDetector detector = new GestureDetector(getActivity(), new GestureDetector.SimpleOnGestureListener() {
                 @Override
                 public boolean onDown(MotionEvent e) {
@@ -169,8 +160,14 @@ public class ViewerPagerFragment extends Fragment {
             };
 
             mThumbImageView.setOnTouchListener(onTouch);
-            mImageView.setOnTouchListener(onTouch);
             mGifImageView.setOnTouchListener(onTouch);
+
+            mImageView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    invokeToolbar();
+                }
+            });
 
             if (BuildConfig.DEBUG) {
                 mImageView.setDebug(true);
@@ -213,12 +210,12 @@ public class ViewerPagerFragment extends Fragment {
     private Uri getUri() {
         Uri uri = null;
         if (mEntry != null) {
-            if (mEntry instanceof PhotoEntry) {
+            /*if (mEntry instanceof PhotoEntry) {
                 if (((PhotoEntry) mEntry).originalUri != null)
                     uri = Uri.parse(((PhotoEntry) mEntry).originalUri);
             } else if (((VideoEntry) mEntry).originalUri != null) {
                 uri = Uri.parse(((VideoEntry) mEntry).originalUri);
-            }
+            }*/
             if (uri == null)
                 uri = Uri.fromFile(new File(mEntry.data()));
         } else {
