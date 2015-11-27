@@ -34,8 +34,9 @@ public class SortMemoryProvider extends ProviderBase {
                 if (cursor != null) {
                     while (cursor.moveToNext()) {
                         final File fi = new File(cursor.getString(1));
-                        if (!fi.exists())
+                        if (!fi.exists()) {
                             r.delete(CONTENT_URI, "path = ?", new String[]{cursor.getString(1)});
+                        }
                     }
                     cursor.close();
                 }
@@ -44,7 +45,9 @@ public class SortMemoryProvider extends ProviderBase {
     }
 
     public static void save(Context context, String path, @MediaAdapter.SortMode int mode) {
-        if (context == null) return;
+        if (context == null) {
+            return;
+        }
         if (path == null) {
             PrefUtils.setSortMode(context, mode);
         } else {
@@ -62,8 +65,9 @@ public class SortMemoryProvider extends ProviderBase {
                 }
                 cursor.close();
             }
-            if (!found)
+            if (!found) {
                 r.insert(CONTENT_URI, values);
+            }
         }
     }
 
@@ -80,8 +84,9 @@ public class SortMemoryProvider extends ProviderBase {
                 null, "path = ?", new String[]{path}, null);
         int mode = -1;
         if (cursor != null) {
-            if (cursor.moveToFirst())
+            if (cursor.moveToFirst()) {
                 mode = cursor.getInt(2);
+            }
             cursor.close();
         }
         if (mode == -1) {
@@ -92,7 +97,9 @@ public class SortMemoryProvider extends ProviderBase {
     }
 
     public static void forget(Context context, String path) {
-        if (context == null) return;
+        if (context == null) {
+            return;
+        }
         context.getContentResolver().delete(CONTENT_URI, "path = ?", new String[]{path});
     }
 }

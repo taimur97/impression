@@ -47,9 +47,11 @@ public class ExcludedFolderProvider extends ProviderBase {
             argsAry.add(pathFi.getAbsolutePath());
             while (true) {
                 pathFi = pathFi.getParentFile();
-                if (pathFi == null) break;
-                else if (pathFi.getAbsolutePath().equalsIgnoreCase(Environment.getExternalStorageDirectory().getAbsolutePath()))
+                if (pathFi == null) {
                     break;
+                } else if (pathFi.getAbsolutePath().equalsIgnoreCase(Environment.getExternalStorageDirectory().getAbsolutePath())) {
+                    break;
+                }
                 selectionBuilder.append(" OR path = ?");
                 argsAry.add(pathFi.getAbsolutePath());
             }

@@ -99,7 +99,9 @@ public class ViewerPagerFragment extends Fragment {
     }
 
     public static InputStream openStream(Context context, Uri uri) throws FileNotFoundException {
-        if (uri == null) return null;
+        if (uri == null) {
+            return null;
+        }
         if (uri.getScheme() == null || uri.getScheme().equalsIgnoreCase("file")) {
             return new FileInputStream(uri.getPath());
         } else {
@@ -216,8 +218,9 @@ public class ViewerPagerFragment extends Fragment {
             } else if (((VideoEntry) mEntry).originalUri != null) {
                 uri = Uri.parse(((VideoEntry) mEntry).originalUri);
             }*/
-            if (uri == null)
+            if (uri == null) {
                 uri = Uri.fromFile(new File(mEntry.data()));
+            }
         } else {
             uri = Uri.fromFile(new File(mMediaPath));
         }
@@ -228,7 +231,9 @@ public class ViewerPagerFragment extends Fragment {
     public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         if (mIsVideo) {
-            if ((mEntry == null || mEntry.data() == null) && mMediaPath == null) return;
+            if ((mEntry == null || mEntry.data() == null) && mMediaPath == null) {
+                return;
+            }
             mVideoView.setVideoURI(getUri());
             View playFrame = view.findViewById(R.id.playFrame);
             View seekFrame = view.findViewById(R.id.seekerFrame);
@@ -367,8 +372,9 @@ public class ViewerPagerFragment extends Fragment {
                 @Override
                 public void onTransitionEnd(Transition transition) {
                     ViewerActivity act = (ViewerActivity) getActivity();
-                    if (act == null)
+                    if (act == null) {
                         return;
+                    }
                     act.getWindow().getSharedElementEnterTransition().removeListener(this);
                     act.setFinishedTransition(true);
 
@@ -389,6 +395,10 @@ public class ViewerPagerFragment extends Fragment {
             mGifImageView.postDelayed(new Runnable() {
                 @Override
                 public void run() {
+                    if (!mIsActive) {
+                        return;
+                    }
+
                     mGifImageView.setImageURI(getUri());
                     mGifImageView.setVisibility(View.VISIBLE);
 
@@ -484,8 +494,9 @@ public class ViewerPagerFragment extends Fragment {
             @Override
             public void onImageLoaded() {
                 final ViewerActivity activity = (ViewerActivity) getActivity();
-                if (activity != null)
+                if (activity != null) {
                     activity.invalidateTransition();
+                }
             }
 
             @Override
@@ -523,9 +534,9 @@ public class ViewerPagerFragment extends Fragment {
         }
 
         ViewerActivity act = (ViewerActivity) getActivity();
-        if (act == null)
+        if (act == null) {
             return;
-        else if (!act.isFinishedTransition() && mIsActive && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+        } else if (!act.isFinishedTransition() && mIsActive && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             // If the activity transition didn't finish yet, wait for it to do so
             // So that the photo view attacher attaches correctly.
             act.getWindow().getSharedElementEnterTransition().addListener(new Transition.TransitionListener() {
@@ -549,12 +560,14 @@ public class ViewerPagerFragment extends Fragment {
                 @Override
                 public void onTransitionEnd(Transition transition) {
                     ViewerActivity act = (ViewerActivity) getActivity();
-                    if (act == null)
+                    if (act == null) {
                         return;
+                    }
                     act.getWindow().getEnterTransition().removeListener(this);
                     act.setFinishedTransition(true);
-                    if (isAdded())
+                    if (isAdded()) {
                         loadVideo();
+                    }
                 }
             });
             return;

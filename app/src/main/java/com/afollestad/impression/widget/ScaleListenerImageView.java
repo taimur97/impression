@@ -18,6 +18,7 @@ public class ScaleListenerImageView extends ImageView {
     public ScaleListenerImageView(Context context) {
         super(context);
     }
+
     public ScaleListenerImageView(Context context, AttributeSet attrs) {
         super(context, attrs);
     }
@@ -25,7 +26,7 @@ public class ScaleListenerImageView extends ImageView {
     public PhotoViewAttacher attachPhotoView() {
         if (mAttacher != null) {
             mAttacher.update();
-        } else{
+        } else {
             mAttacher = new PhotoViewAttacher(this);
         }
         return mAttacher;
@@ -34,9 +35,9 @@ public class ScaleListenerImageView extends ImageView {
     @Override
     public void setScaleType(ScaleType scaleType) {
         super.setScaleType(scaleType);
-        if (scaleType == ScaleType.MATRIX)
+        if (scaleType == ScaleType.MATRIX) {
             checkForChange = true;
-        else if (checkForChange && mAttacher != null) {
+        } else if (checkForChange && mAttacher != null) {
             mAttacher.cleanup();
             mAttacher = null;
             Log.v("ScaleListenerImageView", "Destroying PhotoViewAttacher instance.");

@@ -24,7 +24,7 @@ import android.widget.Toast;
 
 import com.afollestad.impression.R;
 import com.afollestad.impression.accounts.base.Account;
-import com.afollestad.impression.api.FolderEntry;
+import com.afollestad.impression.api.MediaFolderEntry;
 import com.afollestad.impression.base.ThemedActivity;
 import com.afollestad.impression.media.MainActivity;
 import com.afollestad.impression.media.MediaAdapter;
@@ -71,9 +71,13 @@ public class NavDrawerFragment extends Fragment implements NavDrawerAdapter.Call
 
     public void notifyClosed() {
         View v = getView();
-        if (v == null) return;
+        if (v == null) {
+            return;
+        }
         View dropdown = v.findViewById(R.id.dropdown);
-        if (dropdown.getTag() != null) dropdown.performClick();
+        if (dropdown.getTag() != null) {
+            dropdown.performClick();
+        }
     }
 
     private void invalidateAccountViews(View itemView, int currentIndex, int selectedIndex) {
@@ -124,7 +128,9 @@ public class NavDrawerFragment extends Fragment implements NavDrawerAdapter.Call
     }
 
     private void showAccountAddDialog() {
-        if (getActivity() == null) return;
+        if (getActivity() == null) {
+            return;
+        }
         new MaterialDialog.Builder(getActivity())
                 .title(R.string.add_account)
                 .items(R.array.account_options)
@@ -149,8 +155,9 @@ public class NavDrawerFragment extends Fragment implements NavDrawerAdapter.Call
             }
         });
         ImageButton dropdown = (ImageButton) view.findViewById(R.id.dropdown);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             dropdown.setBackgroundResource(Utils.resolveDrawable(getActivity(), R.attr.menu_selector));
+        }
         dropdown.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -205,7 +212,9 @@ public class NavDrawerFragment extends Fragment implements NavDrawerAdapter.Call
     }
 
     public void reloadAccounts() {
-        if (getActivity() == null) return;
+        if (getActivity() == null) {
+            return;
+        }
         mAccounts = new ArrayList<>();
         View addAccountFrame = mAccountsFrame.findViewById(R.id.addAccountFrame);
         mAccountsFrame.removeAllViews();
@@ -220,51 +229,59 @@ public class NavDrawerFragment extends Fragment implements NavDrawerAdapter.Call
         }
 
         final int fCurrent = mCurrent;
-        Account.getAll(getActivity()).observeOn(AndroidSchedulers.mainThread())
+        Account.getAll(getActivity())
+                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new Action1<Account[]>() {
-            @Override
-            public void call(Account[] accounts) {
-                if (accounts == null || !isAdded()) return;
-                for (int i = 0; i < accounts.length; i++) {
-                    Account a = accounts[i];
-                    mAccounts.add(a);
-                    boolean selected = a.id() == fCurrent;
-                    mAccountsFrame.addView(getAccountView(i, selected ? i : -1, mAccountsFrame), i);
-                    if (selected) getAlbums(a);
-                }
-                mAccountsFrame.requestLayout();
-                mAccountsFrame.invalidate();
-            }
-        });
+                    @Override
+                    public void call(Account[] accounts) {
+                        if (accounts == null || !isAdded()) {
+                            return;
+                        }
+                        for (int i = 0; i < accounts.length; i++) {
+                            Account a = accounts[i];
+                            mAccounts.add(a);
+                            boolean selected = a.id() == fCurrent;
+                            mAccountsFrame.addView(getAccountView(i, selected ? i : -1, mAccountsFrame), i);
+                            if (selected) {
+                                getMediaFolders(a);
+                            }
+                        }
+                        mAccountsFrame.requestLayout();
+                        mAccountsFrame.invalidate();
+                    }
+                });
     }
 
-    public void getAlbums(Account account) {
-        if (account != null)
+    public void getMediaFolders(Account account) {
+        if (account != null) {
             mCurrentAccount = account;
+        }
         mAdapter.clear();
-        mAdapter.add(new NavDrawerAdapter.Entry(FolderEntry.OVERVIEW_PATH, false, false));
+        mAdapter.add(new NavDrawerAdapter.Entry(MediaFolderEntry.OVERVIEW_PATH, false, false));
 
-        mCurrentAccount.getAlbums(MediaAdapter.SORT_NAME_DESC, MediaAdapter.FILTER_ALL)
+        mCurrentAccount.getMediaFolders(MediaAdapter.SORT_NAME_DESC, MediaAdapter.FILTER_ALL)
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new SingleSubscriber<Set<FolderEntry>>() {
-            @Override
-            public void onSuccess(Set<FolderEntry> folderEntries) {
-                for (FolderEntry f : folderEntries) {
-                    mAdapter.add(new NavDrawerAdapter.Entry(f.folderPath(), false, false));
-                }
-                if (mCurrentAccount.supportsIncludedFolders()) {
-                    getIncludedFolders();
-                } else {
-                    mAdapter.notifyDataSetChangedAndSort();
-                }
-            }
+                .subscribe(new SingleSubscriber<Set<MediaFolderEntry>>() {
+                    @Override
+                    public void onSuccess(Set<MediaFolderEntry> folderEntries) {
+                        for (MediaFolderEntry f : folderEntries) {
+                            mAdapter.add(new NavDrawerAdapter.Entry(f.data(), false, false));
+                        }
+                        if (mCurrentAccount.supportsIncludedFolders()) {
+                            getIncludedFolders();
+                        } else {
+                            mAdapter.notifyDataSetChangedAndSort();
+                        }
+                    }
 
-            @Override
-            public void onError(Throwable error) {
-                if (getActivity() == null) return;
-                Utils.showErrorDialog(getActivity(), error);
-            }
-        });
+                    @Override
+                    public void onError(Throwable error) {
+                        if (getActivity() == null) {
+                            return;
+                        }
+                        Utils.showErrorDialog(getActivity(), error);
+                    }
+                });
     }
 
     private void getIncludedFolders() {
@@ -306,17 +323,21 @@ public class NavDrawerFragment extends Fragment implements NavDrawerAdapter.Call
                             @Override
                             public void onPositive(MaterialDialog materialDialog) {
                                 IncludedFolderProvider.remove(getActivity(), entry.getPath());
-                                getAlbums(mCurrentAccount); // reload albums
+                                getMediaFolders(mCurrentAccount); // reload albums
 
-                                if (getActivity() == null) return;
+                                if (getActivity() == null) {
+                                    return;
+                                }
                                 MainActivity act = (MainActivity) getActivity();
                                 /*act.notifyFoldersChanged();*/
 
                                 if (index == mCurrentSelectedPosition) {
-                                    if (mCurrentSelectedPosition > mAdapter.getItemCount() - 1)
+                                    if (mCurrentSelectedPosition > mAdapter.getItemCount() - 1) {
                                         mCurrentSelectedPosition = mAdapter.getItemCount() - 1;
-                                    if (mAdapter.get(mCurrentSelectedPosition).isAdd())
+                                    }
+                                    if (mAdapter.get(mCurrentSelectedPosition).isAdd()) {
                                         mCurrentSelectedPosition--;
+                                    }
                                     NavDrawerAdapter.Entry newPath = mAdapter.get(mCurrentSelectedPosition);
                                     act.navDrawerSwitchAlbum(newPath.getPath());
                                     mAdapter.setItemChecked(mCurrentSelectedPosition);
@@ -334,15 +355,19 @@ public class NavDrawerFragment extends Fragment implements NavDrawerAdapter.Call
                                 ExcludedFolderProvider.add(getActivity(), entry.getPath());
                                 mAdapter.remove(index);
                                 mAdapter.notifyDataSetChanged();
-                                if (getActivity() == null) return;
+                                if (getActivity() == null) {
+                                    return;
+                                }
                                 MainActivity act = (MainActivity) getActivity();
                                 /*act.notifyFoldersChanged();*/
 
                                 if (index == mCurrentSelectedPosition) {
-                                    if (mCurrentSelectedPosition > mAdapter.getItemCount() - 1)
+                                    if (mCurrentSelectedPosition > mAdapter.getItemCount() - 1) {
                                         mCurrentSelectedPosition--;
-                                    if (mAdapter.get(mCurrentSelectedPosition).isAdd())
+                                    }
+                                    if (mAdapter.get(mCurrentSelectedPosition).isAdd()) {
                                         mCurrentSelectedPosition--;
+                                    }
                                     NavDrawerAdapter.Entry newPath = mAdapter.get(mCurrentSelectedPosition);
                                     act.navDrawerSwitchAlbum(newPath.getPath());
                                     mAdapter.setItemChecked(mCurrentSelectedPosition);

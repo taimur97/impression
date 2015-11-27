@@ -15,6 +15,7 @@ import android.widget.ImageView;
 
 import com.afollestad.impression.R;
 import com.afollestad.impression.api.MediaEntry;
+import com.afollestad.impression.api.MediaFolderEntry;
 import com.afollestad.impression.utils.Utils;
 import com.afollestad.impression.viewer.KeepRatio;
 import com.bumptech.glide.Glide;
@@ -51,7 +52,9 @@ public class ImpressionThumbnailImageView extends ImageView {
     }
 
     private void init(Context context) {
-        if (isInEditMode()) return;
+        if (isInEditMode()) {
+            return;
+        }
         final Resources r = getResources();
         mCheck = BitmapFactory.decodeResource(r, R.drawable.ic_check);
         mPlay = BitmapFactory.decodeResource(r, R.drawable.ic_play);
@@ -61,11 +64,16 @@ public class ImpressionThumbnailImageView extends ImageView {
     }
 
     public void load(MediaEntry entry, View progress) {
-        if (isInEditMode()) return;
+        if (isInEditMode()) {
+            return;
+        }
         mEntry = entry;
-        if (mEntry == null) return;
-        if (mProgress == null && progress != null)
+        if (mEntry == null) {
+            return;
+        }
+        if (mProgress == null && progress != null) {
             mProgress = new WeakReference<>(progress);
+        }
         //if (getMeasuredWidth() == 0) return;
 
         setImageDrawable(null);
@@ -73,8 +81,9 @@ public class ImpressionThumbnailImageView extends ImageView {
             mProgress.get().setVisibility(View.VISIBLE);
         }
         String pathToLoad = entry.data();
-       /* if (entry.isAlbum())
-            pathToLoad = ((OldAlbumEntry) entry).mFirstPath;*/
+        if (entry.isFolder() && entry instanceof MediaFolderEntry) {
+            pathToLoad = ((MediaFolderEntry) entry).firstPath();
+        }
         String ext = Utils.getExtension(entry.data());
         mIsGif = ext != null && ext.equalsIgnoreCase("gif");
 
@@ -112,8 +121,9 @@ public class ImpressionThumbnailImageView extends ImageView {
         super.onDraw(canvas);
         if (getMeasuredWidth() > 0 && getDrawable() != null) {
             int targetDimen = mCheck.getWidth();
-            if (mCheck.getWidth() > getMeasuredWidth())
+            if (mCheck.getWidth() > getMeasuredWidth()) {
                 targetDimen = getMeasuredWidth();
+            }
             if (isActivated()) {
                 if (mEntry != null && !mEntry.isFolder()) {
                     canvas.drawColor(mSelectedColor);

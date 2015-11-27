@@ -11,11 +11,17 @@ import android.view.WindowManager;
 import android.webkit.MimeTypeMap;
 
 import com.afollestad.impression.R;
+import com.afollestad.impression.api.ExplorerFolderEntry;
+import com.afollestad.impression.api.MediaEntry;
+import com.afollestad.impression.media.MediaAdapter;
+import com.afollestad.impression.providers.ExcludedFolderProvider;
 import com.afollestad.materialdialogs.MaterialDialog;
 
 import java.io.File;
 import java.text.DecimalFormat;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -24,7 +30,9 @@ import java.util.Set;
 public abstract class Utils {
 
     public static Uri getImageContentUri(Context context, File imageFile) {
-        if (context == null) return null;
+        if (context == null) {
+            return null;
+        }
         final String mimeType = Utils.getMimeType(Utils.getExtension(imageFile.getName()));
         Uri providerUri;
         if (mimeType != null && mimeType.startsWith("video/")) {
@@ -76,14 +84,18 @@ public abstract class Utils {
     }
 
     public static String readableFileSize(long size) {
-        if (size <= 0) return "0 B";
+        if (size <= 0) {
+            return "0 B";
+        }
         final String[] units = new String[]{"B", "KB", "MB", "GB", "TB"};
         int digitGroups = (int) (Math.log10(size) / Math.log10(1024));
         return new DecimalFormat("#,##0.#").format(size / Math.pow(1024, digitGroups)) + " " + units[digitGroups];
     }
 
     public static String getExtension(String name) {
-        if (name == null) return null;
+        if (name == null) {
+            return null;
+        }
         name = name.toLowerCase();
         return name.substring(name.lastIndexOf('.') + 1);
     }
@@ -130,38 +142,25 @@ public abstract class Utils {
         folder.delete();
     }
 
-    /*public static List<MediaEntry> getEntriesFromFolder(Context context, File dir, boolean includeFolders, boolean includeFoldersContents, MediaAdapter.FileFilterMode filter) {
+    public static List<MediaEntry> getEntriesFromFolder(Context context, File dir, @MediaAdapter.FileFilterMode int filter) {
         final File[] content = dir.listFiles();
         final List<MediaEntry> results = new ArrayList<>();
         if (content != null) {
             for (File fi : content) {
-                if (!fi.isHidden()) {
-                    if (fi.isDirectory()) {
-                        if (includeFolders || includeFoldersContents) {
-                            if (ExcludedFolderProvider.contains(context, fi.getAbsolutePath()))
-                                continue;
-                            if (includeFoldersContents) {
-                                final List<MediaEntry> subContents = Utils.getEntriesFromFolder(context, fi, includeFolders, true, filter);
-                                results.addAll(subContents);
-                            } else {
-                                results.add(new OldFolderEntry(fi));
-                            }
-                        }
-                    } else {
-                        String mime = Utils.getMimeType(Utils.getExtension(fi.getName()));
-                        if (mime != null) {
-                            if (mime.startsWith("image/") && filter != MediaAdapter.FileFilterMode.VIDEOS) {
-                                results.add(new PhotoEntry().load(fi));
-                            } else if (mime.startsWith("video/") && filter != MediaAdapter.FileFilterMode.PHOTOS) {
-                                results.add(new VideoEntry().load(fi));
-                            }
-                        }
+                if (fi.isHidden()) {
+                    continue;
+                }
+                if (fi.isDirectory()) {
+                    if (ExcludedFolderProvider.contains(context, fi.getAbsolutePath())) {
+                        continue;
                     }
+
+                    results.add(new ExplorerFolderEntry(fi));
                 }
             }
         }
         return results;
-    }*/
+    }
 
     /**
      * Returns a string representation of {@param set}. Used only for debugging purposes.

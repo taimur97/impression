@@ -68,21 +68,22 @@ public enum Edge {
 
         float resultX = x;
 
-        if (x - imageRect.left < imageSnapRadius)
+        if (x - imageRect.left < imageSnapRadius) {
             resultX = imageRect.left;
-
-        else {
+        } else {
             // Select the minimum of the three possible values to use
             float resultXHoriz = Float.POSITIVE_INFINITY;
             float resultXVert = Float.POSITIVE_INFINITY;
 
             // Checks if the window is too small horizontally
-            if (x >= Edge.RIGHT.getCoordinate() - MIN_CROP_LENGTH_PX)
+            if (x >= Edge.RIGHT.getCoordinate() - MIN_CROP_LENGTH_PX) {
                 resultXHoriz = Edge.RIGHT.getCoordinate() - MIN_CROP_LENGTH_PX;
+            }
 
             // Checks if the window is too small vertically
-            if (((Edge.RIGHT.getCoordinate() - x) / aspectRatio) <= MIN_CROP_LENGTH_PX)
+            if (((Edge.RIGHT.getCoordinate() - x) / aspectRatio) <= MIN_CROP_LENGTH_PX) {
                 resultXVert = Edge.RIGHT.getCoordinate() - (MIN_CROP_LENGTH_PX * aspectRatio);
+            }
 
             resultX = Math.min(resultX, Math.min(resultXHoriz, resultXVert));
         }
@@ -103,17 +104,17 @@ public enum Edge {
         float resultX = x;
 
         // If close to the edge
-        if (imageRect.right - x < imageSnapRadius)
+        if (imageRect.right - x < imageSnapRadius) {
             resultX = imageRect.right;
-
-        else {
+        } else {
             // Select the maximum of the three possible values to use
             float resultXHoriz = Float.NEGATIVE_INFINITY;
             float resultXVert = Float.NEGATIVE_INFINITY;
 
             // Checks if the window is too small horizontally
-            if (x <= Edge.LEFT.getCoordinate() + MIN_CROP_LENGTH_PX)
+            if (x <= Edge.LEFT.getCoordinate() + MIN_CROP_LENGTH_PX) {
                 resultXHoriz = Edge.LEFT.getCoordinate() + MIN_CROP_LENGTH_PX;
+            }
 
             // Checks if the window is too small vertically
             if (((x - Edge.LEFT.getCoordinate()) / aspectRatio) <= MIN_CROP_LENGTH_PX) {
@@ -140,21 +141,22 @@ public enum Edge {
 
         float resultY = y;
 
-        if (y - imageRect.top < imageSnapRadius)
+        if (y - imageRect.top < imageSnapRadius) {
             resultY = imageRect.top;
-
-        else {
+        } else {
             // Select the minimum of the three possible values to use
             float resultYVert = Float.POSITIVE_INFINITY;
             float resultYHoriz = Float.POSITIVE_INFINITY;
 
             // Checks if the window is too small vertically
-            if (y >= Edge.BOTTOM.getCoordinate() - MIN_CROP_LENGTH_PX)
+            if (y >= Edge.BOTTOM.getCoordinate() - MIN_CROP_LENGTH_PX) {
                 resultYHoriz = Edge.BOTTOM.getCoordinate() - MIN_CROP_LENGTH_PX;
+            }
 
             // Checks if the window is too small horizontally
-            if (((Edge.BOTTOM.getCoordinate() - y) * aspectRatio) <= MIN_CROP_LENGTH_PX)
+            if (((Edge.BOTTOM.getCoordinate() - y) * aspectRatio) <= MIN_CROP_LENGTH_PX) {
                 resultYVert = Edge.BOTTOM.getCoordinate() - (MIN_CROP_LENGTH_PX / aspectRatio);
+            }
 
             resultY = Math.min(resultY, Math.min(resultYHoriz, resultYVert));
 
@@ -176,20 +178,22 @@ public enum Edge {
 
         float resultY = y;
 
-        if (imageRect.bottom - y < imageSnapRadius)
+        if (imageRect.bottom - y < imageSnapRadius) {
             resultY = imageRect.bottom;
-        else {
+        } else {
             // Select the maximum of the three possible values to use
             float resultYVert = Float.NEGATIVE_INFINITY;
             float resultYHoriz = Float.NEGATIVE_INFINITY;
 
             // Checks if the window is too small vertically
-            if (y <= Edge.TOP.getCoordinate() + MIN_CROP_LENGTH_PX)
+            if (y <= Edge.TOP.getCoordinate() + MIN_CROP_LENGTH_PX) {
                 resultYVert = Edge.TOP.getCoordinate() + MIN_CROP_LENGTH_PX;
+            }
 
             // Checks if the window is too small horizontally
-            if (((y - Edge.TOP.getCoordinate()) * aspectRatio) <= MIN_CROP_LENGTH_PX)
+            if (((y - Edge.TOP.getCoordinate()) * aspectRatio) <= MIN_CROP_LENGTH_PX) {
                 resultYHoriz = Edge.TOP.getCoordinate() + (MIN_CROP_LENGTH_PX / aspectRatio);
+            }
 
             resultY = Math.max(resultY, Math.max(resultYHoriz, resultYVert));
         }

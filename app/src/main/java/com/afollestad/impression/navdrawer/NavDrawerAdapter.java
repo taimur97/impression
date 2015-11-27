@@ -10,7 +10,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.afollestad.impression.R;
-import com.afollestad.impression.api.FolderEntry;
+import com.afollestad.impression.api.MediaFolderEntry;
 import com.afollestad.impression.base.ThemedActivity;
 import com.afollestad.impression.utils.Utils;
 
@@ -42,7 +42,7 @@ public class NavDrawerAdapter extends RecyclerView.Adapter<NavDrawerAdapter.View
 
     /*public void setItemChecked(String path) {
         if (path == null)
-            path = FolderEntry.OVERVIEW_PATH;
+            path = MediaFolderEntry.OVERVIEW_PATH;
         for (int i = 0; i < mEntries.size(); i++) {
             String entryPath = mEntries.get(i).getPath();
             if (entryPath.equals(path)) {
@@ -56,8 +56,11 @@ public class NavDrawerAdapter extends RecyclerView.Adapter<NavDrawerAdapter.View
         mCheckedItem = index;
         notifyDataSetChanged();
     }
+
     public void add(Entry entry) {
-        if (mEntries.contains(entry)) return;
+        if (mEntries.contains(entry)) {
+            return;
+        }
         mEntries.add(entry);
     }
 
@@ -70,8 +73,9 @@ public class NavDrawerAdapter extends RecyclerView.Adapter<NavDrawerAdapter.View
                 break;
             }
         }
-        if (!found)
+        if (!found) {
             mEntries.add(entry);
+        }
     }
 
     public Entry get(int index) {
@@ -99,7 +103,7 @@ public class NavDrawerAdapter extends RecyclerView.Adapter<NavDrawerAdapter.View
             holder.icon.setVisibility(View.VISIBLE);
             holder.icon.getDrawable().mutate().setColorFilter(
                     Utils.resolveColor(mContext, android.R.attr.textColorPrimary), PorterDuff.Mode.SRC_ATOP);
-        } else if (entry.getPath().equals(FolderEntry.OVERVIEW_PATH)) {
+        } else if (entry.getPath().equals(MediaFolderEntry.OVERVIEW_PATH)) {
             holder.textView.setText(R.string.overview);
             holder.vivider.setVisibility(View.GONE);
             holder.icon.setVisibility(View.GONE);
@@ -142,9 +146,9 @@ public class NavDrawerAdapter extends RecyclerView.Adapter<NavDrawerAdapter.View
                 return 1;
             } else if (rhs.isAdd()) {
                 return -1;
-            } else if (lhs.getPath().equals(FolderEntry.OVERVIEW_PATH)) {
+            } else if (lhs.getPath().equals(MediaFolderEntry.OVERVIEW_PATH)) {
                 return -1;
-            } else if (rhs.getPath().equals(FolderEntry.OVERVIEW_PATH)) {
+            } else if (rhs.getPath().equals(MediaFolderEntry.OVERVIEW_PATH)) {
                 return 1;
             } else if (lhs.isIncluded() && !rhs.isIncluded()) {
                 return 1;
@@ -171,7 +175,9 @@ public class NavDrawerAdapter extends RecyclerView.Adapter<NavDrawerAdapter.View
         public String getName() {
             if (mPath.contains(File.separator)) {
                 return mPath.substring(mPath.lastIndexOf(File.separatorChar) + 1);
-            } else return mPath;
+            } else {
+                return mPath;
+            }
         }
 
         public String getPath() {
@@ -193,7 +199,9 @@ public class NavDrawerAdapter extends RecyclerView.Adapter<NavDrawerAdapter.View
 
         @Override
         public boolean equals(Object o) {
-            if (!(o instanceof Entry)) return false;
+            if (!(o instanceof Entry)) {
+                return false;
+            }
             Entry oe = (Entry) o;
             return oe.mPath.equals(mPath) && oe.mIsAddIncludedFolderEntry == mIsAddIncludedFolderEntry && oe.mIsIncludedFolder == mIsIncludedFolder;
         }
@@ -230,7 +238,9 @@ public class NavDrawerAdapter extends RecyclerView.Adapter<NavDrawerAdapter.View
                     int index = getAdapterPosition();
                     if (mCallback != null && index > 0) {
                         Entry entry = mEntries.get(index);
-                        if (entry.isAdd()) return false;
+                        if (entry.isAdd()) {
+                            return false;
+                        }
                         mCallback.onEntrySelected(index, entry, true);
                         return true;
                     }

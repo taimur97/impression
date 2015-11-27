@@ -72,8 +72,9 @@ public class MediaCab implements Serializable, MaterialCab.Callback {
 
     public void setFragment(MediaFragment frag, boolean invalidateChecked) {
         mFragment = frag;
-        if (invalidateChecked)
+        if (invalidateChecked) {
             invalidateChecked();
+        }
     }
 
     public void start() {
@@ -93,8 +94,9 @@ public class MediaCab implements Serializable, MaterialCab.Callback {
 
     private void invalidateChecked() {
         if (mFragment != null && mMediaEntries.size() > 0) {
-            for (MediaEntry e : mMediaEntries)
+            for (MediaEntry e : mMediaEntries) {
                 ((MediaAdapter) mFragment.getAdapter()).setItemChecked(e, true);
+            }
         }
     }
 
@@ -108,13 +110,13 @@ public class MediaCab implements Serializable, MaterialCab.Callback {
     }
 
     private void invalidate() {
-        if (mMediaEntries.size() == 0)
+        if (mMediaEntries.size() == 0) {
             finish();
-        else if (mMediaEntries.size() == 1) {
-            //TODO
-            mCab.setTitle(mMediaEntries.get(0).displayName());
-        } else
+        } else if (mMediaEntries.size() == 1) {
+            mCab.setTitle(mMediaEntries.get(0).displayName(mContext));
+        } else {
             mCab.setTitle(mMediaEntries.size() + "");
+        }
     }
 
     public void finish() {
@@ -132,14 +134,16 @@ public class MediaCab implements Serializable, MaterialCab.Callback {
         boolean found = false;
         for (int i = 0; i < mMediaEntries.size(); i++) {
             if (mMediaEntries.get(i).data().equals(p.data())) {
-                if (!forceCheckOn)
+                if (!forceCheckOn) {
                     mMediaEntries.remove(i);
+                }
                 found = true;
                 break;
             }
         }
-        if (!found)
+        if (!found) {
             mMediaEntries.add(p);
+        }
         ((MediaAdapter) mFragment.getAdapter()).setItemChecked(p, forceCheckOn || !found);
         invalidate();
     }
@@ -171,7 +175,9 @@ public class MediaCab implements Serializable, MaterialCab.Callback {
             @Override
             public void run() {
                 for (MediaEntry e : mMediaEntries) {
-                    if (!mDialog.isShowing()) break;
+                    if (!mDialog.isShowing()) {
+                        break;
+                    }
                     ExcludedFolderProvider.add(mContext, e.data());
                     mDialog.setProgress(mDialog.getProgress() + 1);
                 }
@@ -220,7 +226,7 @@ public class MediaCab implements Serializable, MaterialCab.Callback {
                     foundVideos = foundVideos || p.isVideo();
                     uris.add(Uri.fromFile(new File(p.data())));
                 }*/
-                String mime = "*/*";
+        String mime = "*/*";
                 /*if (foundPhotos && !foundVideos) {
                     mime = "image*//*";
                 } else if (foundVideos && !foundPhotos) {
@@ -270,7 +276,9 @@ public class MediaCab implements Serializable, MaterialCab.Callback {
             @Override
             public void run() {
                 for (MediaEntry p : toDelete) {
-                    if (!mDialog.isShowing()) break;
+                    if (!mDialog.isShowing()) {
+                        break;
+                    }
                     //TODO
                     /*p.delete(mContext);*/
                     mDialog.setProgress(mDialog.getProgress() + 1);
@@ -329,14 +337,20 @@ public class MediaCab implements Serializable, MaterialCab.Callback {
     }
 
     private String getNameNoExtension(File file) {
-        if (file.isDirectory()) return file.getName();
+        if (file.isDirectory()) {
+            return file.getName();
+        }
         String name = file.getName();
-        if (name.startsWith(".") || !name.substring(1).contains(".")) return name;
+        if (name.startsWith(".") || !name.substring(1).contains(".")) {
+            return name;
+        }
         return name.substring(0, name.lastIndexOf('.'));
     }
 
     private File checkDuplicate(File newFile) {
-        if (!newFile.exists()) return newFile;
+        if (!newFile.exists()) {
+            return newFile;
+        }
         final String parent = newFile.getParent();
         final String name = getNameNoExtension(newFile);
         final String extension = Utils.getExtension(newFile.getName());
@@ -375,8 +389,9 @@ public class MediaCab implements Serializable, MaterialCab.Callback {
             @Override
             public void run() {
                 for (MediaEntry p : toMove) {
-                    if (!mDialog.isShowing())
+                    if (!mDialog.isShowing()) {
                         break;
+                    }
                     final File fi = new File(p.data());
                     final File newFi = new File(destDir, fi.getName());
                     try {
@@ -407,8 +422,9 @@ public class MediaCab implements Serializable, MaterialCab.Callback {
 
     private void selectAll() {
         List<MediaEntry> adapterPics = ((MediaAdapter) mFragment.getAdapter()).getMediaWrapper().getMedia();
-        for (MediaEntry p : adapterPics)
+        for (MediaEntry p : adapterPics) {
             toggleEntry(p, true);
+        }
     }
 
     @Override

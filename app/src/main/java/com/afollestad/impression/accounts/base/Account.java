@@ -5,8 +5,8 @@ import android.database.Cursor;
 import android.support.annotation.IntDef;
 
 import com.afollestad.impression.accounts.LocalAccount;
-import com.afollestad.impression.api.FolderEntry;
 import com.afollestad.impression.api.MediaEntry;
+import com.afollestad.impression.api.MediaFolderEntry;
 import com.afollestad.impression.media.MediaAdapter;
 import com.afollestad.impression.providers.AccountProvider;
 
@@ -31,6 +31,7 @@ public abstract class Account {
     private final static Object LOCK = new Object();
     private static Account[] mAccountsSingleton;
     private final Context mContext;
+
     protected Account(Context context) {
         mContext = context;
     }
@@ -83,17 +84,18 @@ public abstract class Account {
 
     public abstract int id();
 
+    @Type
     public abstract int type();
 
     public abstract String name();
 
     public abstract boolean supportsIncludedFolders();
 
-    public abstract Single<Set<FolderEntry>> getAlbums(@MediaAdapter.SortMode int sort, @MediaAdapter.FileFilterMode int filter);
+    public abstract Single<Set<MediaFolderEntry>> getMediaFolders(@MediaAdapter.SortMode int sort, @MediaAdapter.FileFilterMode int filter);
 
-    public abstract Single<List<FolderEntry>> getIncludedFolders(@MediaAdapter.FileFilterMode int filter);
+    public abstract Single<List<MediaFolderEntry>> getIncludedFolders(@MediaAdapter.FileFilterMode int filter);
 
-    public abstract Single<List<? extends MediaEntry>> getEntries(String albumPath, boolean explorerMode, @MediaAdapter.FileFilterMode int filter, @MediaAdapter.SortMode int sort);
+    public abstract Single<List<MediaEntry>> getEntries(String albumPath, boolean explorerMode, @MediaAdapter.FileFilterMode int filter, @MediaAdapter.SortMode int sort);
 
     @IntDef({TYPE_LOCAL, TYPE_GOOGLE_DRIVE, TYPE_DROPBOX})
     @Retention(RetentionPolicy.SOURCE)

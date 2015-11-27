@@ -40,8 +40,11 @@ public abstract class ThemedActivity extends AppCompatActivity {
 
     public int primaryColor() {
         String key = "primary_color";
-        if (mLastDarkTheme) key += "_dark";
-        else key += "_light";
+        if (mLastDarkTheme) {
+            key += "_dark";
+        } else {
+            key += "_light";
+        }
         final int defaultColor = ContextCompat.getColor(this, mLastDarkTheme ?
                 R.color.dark_theme_gray : R.color.material_indigo_500);
         return PreferenceManager.getDefaultSharedPreferences(this).getInt(key, defaultColor);
@@ -49,8 +52,11 @@ public abstract class ThemedActivity extends AppCompatActivity {
 
     protected void primaryColor(int newColor) {
         String key = "primary_color";
-        if (mLastDarkTheme) key += "_dark";
-        else key += "_light";
+        if (mLastDarkTheme) {
+            key += "_dark";
+        } else {
+            key += "_light";
+        }
         PreferenceManager.getDefaultSharedPreferences(this).edit().putInt(key, newColor).commit();
     }
 
@@ -60,16 +66,22 @@ public abstract class ThemedActivity extends AppCompatActivity {
 
     public int accentColor() {
         String key = "accent_color";
-        if (mLastDarkTheme) key += "_dark";
-        else key += "_light";
+        if (mLastDarkTheme) {
+            key += "_dark";
+        } else {
+            key += "_light";
+        }
         final int defaultColor = ContextCompat.getColor(this, R.color.material_pink_500);
         return PreferenceManager.getDefaultSharedPreferences(this).getInt(key, defaultColor);
     }
 
     protected void accentColor(int newColor) {
         String key = "accent_color";
-        if (mLastDarkTheme) key += "_dark";
-        else key += "_light";
+        if (mLastDarkTheme) {
+            key += "_dark";
+        } else {
+            key += "_light";
+        }
         PreferenceManager.getDefaultSharedPreferences(this).edit().putInt(key, newColor).commit();
     }
 
@@ -97,16 +109,19 @@ public abstract class ThemedActivity extends AppCompatActivity {
             setTaskDescription(td);
         }
 
-        if (getSupportActionBar() != null)
+        if (getSupportActionBar() != null) {
             getSupportActionBar().setBackgroundDrawable(new ColorDrawable(primaryColor()));
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && hasColoredBars()) {
             final int dark = primaryColorDark();
-            if (allowStatusBarColoring())
+            if (allowStatusBarColoring()) {
                 getWindow().setStatusBarColor(dark);
-            else
+            } else {
                 getWindow().setStatusBarColor(ContextCompat.getColor(this, android.R.color.transparent));
-            if (mLastColoredNav)
+            }
+            if (mLastColoredNav) {
                 getWindow().setNavigationBarColor(dark);
+            }
         }
     }
 

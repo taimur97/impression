@@ -70,8 +70,9 @@ public class SettingsActivity extends ThemedActivity implements ColorChooserDial
         //noinspection ConstantConditions
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
-        if (savedInstanceState == null)
+        if (savedInstanceState == null) {
             getFragmentManager().beginTransaction().replace(R.id.content_frame, new SettingsFragment()).commit();
+        }
     }
 
     @Override
@@ -129,8 +130,9 @@ public class SettingsActivity extends ThemedActivity implements ColorChooserDial
             findPreference(PrefUtils.DARK_THEME).setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
                 @Override
                 public boolean onPreferenceChange(Preference preference, Object newValue) {
-                    if (getActivity() != null)
+                    if (getActivity() != null) {
                         getActivity().recreate();
+                    }
                     return true;
                 }
             });
@@ -165,7 +167,9 @@ public class SettingsActivity extends ThemedActivity implements ColorChooserDial
                 @Override
                 public boolean onPreferenceClick(Preference preference) {
                     SettingsActivity act = (SettingsActivity) getActivity();
-                    if (act == null) return false;
+                    if (act == null) {
+                        return false;
+                    }
                     new ColorChooserDialog.Builder(act, preference.getTitleRes())
                             .preselect(act.primaryColor())
                             .backButton(R.string.back)
@@ -183,7 +187,9 @@ public class SettingsActivity extends ThemedActivity implements ColorChooserDial
                 @Override
                 public boolean onPreferenceClick(Preference preference) {
                     SettingsActivity act = (SettingsActivity) getActivity();
-                    if (act == null) return false;
+                    if (act == null) {
+                        return false;
+                    }
                     new ColorChooserDialog.Builder(act, preference.getTitleRes())
                             .preselect(act.accentColor())
                             .accentMode(true)

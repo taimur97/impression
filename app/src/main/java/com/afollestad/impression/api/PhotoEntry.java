@@ -1,5 +1,6 @@
 package com.afollestad.impression.api;
 
+import android.content.Context;
 import android.os.Parcel;
 import android.provider.MediaStore;
 
@@ -152,7 +153,7 @@ public class PhotoEntry implements MediaEntry {
     }
 
     @Override
-    public String displayName() {
+    public String displayName(Context context) {
         return _displayName;
     }
 

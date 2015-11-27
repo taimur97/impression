@@ -49,11 +49,13 @@ public abstract class PrefUtils {
     }
 
     public static void setGridMode(Context context, boolean gridMode) {
-       PreferenceManager.getDefaultSharedPreferences(context).edit().putBoolean(GRID_MODE, gridMode).apply();
+        PreferenceManager.getDefaultSharedPreferences(context).edit().putBoolean(GRID_MODE, gridMode).apply();
     }
 
     public static int getGridColumns(Context context) {
-        if (context == null  || !isGridMode(context)) return 1;
+        if (context == null || !isGridMode(context)) {
+            return 1;
+        }
 
         final Resources r = context.getResources();
         final int defaultGrid = r.getInteger(R.integer.default_grid_width);
@@ -72,7 +74,9 @@ public abstract class PrefUtils {
     public static
     @MediaAdapter.FileFilterMode
     int getFilterMode(Context context) {
-        if (context == null) return MediaAdapter.FILTER_ALL;
+        if (context == null) {
+            return MediaAdapter.FILTER_ALL;
+        }
         //noinspection ResourceType
         return PreferenceManager.getDefaultSharedPreferences(context).getInt(FILTER_MODE, MediaAdapter.FILTER_ALL);
     }
@@ -103,12 +107,12 @@ public abstract class PrefUtils {
         PreferenceManager.getDefaultSharedPreferences(context).edit().putInt(SORT_MODE, mode).apply();
     }
 
-    public static Comparator<MediaEntry> getSortComparator(@MediaAdapter.SortMode int mode) {
+    public static Comparator<MediaEntry> getSortComparator(Context context, @MediaAdapter.SortMode int mode) {
         switch (mode) {
             default:
-                return new MediaNameSorter(false);
+                return new MediaNameSorter(context, false);
             case MediaAdapter.SORT_NAME_DESC:
-                return new MediaNameSorter(true);
+                return new MediaNameSorter(context, true);
             case MediaAdapter.SORT_MODIFIED_DATE_ASC:
                 return new MediaModifiedSorter(false);
             case MediaAdapter.SORT_MODIFIED_DATE_DESC:

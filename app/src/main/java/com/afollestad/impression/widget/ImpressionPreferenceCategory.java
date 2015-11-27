@@ -31,7 +31,8 @@ public class ImpressionPreferenceCategory extends PreferenceCategory {
     protected void onBindView(@NonNull View view) {
         super.onBindView(view);
         ColorStateList positiveColor = ThemeSingleton.get().positiveColor;
-        if (positiveColor != null)
+        if (positiveColor != null) {
             ((TextView) view.findViewById(android.R.id.title)).setTextColor(positiveColor);
+        }
     }
 }

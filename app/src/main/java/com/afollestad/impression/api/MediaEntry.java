@@ -1,5 +1,6 @@
 package com.afollestad.impression.api;
 
+import android.content.Context;
 import android.os.Parcelable;
 
 public interface MediaEntry extends Parcelable /*extends CursorItem<T>, Serializable*/ {
@@ -17,7 +18,7 @@ public interface MediaEntry extends Parcelable /*extends CursorItem<T>, Serializ
 
     /*String title();*/
 
-    String displayName();
+    String displayName(Context context);
 
     String mimeType();
 

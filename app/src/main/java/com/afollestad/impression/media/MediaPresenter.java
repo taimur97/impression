@@ -19,8 +19,8 @@ import com.afollestad.impression.App;
 import com.afollestad.impression.MvpPresenter;
 import com.afollestad.impression.R;
 import com.afollestad.impression.accounts.base.Account;
-import com.afollestad.impression.api.FolderEntry;
 import com.afollestad.impression.api.MediaEntry;
+import com.afollestad.impression.api.MediaFolderEntry;
 import com.afollestad.impression.providers.SortMemoryProvider;
 import com.afollestad.impression.utils.PrefUtils;
 import com.afollestad.impression.utils.Utils;
@@ -33,6 +33,7 @@ import java.util.List;
 
 import rx.Single;
 import rx.SingleSubscriber;
+import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Func1;
 
@@ -40,10 +41,15 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
 
     public static final String INIT_PATH = "path";
     private static final String STATE_PATH = "state_path";
+    private static final String STATE_LOADED = "state_loaded";
+
     private static final String TAG = "MediaPresenter";
 
     private String mPath;
     private boolean mLastDarkTheme;
+    private Subscription mAllEntriesSubscription;
+
+    private boolean mLoaded;
 
     public static MediaFragment newInstance(String albumPath) {
         MediaFragment frag = new MediaFragment();
@@ -58,11 +64,17 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
             //noinspection ConstantConditions
             getView().saveScrollPositionInto(findCrumbForCurrentPath((MainActivity) getView().getContextCompat()));
         }
+        if (mAllEntriesSubscription != null) {
+            mAllEntriesSubscription.unsubscribe();
+            mAllEntriesSubscription = null;
+        }
     }
 
     public void setGridModeOn(boolean gridMode) {
         //noinspection ConstantConditions
-        if (!isViewAttached() || getView().getContextCompat() == null) return;
+        if (!isViewAttached() || getView().getContextCompat() == null) {
+            return;
+        }
 
         PrefUtils.setGridMode(getView().getContextCompat(), gridMode);
 
@@ -75,7 +87,9 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
 
     protected final void setGridColumns(int width) {
         //noinspection ConstantConditions
-        if (!isViewAttached() || getView().getContextCompat() == null) return;
+        if (!isViewAttached() || getView().getContextCompat() == null) {
+            return;
+        }
         final Resources r = getView().getContextCompat().getResources();
         final int orientation = r.getConfiguration().orientation;
         PrefUtils.setGridColumns(getView().getContextCompat(), orientation, width);
@@ -90,12 +104,11 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
             final boolean gridMode = PrefUtils.isGridMode(getView().getContextCompat());
             getView().initializeRecyclerView(gridMode, PrefUtils.getGridColumns(getView().getContextCompat()), createAdapter());
 
-            if (savedInstanceState == null) {
+            if (savedInstanceState == null || !mLoaded) {
                 setPath(mPath);
             } else {
                 MediaEntry[] mediaEntries = getView().getAdapter().restoreInstanceState(savedInstanceState);
                 reloadFinished(mediaEntries);
-
                 onPathSet((MainActivity) getView().getContextCompat());
             }
         }
@@ -107,8 +120,10 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
             if (savedInstanceState == null) {
                 //noinspection ConstantConditions
                 mPath = getView().getArguments().getString(INIT_PATH);
+                mLoaded = false;
             } else {
                 mPath = savedInstanceState.getString(STATE_PATH);
+                mLoaded = savedInstanceState.getBoolean(STATE_LOADED);
             }
             //noinspection ConstantConditions
             mLastDarkTheme = PrefUtils.isDarkTheme(getView().getContextCompat());
@@ -135,6 +150,7 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
 
     protected void onSaveInstanceState(Bundle bundle) {
         bundle.putString(STATE_PATH, mPath);
+        bundle.putBoolean(STATE_LOADED, mLoaded);
         if (isViewAttached()) {
             //noinspection ConstantConditions
             getView().getAdapter().saveInstanceState(bundle);
@@ -149,10 +165,14 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
 
         switch (itemId) {
             case R.id.viewExplorer:
+                //noinspection ConstantConditions
                 MainActivity act = (MainActivity) getView().getContextCompat();
                 boolean currentExplorerMode = PrefUtils.isExplorerMode(act);
                 PrefUtils.setExplorerMode(act, !currentExplorerMode);
-                reload();
+
+                getView().getAdapter().updateExplorerMode();
+
+                act.switchAlbum(null);
                 updateTitle();
                 act.invalidateOptionsMenu();
                 act.invalidateExplorerMode();
@@ -172,7 +192,7 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
         if (PrefUtils.isExplorerMode(getView().getContextCompat())) {
             // In explorer mode, the path is displayed in the bread crumbs so the name is shown instead
             title = getView().getContextCompat().getString(R.string.app_name);
-        } else if (mPath == null || mPath.equals(FolderEntry.OVERVIEW_PATH)) {
+        } else if (mPath == null || mPath.equals(MediaFolderEntry.OVERVIEW_PATH)) {
             title = getView().getContextCompat().getString(R.string.overview);
         } else if (mPath.equals(Environment.getExternalStorageDirectory().getAbsolutePath())) {
             title = getView().getContextCompat().getString(R.string.internal_storage);
@@ -208,15 +228,15 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
         }
     }
 
-    private Single<List<? extends MediaEntry>> getAllEntries() {
+    private Single<List<MediaEntry>> getAllEntries() {
         if (!isViewAttached()) {
             return null;
         }
         //noinspection ConstantConditions
         return App.getCurrentAccount(getView().getContextCompat())
-                .flatMap(new Func1<Account, Single<List<? extends MediaEntry>>>() {
+                .flatMap(new Func1<Account, Single<List<MediaEntry>>>() {
                     @Override
-                    public Single<List<? extends MediaEntry>> call(Account account) {
+                    public Single<List<MediaEntry>> call(Account account) {
                         //if (!isAdded()) return null;
                         if (account != null) {
                             /*acc.getEntries(mPresenter.getPath(), PrefUtils.getOverviewAllMediaMode(getActivity()),
@@ -233,6 +253,8 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
     }
 
     public final void reload() {
+        mLoaded = false;
+
         if (!isViewAttached()) {
             return;
         }
@@ -251,18 +273,23 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
             getView().getAdapter().clear();
         }
 
+        /* if (!isAdded())
+             return;
+         else */
+
         //noinspection ConstantConditions
-        getAllEntries()
+        mAllEntriesSubscription = getAllEntries()
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new SingleSubscriber<List<? extends MediaEntry>>() {
+                .subscribe(new SingleSubscriber<List<MediaEntry>>() {
                     @Override
-                    public void onSuccess(List<? extends MediaEntry> entries) {
+                    public void onSuccess(List<MediaEntry> entries) {
                         MediaEntry[] allEntries = entries.toArray(new MediaEntry[entries.size()]);
                        /* if (!isAdded())
                             return;
                         else */
-                        if (getView().getAdapter() != null)
+                        if (getView().getAdapter() != null) {
                             getView().getAdapter().addAll(allEntries);
+                        }
 
                         reloadFinished(allEntries);
                     }
@@ -270,7 +297,9 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
                     @Override
                     public void onError(Throwable error) {
                         error.printStackTrace();
-                        if (getView().getContextCompat() == null) return;
+                        if (getView().getContextCompat() == null) {
+                            return;
+                        }
                         Utils.showErrorDialog(getView().getContextCompat(), error);
                     }
                 });
@@ -282,6 +311,8 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
         getView().setListShown(true);
         getView().restoreScrollPositionFrom(findCrumbForCurrentPath(mainActivity));
         getView().invalidateSubtitle(allEntries);
+
+        mLoaded = true;
     }
 
     private Crumb findCrumbForCurrentPath(MainActivity mainActivity) {
@@ -325,9 +356,8 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
             act.getTmpState().putInt(MainActivity.EXTRA_OLD_ITEM_POSITION, index);
 
             if (act.isPickMode() || act.isSelectAlbumMode()) {
-                //TODO
-                if (pic.isFolder() && pic instanceof FolderEntry) {
-                    act.switchAlbum(((FolderEntry) pic).folderPath());
+                if (pic.isFolder()) {
+                    act.switchAlbum(pic.data());
                 } else {
                     // This will never be called for album selection mode, only pick mode
                     final File file = new File(pic.data());
@@ -336,10 +366,12 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
                     act.finish();
                 }
             } else if (longClick) {
-                if (act.getMediaCab() == null)
+                if (act.getMediaCab() == null) {
                     act.setMediaCab(new MediaCab(act));
-                if (!act.getMediaCab().isStarted())
+                }
+                if (!act.getMediaCab().isStarted()) {
                     act.getMediaCab().start();
+                }
                 act.getMediaCab().setFragment((MediaFragment) getView(), false);
                 act.getMediaCab().toggleEntry(pic);
             } else {
@@ -347,9 +379,8 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
                     act.getMediaCab().setFragment((MediaFragment) getView(), false);
                     act.getMediaCab().toggleEntry(pic);
                 } else {
-                    //TODO
-                    if (pic.isFolder() && pic instanceof FolderEntry) {
-                        act.switchAlbum(((FolderEntry) pic).folderPath());
+                    if (pic.isFolder()) {
+                        act.switchAlbum(pic.data());
                     } else {
                         ImpressionThumbnailImageView iv = (ImpressionThumbnailImageView) view.findViewById(R.id.image);
                         int width = iv.getWidth();

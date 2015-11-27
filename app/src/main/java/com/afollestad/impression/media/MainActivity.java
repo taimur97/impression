@@ -42,7 +42,7 @@ import android.widget.TextView;
 
 import com.afollestad.impression.BuildConfig;
 import com.afollestad.impression.R;
-import com.afollestad.impression.api.FolderEntry;
+import com.afollestad.impression.api.MediaFolderEntry;
 import com.afollestad.impression.base.ThemedActivity;
 import com.afollestad.impression.navdrawer.NavDrawerFragment;
 import com.afollestad.impression.providers.IncludedFolderProvider;
@@ -148,8 +148,9 @@ public class MainActivity extends ThemedActivity
 
     public void animateDrawerArrow(boolean close) {
         float currentOffset;
-        if (mAnimatedDrawerToggle == null || (currentOffset = mAnimatedDrawerToggle.getOffset()) == (close ? 0 : 1))
+        if (mAnimatedDrawerToggle == null || (currentOffset = mAnimatedDrawerToggle.getOffset()) == (close ? 0 : 1)) {
             return;
+        }
         ValueAnimator anim;
         if (close) {
             anim = ValueAnimator.ofFloat(currentOffset, 0f);
@@ -180,7 +181,9 @@ public class MainActivity extends ThemedActivity
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     private void setupSharedElementCallback() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) return;
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+            return;
+        }
         final SharedElementCallback mCallback = new SharedElementCallback() {
             @Override
             public void onMapSharedElements(List<String> names, Map<String, View> sharedElements) {
@@ -215,21 +218,24 @@ public class MainActivity extends ThemedActivity
                 View statusBar = decor.findViewById(android.R.id.statusBarBackground);
 
                 if (navigationBar != null && !sharedElements.containsKey(Window.NAVIGATION_BAR_BACKGROUND_TRANSITION_NAME)) {
-                    if (!names.contains(Window.NAVIGATION_BAR_BACKGROUND_TRANSITION_NAME))
+                    if (!names.contains(Window.NAVIGATION_BAR_BACKGROUND_TRANSITION_NAME)) {
                         names.add(Window.NAVIGATION_BAR_BACKGROUND_TRANSITION_NAME);
+                    }
                     sharedElements.put(Window.NAVIGATION_BAR_BACKGROUND_TRANSITION_NAME, navigationBar);
                 }
 
                 View toolbarFrame = findViewById(R.id.toolbar_frame);
                 if (toolbarFrame != null && !sharedElements.containsKey(toolbarFrame.getTransitionName())) {
-                    if (!names.contains(toolbarFrame.getTransitionName()))
+                    if (!names.contains(toolbarFrame.getTransitionName())) {
                         names.add(toolbarFrame.getTransitionName());
+                    }
                     sharedElements.put(toolbarFrame.getTransitionName(), toolbarFrame);
                 }
 
                 if (statusBar != null && !sharedElements.containsKey(Window.STATUS_BAR_BACKGROUND_TRANSITION_NAME)) {
-                    if (!names.contains(Window.STATUS_BAR_BACKGROUND_TRANSITION_NAME))
+                    if (!names.contains(Window.STATUS_BAR_BACKGROUND_TRANSITION_NAME)) {
                         names.add(Window.STATUS_BAR_BACKGROUND_TRANSITION_NAME);
+                    }
                     sharedElements.put(Window.STATUS_BAR_BACKGROUND_TRANSITION_NAME, statusBar);
                 }
 
@@ -296,7 +302,9 @@ public class MainActivity extends ThemedActivity
         } else {
             switchAlbum(null);
             NavDrawerFragment nav = (NavDrawerFragment) getFragmentManager().findFragmentByTag(NAV_DRAWER_FRAGMENT);
-            if (nav != null) nav.reloadAccounts();
+            if (nav != null) {
+                nav.reloadAccounts();
+            }
         }
     }
 
@@ -330,8 +338,9 @@ public class MainActivity extends ThemedActivity
                 public void onDrawerClosed(View drawerView) {
                     super.onDrawerClosed(drawerView);
                     Fragment nav = getFragmentManager().findFragmentByTag(NAV_DRAWER_FRAGMENT);
-                    if (nav != null)
+                    if (nav != null) {
                         ((NavDrawerFragment) nav).notifyClosed();
+                    }
                 }
             });
             mDrawerLayout.setStatusBarBackgroundColor(primaryColorDark());
@@ -370,8 +379,9 @@ public class MainActivity extends ThemedActivity
                     onBackPressed();
                 } else {
                     String activeFile = null;
-                    if (mBreadCrumbLayout.getActiveIndex() > -1)
+                    if (mBreadCrumbLayout.getActiveIndex() > -1) {
                         activeFile = mBreadCrumbLayout.getCrumb(mBreadCrumbLayout.getActiveIndex()).getPath();
+                    }
                     if (crumb.getPath() != null && activeFile != null &&
                             crumb.getPath().equals(activeFile)) {
                         Fragment frag = getFragmentManager().findFragmentById(R.id.content_frame);
@@ -388,7 +398,9 @@ public class MainActivity extends ThemedActivity
             switchAlbum(null);
         } else {
             if (!isSelectAlbumMode()) {
-                if (mTitle != null) getSupportActionBar().setTitle(mTitle);
+                if (mTitle != null) {
+                    getSupportActionBar().setTitle(mTitle);
+                }
                 mMediaCab = MediaCab.restoreState(savedInstanceState, this);
             }
         }
@@ -416,8 +428,9 @@ public class MainActivity extends ThemedActivity
     @Override
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        if (mMediaCab != null)
+        if (mMediaCab != null) {
             mMediaCab.saveState(outState);
+        }
     }
 
     @Override
@@ -549,7 +562,9 @@ public class MainActivity extends ThemedActivity
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == SETTINGS_REQUEST && resultCode == Activity.RESULT_OK) {
             MediaFragment content = findMediaFragment();
-            if (content != null) content.getPresenter().reload();
+            if (content != null) {
+                content.getPresenter().reload();
+            }
             reloadNavDrawerAlbums();
         }
     }
@@ -560,6 +575,10 @@ public class MainActivity extends ThemedActivity
 
     public boolean navDrawerSwitchAlbum(String path) {
         mDrawerLayout.closeDrawers();
+
+        if (path.equals(MediaFolderEntry.OVERVIEW_PATH) && PrefUtils.isExplorerMode(this)) {
+            path = Environment.getExternalStorageDirectory().getAbsolutePath();
+        }
 
         mBreadCrumbLayout.setTopPath(path);
 
@@ -584,7 +603,7 @@ public class MainActivity extends ThemedActivity
             // Initial directory
             path = PrefUtils.isExplorerMode(this) ?
                     Environment.getExternalStorageDirectory().getAbsolutePath() :
-                    FolderEntry.OVERVIEW_PATH;
+                    MediaFolderEntry.OVERVIEW_PATH;
             mBreadCrumbLayout.setTopPath(path);
         }
 
@@ -599,8 +618,9 @@ public class MainActivity extends ThemedActivity
             String path = crumb.getPath();
             while (path != null) {
                 mBreadCrumbLayout.addHistory(new Crumb(this, path));
-                if (mBreadCrumbLayout.isTopPath(path))
+                if (mBreadCrumbLayout.isTopPath(path)) {
                     break;
+                }
                 path = new File(path).getParent();
             }
             mBreadCrumbLayout.reverseHistory();
@@ -633,9 +653,11 @@ public class MainActivity extends ThemedActivity
     public void reloadNavDrawerAlbums() {
         NavDrawerFragment nav = (NavDrawerFragment) getFragmentManager().findFragmentByTag(NAV_DRAWER_FRAGMENT);
         if (nav != null) {
-            if (nav.mCurrentAccount == null)
+            if (nav.mCurrentAccount == null) {
                 nav.reloadAccounts();
-            else nav.getAlbums(nav.mCurrentAccount);
+            } else {
+                nav.getMediaFolders(nav.mCurrentAccount);
+            }
         }
     }
 
@@ -703,7 +725,9 @@ public class MainActivity extends ThemedActivity
 
                         for (int i = 0; i < listView.getChildCount(); i++) {
                             View v = listView.getChildAt(i);
-                            if (!(v instanceof ListMenuItemView)) continue;
+                            if (!(v instanceof ListMenuItemView)) {
+                                continue;
+                            }
                             ListMenuItemView iv = (ListMenuItemView) v;
 
                             CheckBox check = (CheckBox) checkboxField.get(iv);

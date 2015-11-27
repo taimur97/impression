@@ -16,10 +16,16 @@ public class MediaModifiedSorter implements Comparator<MediaEntry> {
     public int compare(MediaEntry lhs, MediaEntry rhs) {
         Long right;
         Long left;
-        if (rhs != null) right = rhs.dateTaken();
-        else right = 0L;
-        if (lhs != null) left = lhs.dateTaken();
-        else left = 0L;
+        if (rhs != null) {
+            right = rhs.dateTaken();
+        } else {
+            right = 0L;
+        }
+        if (lhs != null) {
+            left = lhs.dateTaken();
+        } else {
+            left = 0L;
+        }
 
         if (desc) {
             return left.compareTo(right);

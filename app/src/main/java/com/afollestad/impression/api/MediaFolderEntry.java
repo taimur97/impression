@@ -1,23 +1,26 @@
 package com.afollestad.impression.api;
 
+import android.content.Context;
+import android.os.Environment;
 import android.os.Parcel;
 import android.provider.MediaStore;
 
+import com.afollestad.impression.R;
 import com.afollestad.inquiry.annotations.Column;
 
 import java.io.File;
 
 //TODO: Don't repeat everything in PhotoEntry? Superclass problem with Inquiry
-public class FolderEntry extends PhotoEntry {
+public class MediaFolderEntry extends PhotoEntry {
 
     public static final String OVERVIEW_PATH = "OVERVIEW";
-    public static final Creator<FolderEntry> CREATOR = new Creator<FolderEntry>() {
-        public FolderEntry createFromParcel(Parcel source) {
-            return new FolderEntry(source);
+    public static final Creator<MediaFolderEntry> CREATOR = new Creator<MediaFolderEntry>() {
+        public MediaFolderEntry createFromParcel(Parcel source) {
+            return new MediaFolderEntry(source);
         }
 
-        public FolderEntry[] newArray(int size) {
-            return new FolderEntry[size];
+        public MediaFolderEntry[] newArray(int size) {
+            return new MediaFolderEntry[size];
         }
     };
     @Column(name = MediaStore.Images.Media._ID)
@@ -47,10 +50,10 @@ public class FolderEntry extends PhotoEntry {
     @Column(name = MediaStore.Images.Media.HEIGHT)
     protected int height;
 
-    public FolderEntry() {
+    public MediaFolderEntry() {
     }
 
-    protected FolderEntry(Parcel in) {
+    protected MediaFolderEntry(Parcel in) {
         this.bucketId = in.readString();
         this.bucketDisplayName = in.readString();
         this.dateTaken = in.readLong();
@@ -59,7 +62,7 @@ public class FolderEntry extends PhotoEntry {
 
     @Override
     public String toString() {
-        return "FolderEntry{" +
+        return "MediaFolderEntry{" +
                 "_id=" + _id +
                 ", _data='" + _data + '\'' +
                 ", _size=" + _size +
@@ -80,13 +83,13 @@ public class FolderEntry extends PhotoEntry {
         return -1;
     }
 
-    public String folderPath(){
-        return new File(_data).getParent();
+    public String firstPath() {
+        return _data;
     }
 
     @Override
     public String data() {
-        return _data;
+        return new File(_data).getParent();
     }
 
     @Override
@@ -131,7 +134,10 @@ public class FolderEntry extends PhotoEntry {
     }
 
     @Override
-    public String displayName() {
+    public String displayName(Context context) {
+        if (data().equals(Environment.getExternalStorageDirectory().getAbsolutePath())) {
+            return context.getString(R.string.internal_storage);
+        }
         return bucketDisplayName;
     }
 

@@ -122,8 +122,9 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
 
         @Override
         public void onPageSelected(int position) {
-            if (userScrollChange)
+            if (userScrollChange) {
                 stopSlideshow();
+            }
 
             mCurrentPosition = position;
 
@@ -186,15 +187,18 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     public void invalidateTransition() {
-        if (mStartedPostponedTransition || Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP)
+        if (mStartedPostponedTransition || Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
             return;
+        }
         mStartedPostponedTransition = true;
         startPostponedEnterTransition();
     }
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     private void setupSharedElementCallback() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) return;
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+            return;
+        }
         final SharedElementCallback enterCallback = new SharedElementCallback() {
             @Override
             public void onMapSharedElements(List<String> names, Map<String, View> sharedElements) {
@@ -223,20 +227,23 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
                 View statusBar = decor.findViewById(android.R.id.statusBarBackground);
 
                 if (navigationBar != null && !sharedElements.containsKey(Window.NAVIGATION_BAR_BACKGROUND_TRANSITION_NAME)) {
-                    if (!names.contains(Window.NAVIGATION_BAR_BACKGROUND_TRANSITION_NAME))
+                    if (!names.contains(Window.NAVIGATION_BAR_BACKGROUND_TRANSITION_NAME)) {
                         names.add(Window.NAVIGATION_BAR_BACKGROUND_TRANSITION_NAME);
+                    }
                     sharedElements.put(Window.NAVIGATION_BAR_BACKGROUND_TRANSITION_NAME, navigationBar);
                 }
 
                 if (mToolbar != null && !sharedElements.containsKey(mToolbar.getTransitionName())) {
-                    if (!names.contains(mToolbar.getTransitionName()))
+                    if (!names.contains(mToolbar.getTransitionName())) {
                         names.add(mToolbar.getTransitionName());
+                    }
                     sharedElements.put(mToolbar.getTransitionName(), mToolbar);
                 }
 
                 if (statusBar != null && !sharedElements.containsKey(Window.STATUS_BAR_BACKGROUND_TRANSITION_NAME)) {
-                    if (!names.contains(Window.STATUS_BAR_BACKGROUND_TRANSITION_NAME))
+                    if (!names.contains(Window.STATUS_BAR_BACKGROUND_TRANSITION_NAME)) {
                         names.add(Window.STATUS_BAR_BACKGROUND_TRANSITION_NAME);
+                    }
                     sharedElements.put(Window.STATUS_BAR_BACKGROUND_TRANSITION_NAME, statusBar);
                 }
 
@@ -271,10 +278,11 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
                         }
                     }
 
-                    if (statusBar != null)
+                    if (statusBar != null) {
                         ObjectAnimator.ofArgb(statusBar, "backgroundColor", primaryColor(), Color.BLACK)
                                 .setDuration(SHARED_ELEMENT_TRANSITION_DURATION)
                                 .start();
+                    }
                 }
             }
 
@@ -289,10 +297,11 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
                 View statusBar = decor.findViewById(android.R.id.statusBarBackground);
 
                 if (mIsReturningToMain) {
-                    if (mToolbar != null)
+                    if (mToolbar != null) {
                         ObjectAnimator.ofArgb(mToolbar, "backgroundColor", Color.BLACK, primaryColor())
                                 .setDuration(SHARED_ELEMENT_TRANSITION_DURATION)
                                 .start();
+                    }
 
                     if (navigationBar != null) {
                         if (PrefUtils.isColoredNavBar(ViewerActivity.this)) {
@@ -301,10 +310,11 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
                                     .start();
                         }
                     }
-                    if (statusBar != null)
+                    if (statusBar != null) {
                         ObjectAnimator.ofArgb(statusBar, "backgroundColor", Color.BLACK, primaryColorDark())
                                 .setDuration(SHARED_ELEMENT_TRANSITION_DURATION)
                                 .start();
+                    }
                 }
             }
 
@@ -387,14 +397,19 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
         final Resources r = getResources();
         int id;
         if (config.orientation == Configuration.ORIENTATION_LANDSCAPE) {
-            if (portraitOnly) return 0;
+            if (portraitOnly) {
+                return 0;
+            }
             id = r.getIdentifier("navigation_bar_height_landscape", "dimen", "android");
         } else {
-            if (landscapeOnly) return 0;
+            if (landscapeOnly) {
+                return 0;
+            }
             id = r.getIdentifier("navigation_bar_height", "dimen", "android");
         }
-        if (id > 0)
+        if (id > 0) {
             return r.getDimensionPixelSize(id);
+        }
         return 0;
     }
 
@@ -470,8 +485,9 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
                         String tempPath = null;
                         try {
                             Cursor cursor = getContentResolver().query(data, new String[]{"_data"}, null, null, null);
-                            if (cursor.moveToFirst())
+                            if (cursor.moveToFirst()) {
                                 tempPath = cursor.getString(0);
+                            }
                             cursor.close();
                         } catch (Exception e) {
                             e.printStackTrace();
@@ -706,7 +722,9 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
                 @Override
                 public void onAnimationEnd(Animator animation) {
                     super.onAnimationEnd(animation);
-                    if (listener != null) listener.onFade();
+                    if (listener != null) {
+                        listener.onFade();
+                    }
                 }
             });
             hideSystemUi();
@@ -853,7 +871,9 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
                             //TODO
                             /*mEntries.get(mCurrentPosition).delete(ViewerActivity.this);*/
                             mAdapter.remove(mCurrentPosition);
-                            if (mEntries.size() == 0) finish();
+                            if (mEntries.size() == 0) {
+                                finish();
+                            }
                         }
                     }).build().show();
         } else if (item.getItemId() == R.id.slideshow) {
@@ -876,8 +896,9 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
             MediaEntry e = mEntries.get(mCurrentPosition);
             if (e.isVideo()) {
                 mCurrentPosition += 1;
-                if (mCurrentPosition > mEntries.size() - 1)
+                if (mCurrentPosition > mEntries.size() - 1) {
                     mCurrentPosition = 0;
+                }
             } else {
                 mPager.setCurrentItem(mCurrentPosition);
                 break;
@@ -994,8 +1015,9 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
 
         mIsReturningToMain = true;
         Intent data = new Intent();
-        if (getIntent() != null)
+        if (getIntent() != null) {
             data.putExtra(MainActivity.EXTRA_OLD_ITEM_POSITION, getIntent().getIntExtra(MainActivity.EXTRA_CURRENT_ITEM_POSITION, 0));
+        }
         data.putExtra(MainActivity.EXTRA_CURRENT_ITEM_POSITION, mCurrentPosition);
         setResult(RESULT_OK, data);
         super.finishAfterTransition();
@@ -1032,8 +1054,9 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
                 MediaEntry p = mediaEntries.get(i);
                 //TODO
                 /*p.setRealIndex(i);*/
-                if (allowFolders || !p.isFolder())
+                if (allowFolders || !p.isFolder()) {
                     mMediaEntries.add(p);
+                }
             }
         }
 
@@ -1065,7 +1088,9 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
 
         @Override
         public Uri[] createBeamUris(NfcEvent event) {
-            if (mCurrentPosition == -1) return null;
+            if (mCurrentPosition == -1) {
+                return null;
+            }
             return new Uri[]{
                     Utils.getImageContentUri(ViewerActivity.this,
                             new File(mEntries.get(mCurrentPosition).data()))

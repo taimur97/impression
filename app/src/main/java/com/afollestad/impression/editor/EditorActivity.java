@@ -112,8 +112,11 @@ public class EditorActivity extends AppCompatActivity implements GLSurfaceView.R
     private void updateSeekLabel(float newValue) {
         TextView label = (TextView) findViewById(R.id.seekbarLabel);
         String text = Utils.roundToDecimals(newValue, 1) + "";
-        if (newValue == 0) text = "0";
-        else if (newValue > 0) text = "+" + text;
+        if (newValue == 0) {
+            text = "0";
+        } else if (newValue > 0) {
+            text = "+" + text;
+        }
         label.setText(text);
     }
 
@@ -234,15 +237,25 @@ public class EditorActivity extends AppCompatActivity implements GLSurfaceView.R
                     @Override
                     public boolean onMenuItemClick(MenuItem item) {
                         if (item.getItemId() == R.id.rotateLeft) {
-                            if (mCurrentRotation == 0) mCurrentRotation = 270;
-                            else if (mCurrentRotation == 90) mCurrentRotation = 0;
-                            else if (mCurrentRotation == 180) mCurrentRotation = 90;
-                            else if (mCurrentRotation == 270) mCurrentRotation = 180;
+                            if (mCurrentRotation == 0) {
+                                mCurrentRotation = 270;
+                            } else if (mCurrentRotation == 90) {
+                                mCurrentRotation = 0;
+                            } else if (mCurrentRotation == 180) {
+                                mCurrentRotation = 90;
+                            } else if (mCurrentRotation == 270) {
+                                mCurrentRotation = 180;
+                            }
                         } else {
-                            if (mCurrentRotation == 0) mCurrentRotation = 90;
-                            else if (mCurrentRotation == 90) mCurrentRotation = 180;
-                            else if (mCurrentRotation == 180) mCurrentRotation = 270;
-                            else if (mCurrentRotation == 270) mCurrentRotation = 0;
+                            if (mCurrentRotation == 0) {
+                                mCurrentRotation = 90;
+                            } else if (mCurrentRotation == 90) {
+                                mCurrentRotation = 180;
+                            } else if (mCurrentRotation == 180) {
+                                mCurrentRotation = 270;
+                            } else if (mCurrentRotation == 270) {
+                                mCurrentRotation = 0;
+                            }
                         }
                         setCurrentEffect(EffectFactory.EFFECT_ROTATE, false);
                         mEffect.setParameter("angle", mCurrentRotation);
@@ -344,10 +357,13 @@ public class EditorActivity extends AppCompatActivity implements GLSurfaceView.R
                     toggleAdjuster(true, 20, 10, new AdjusterCallack() {
                         @Override
                         public void onAdjusted(int value) {
-                            if (value == 10) value = 0;
-                            else if (value < 10)
+                            if (value == 10) {
+                                value = 0;
+                            } else if (value < 10) {
                                 value = -1 * (10 - value);
-                            else value /= 2;
+                            } else {
+                                value /= 2;
+                            }
                             final float calculatedValue = (float) value / 10f;
                             updateSeekLabel(calculatedValue);
                             mEffect.setParameter("scale", calculatedValue);
@@ -407,8 +423,9 @@ public class EditorActivity extends AppCompatActivity implements GLSurfaceView.R
 
     @Override
     public void onSurfaceChanged(GL10 gl, int width, int height) {
-        if (mTexRenderer != null)
+        if (mTexRenderer != null) {
             mTexRenderer.updateViewSize(width, height);
+        }
     }
 
     @Override
@@ -420,8 +437,9 @@ public class EditorActivity extends AppCompatActivity implements GLSurfaceView.R
                 loadTextures();
                 mInitialized = true;
             }
-            if (mCurrentEffect != null)
+            if (mCurrentEffect != null) {
                 applyEffect();
+            }
             renderResult();
         }
     }
@@ -440,9 +458,13 @@ public class EditorActivity extends AppCompatActivity implements GLSurfaceView.R
                 @Override
                 public void run() {
                     int width = mImageWidth;
-                    if (width > mEffectView.getWidth()) width = mEffectView.getWidth();
+                    if (width > mEffectView.getWidth()) {
+                        width = mEffectView.getWidth();
+                    }
                     int height = mImageHeight;
-                    if (height > mEffectView.getHeight()) height = mEffectView.getHeight();
+                    if (height > mEffectView.getHeight()) {
+                        height = mEffectView.getHeight();
+                    }
 //                    final Rect bitmapRect = ImageViewUtil.getBitmapRectCenterInsideHelper(
 //                            width,
 //                            height,
@@ -534,12 +556,15 @@ public class EditorActivity extends AppCompatActivity implements GLSurfaceView.R
                 mApplyDelayer = null;
             }
         }
-        if (renderNow)
+        if (renderNow) {
             mEffectView.requestRender();
+        }
     }
 
     private void applyEffect() {
-        if (mEffect == null) return;
+        if (mEffect == null) {
+            return;
+        }
         mEffect.apply(mTextures[0], mImageWidth, mImageHeight, mTextures[1]);
     }
 

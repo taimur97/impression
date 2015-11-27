@@ -69,7 +69,9 @@ public class CircleView extends FrameLayout {
 
     @ColorInt
     public static int shiftColor(@ColorInt int color, @FloatRange(from = 0.0f, to = 2.0f) float by) {
-        if (by == 1f) return color;
+        if (by == 1f) {
+            return color;
+        }
         float[] hsv = new float[3];
         Color.colorToHSV(color, hsv);
         hsv[2] *= by; // value component
@@ -158,8 +160,9 @@ public class CircleView extends FrameLayout {
             int width = MeasureSpec.getSize(widthMeasureSpec);
             //noinspection SuspiciousNameCombination
             int height = width;
-            if (heightMode == MeasureSpec.AT_MOST)
+            if (heightMode == MeasureSpec.AT_MOST) {
                 height = Math.min(height, MeasureSpec.getSize(heightMeasureSpec));
+            }
             setMeasuredDimension(width, height);
         } else {
             super.onMeasure(widthMeasureSpec, heightMeasureSpec);

@@ -20,7 +20,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.afollestad.impression.R;
-import com.afollestad.impression.api.FolderEntry;
+import com.afollestad.impression.api.MediaFolderEntry;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -88,12 +88,16 @@ public class BreadCrumbLayout extends HorizontalScrollView implements View.OnCli
     }
 
     public Crumb lastHistory() {
-        if (mHistory.size() == 0) return null;
+        if (mHistory.size() == 0) {
+            return null;
+        }
         return mHistory.get(mHistory.size() - 1);
     }
 
     public boolean popHistory() {
-        if (mHistory.size() == 0) return false;
+        if (mHistory.size() == 0) {
+            return false;
+        }
         mHistory.remove(mHistory.size() - 1);
         return mHistory.size() != 0;
     }
@@ -135,7 +139,6 @@ public class BreadCrumbLayout extends HorizontalScrollView implements View.OnCli
         if (refreshLayout) {
             mActive = mCrumbs.size() - 1;
             requestLayout();
-            invalidateActivatedAll();
         }
     }
 
@@ -144,14 +147,18 @@ public class BreadCrumbLayout extends HorizontalScrollView implements View.OnCli
         super.onLayout(changed, l, t, r, b);
         //RTL works fine like this
         View child = mChildFrame.getChildAt(mActive);
-        if (child != null)
+        if (child != null) {
             smoothScrollTo(child.getLeft(), 0);
+        }
+
+        invalidateActivatedAll();
     }
 
     public Crumb findCrumb(@NonNull String forDir) {
         for (int i = 0; i < mCrumbs.size(); i++) {
-            if (mCrumbs.get(i).getPath().equals(forDir))
+            if (mCrumbs.get(i).getPath().equals(forDir)) {
                 return mCrumbs.get(i);
+            }
         }
         return null;
     }
@@ -176,10 +183,10 @@ public class BreadCrumbLayout extends HorizontalScrollView implements View.OnCli
 
     private boolean setActive(Crumb newActive) {
         mActive = mCrumbs.indexOf(newActive);
-        invalidateActivatedAll();
         boolean success = mActive > -1;
-        if (success)
+        if (success) {
             requestLayout();
+        }
         return success;
     }
 
@@ -197,8 +204,9 @@ public class BreadCrumbLayout extends HorizontalScrollView implements View.OnCli
     }
 
     private void updateIndices() {
-        for (int i = 0; i < mChildFrame.getChildCount(); i++)
+        for (int i = 0; i < mChildFrame.getChildCount(); i++) {
             mChildFrame.getChildAt(i).setTag(i);
+        }
     }
 
     public void setActiveOrAdd(@NonNull Crumb crumb, boolean forceRecreate) {
@@ -211,14 +219,15 @@ public class BreadCrumbLayout extends HorizontalScrollView implements View.OnCli
 
             //TODO: figure out what to do with this for explorer mode
             if (!isTopPath(crumb.getPath())) {
-                if (mTopPath.equals(FolderEntry.OVERVIEW_PATH)) {
-                    newPathSet.add(0, FolderEntry.OVERVIEW_PATH);
+                if (mTopPath.equals(MediaFolderEntry.OVERVIEW_PATH)) {
+                    newPathSet.add(0, MediaFolderEntry.OVERVIEW_PATH);
                 } else {
                     File file = new File(crumb.getPath());
                     while ((file = file.getParentFile()) != null) {
                         newPathSet.add(0, file.getAbsolutePath());
-                        if (isTopPath(file.getAbsolutePath()))
+                        if (isTopPath(file.getAbsolutePath())) {
                             break;
+                        }
                     }
                 }
             }
@@ -251,8 +260,9 @@ public class BreadCrumbLayout extends HorizontalScrollView implements View.OnCli
                 Crumb c = mCrumbs.get(0);
                 while (c != null && !isTopPath(c.getPath())) {
                     removeCrumbAt(0);
-                    if (mCrumbs.size() > 0)
+                    if (mCrumbs.size() > 0) {
                         c = mCrumbs.get(0);
+                    }
                 }
                 updateIndices();
                 requestLayout();
@@ -270,12 +280,13 @@ public class BreadCrumbLayout extends HorizontalScrollView implements View.OnCli
         tv.setTextColor(ContextCompat.getColor(getContext(), isActive ? R.color.crumb_active : R.color.crumb_inactive));
         ImageView iv = (ImageView) child.getChildAt(1);
         setAlpha(iv, isActive ? 255 : 109);
-        if (noArrowIfAlone && getChildCount() == 1)
+        if (noArrowIfAlone && getChildCount() == 1) {
             iv.setVisibility(View.GONE);
-        else if (allowArrowVisible)
+        } else if (allowArrowVisible) {
             iv.setVisibility(View.VISIBLE);
-        else
+        } else {
             iv.setVisibility(View.GONE);
+        }
         return tv;
     }
 
@@ -328,9 +339,6 @@ public class BreadCrumbLayout extends HorizontalScrollView implements View.OnCli
         }
 
         mHistory.addAll(Arrays.asList(ss.history));
-
-
-        //setVisibility(visibility);
     }
 
     public interface SelectionCallback {

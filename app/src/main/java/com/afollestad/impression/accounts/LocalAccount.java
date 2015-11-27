@@ -7,9 +7,10 @@ import android.util.Log;
 
 import com.afollestad.impression.R;
 import com.afollestad.impression.accounts.base.Account;
-import com.afollestad.impression.api.FolderEntry;
+import com.afollestad.impression.api.ExplorerFolderEntry;
 import com.afollestad.impression.api.IncludedFolder;
 import com.afollestad.impression.api.MediaEntry;
+import com.afollestad.impression.api.MediaFolderEntry;
 import com.afollestad.impression.api.PhotoEntry;
 import com.afollestad.impression.api.VideoEntry;
 import com.afollestad.impression.media.MediaAdapter;
@@ -51,6 +52,7 @@ public class LocalAccount extends Account {
         return mId;
     }
 
+    @Type
     @Override
     public int type() {
         return TYPE_LOCAL;
@@ -67,7 +69,7 @@ public class LocalAccount extends Account {
     }
 
     @Override
-    public Single<Set<FolderEntry>> getAlbums(@MediaAdapter.SortMode final int sortMode, @MediaAdapter.FileFilterMode int filter) {
+    public Single<Set<MediaFolderEntry>> getMediaFolders(@MediaAdapter.SortMode final int sortMode, @MediaAdapter.FileFilterMode int filter) {
         //mAlbumCallbacks.add(callback);
         final Uri[] uris;
         /*String[][] projections;
@@ -108,16 +110,16 @@ public class LocalAccount extends Account {
         }
 
 
-        return Single.create(new Single.OnSubscribe<Set<FolderEntry>>() {
+        return Single.create(new Single.OnSubscribe<Set<MediaFolderEntry>>() {
             @Override
-            public void call(SingleSubscriber<? super Set<FolderEntry>> singleSubscriber) {
-                Set<FolderEntry> folders = new TreeSet<>(new Comparator<FolderEntry>() {
+            public void call(SingleSubscriber<? super Set<MediaFolderEntry>> singleSubscriber) {
+                Set<MediaFolderEntry> folders = new TreeSet<>(new Comparator<MediaFolderEntry>() {
                     @Override
-                    public int compare(FolderEntry lhs, FolderEntry rhs) {
+                    public int compare(MediaFolderEntry lhs, MediaFolderEntry rhs) {
                         if (lhs.bucketId().equals(rhs.bucketId())) {
                             return 0;
                         } else {
-                            return PrefUtils.getSortComparator(sortMode).compare(lhs, rhs);
+                            return PrefUtils.getSortComparator(getContext(), sortMode).compare(lhs, rhs);
                         }
                     }
                 });
@@ -125,8 +127,8 @@ public class LocalAccount extends Account {
                     //WHERE (TRUE) GROUP BY (bucket_id),(bucket_display_name)
                     String bucketGroupBy = "1) GROUP BY (bucket_id),(bucket_display_name";
                     String bucketOrderBy = "MAX(datetaken) DESC";
-                    FolderEntry[] albums = Inquiry.get()
-                            .selectFrom(uri, FolderEntry.class)
+                    MediaFolderEntry[] albums = Inquiry.get()
+                            .selectFrom(uri, MediaFolderEntry.class)
                             .where(bucketGroupBy)
                             .sort(bucketOrderBy)
                             .all();
@@ -174,13 +176,13 @@ public class LocalAccount extends Account {
 
     //TODO
     @Override
-    public Single<List<FolderEntry>> getIncludedFolders(final @MediaAdapter.FileFilterMode int filter) {
+    public Single<List<MediaFolderEntry>> getIncludedFolders(final @MediaAdapter.FileFilterMode int filter) {
         // mPreEntries = preEntries;
         //mIncludedFolderCallbacks.add(callback);
 
-        return Single.create(new Single.OnSubscribe<List<FolderEntry>>() {
+        return Single.create(new Single.OnSubscribe<List<MediaFolderEntry>>() {
             @Override
-            public void call(SingleSubscriber<? super List<FolderEntry>> singleSubscriber) {
+            public void call(SingleSubscriber<? super List<MediaFolderEntry>> singleSubscriber) {
                 IncludedFolder[] albums = Inquiry.get()
                         .selectFrom(IncludedFolderProvider.CONTENT_URI, IncludedFolder.class)
                         .all();
@@ -190,11 +192,11 @@ public class LocalAccount extends Account {
                     return;
                 }
 
-                final List<FolderEntry> allMediaFolders = new ArrayList<>();
+                final List<MediaFolderEntry> allMediaFolders = new ArrayList<>();
                 for (IncludedFolder folder : albums) {
-                    getMediaFoldersInFolder(new File(folder.path), filter).subscribe(new Action1<List<FolderEntry>>() {
+                    getMediaFoldersInFolder(new File(folder.path), filter).subscribe(new Action1<List<MediaFolderEntry>>() {
                         @Override
-                        public void call(List<FolderEntry> mediaFolders) {
+                        public void call(List<MediaFolderEntry> mediaFolders) {
                             allMediaFolders.addAll(mediaFolders);
                         }
                     });
@@ -235,11 +237,11 @@ public class LocalAccount extends Account {
                 });*/
     }
 
-    private Single<List<FolderEntry>> getMediaFoldersInFolder(final File root, final @MediaAdapter.FileFilterMode int filter) {
-        return Single.create(new Single.OnSubscribe<List<FolderEntry>>() {
+    private Single<List<MediaFolderEntry>> getMediaFoldersInFolder(final File root, final @MediaAdapter.FileFilterMode int filter) {
+        return Single.create(new Single.OnSubscribe<List<MediaFolderEntry>>() {
             @Override
-            public void call(SingleSubscriber<? super List<FolderEntry>> singleSubscriber) {
-                final List<FolderEntry> mediaFolders = new ArrayList<>();
+            public void call(SingleSubscriber<? super List<MediaFolderEntry>> singleSubscriber) {
+                final List<MediaFolderEntry> mediaFolders = new ArrayList<>();
 
                 final List<File> mediaFoldersFiles = new ArrayList<>();
 
@@ -255,39 +257,14 @@ public class LocalAccount extends Account {
                             }
                         }
                     } else if (PrefUtils.isSubfoldersIncluded(getContext())) {
-                        getMediaFoldersInFolder(child, filter).subscribe(new Action1<List<FolderEntry>>() {
+                        getMediaFoldersInFolder(child, filter).subscribe(new Action1<List<MediaFolderEntry>>() {
                             @Override
-                            public void call(List<FolderEntry> childMediaFolders) {
+                            public void call(List<MediaFolderEntry> childMediaFolders) {
                                 mediaFolders.addAll(childMediaFolders);
                             }
                         });
                     }
                 }
-
-                Comparator<File> comparator = new Comparator<File>() {
-                    @Override
-                    public int compare(File lhs, File rhs) {
-                        if (lhs.lastModified() < rhs.lastModified()) {
-                            return 1;
-                        } else if (lhs.lastModified() == rhs.lastModified()) {
-                            return 0;
-                        } else {
-                            return -1;
-                        }
-                    }
-                };
-
-                /*for (File folder : mediaFoldersFiles) {
-                    FolderEntry mediaFolder = new FolderEntry();
-                    mediaFolder.bucketDisplayName = folder.getName();
-                    mediaFolder.bucketId = UUID.randomUUID().toString();
-
-                    File thumb = Collections.max(new ArrayList<>(Arrays.asList(folder.listFiles())), comparator);
-                    mediaFolder.dateTaken = thumb.lastModified();
-                    mediaFolder._data = thumb.getAbsolutePath();
-
-                    mediaFolders.add(mediaFolder);
-                }*/
 
                 singleSubscriber.onSuccess(mediaFolders);
             }
@@ -295,12 +272,12 @@ public class LocalAccount extends Account {
 
     }
 
-    private Single<List<FolderEntry>> getOverviewFolders(@MediaAdapter.SortMode int sort, final @MediaAdapter.FileFilterMode int filter) {
-        final List<FolderEntry> finalEntries = new ArrayList<>();
-        return getAlbums(sort, filter)
-                .doOnSuccess(new Action1<Set<FolderEntry>>() {
+    private Single<List<MediaFolderEntry>> getOverviewFolders(@MediaAdapter.SortMode int sort, final @MediaAdapter.FileFilterMode int filter) {
+        final List<MediaFolderEntry> finalEntries = new ArrayList<>();
+        return getMediaFolders(sort, filter)
+                .doOnSuccess(new Action1<Set<MediaFolderEntry>>() {
                     @Override
-                    public void call(Set<FolderEntry> mediaFolders) {
+                    public void call(Set<MediaFolderEntry> mediaFolders) {
                         finalEntries.addAll(mediaFolders);
                     }
                 })/*.flatMap(new Func1<Set<MediaFolder>, Single<? extends List<MediaFolder>>>() {
@@ -308,9 +285,9 @@ public class LocalAccount extends Account {
                     public Single<? extends List<MediaFolder>> call(Set<MediaFolder> mediaFolders) {
                         return getIncludedFolders(filter);
                     }
-                })*/.map(new Func1<Set<FolderEntry>, List<FolderEntry>>() {
+                })*/.map(new Func1<Set<MediaFolderEntry>, List<MediaFolderEntry>>() {
                     @Override
-                    public List<FolderEntry> call(Set<FolderEntry> mediaFolders) {
+                    public List<MediaFolderEntry> call(Set<MediaFolderEntry> mediaFolders) {
                         //
                         // finalEntries.addAll(mediaFolders);
                         return finalEntries;
@@ -319,83 +296,92 @@ public class LocalAccount extends Account {
     }
 
     @Override
-    public Single<List<? extends MediaEntry>> getEntries(final String albumPath, final boolean explorerMode, final @MediaAdapter.FileFilterMode int filter, final @MediaAdapter.SortMode int sort) {
-        /*if (explorerMode) {
-            if (albumPath == null || albumPath.trim().equals(OldAlbumEntry.ALBUM_OVERVIEW_PATH))
-                albumPath = Environment.getExternalStorageDirectory().getAbsolutePath();
-            final File dir = new File(albumPath);
-            if (!dir.exists()) {
-                callback.onError(new Exception("This directory (" + dir.getAbsolutePath() + ") no longer exists."));
-                return;
-            }
-            final Handler mHandler = new Handler();
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    final List<MediaEntry> results = Utils.getEntriesFromFolder(getContext(), dir, true, false, filter);
-                    if (callback != null) {
-                        mHandler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                callback.onEntries(results.toArray(new MediaEntry[results.size()]));
-                            }
-                        });
-                    }
-                }
-            }).start();
-        } else*/ //{
-        if ((albumPath == null || albumPath.equals(FolderEntry.OVERVIEW_PATH))/*
+    public Single<List<MediaEntry>> getEntries(final String albumPath, final boolean explorerMode,
+                                               final @MediaAdapter.FileFilterMode int filter,
+                                               final @MediaAdapter.SortMode int sort) {
+        if (explorerMode) {
+            /*if (albumPath == null || albumPath.trim().equals(MediaFolderEntry.OVERVIEW_PATH))
+                albumPath = Environment.getExternalStorageDirectory().getAbsolutePath();*/
+            return getEntries(albumPath, false, filter, sort)
+                    .flatMap(new Func1<List<MediaEntry>, Single<List<MediaEntry>>>() {
+                        @Override
+                        public Single<List<MediaEntry>> call(final List<MediaEntry> directChildEntries) {
+                            return Single.create(new Single.OnSubscribe<List<MediaEntry>>() {
+                                @Override
+                                public void call(SingleSubscriber<? super List<MediaEntry>> singleSubscriber) {
+                                    final File dir = new File(albumPath);
+
+                                    if (!dir.exists()) {
+                                        singleSubscriber.onError(new Exception("This directory (" + dir.getAbsolutePath() + ") no longer exists."));
+                                        return;
+                                    }
+
+                                    for (File fi : dir.listFiles()) {
+                                        if (!fi.isDirectory()) {
+                                            continue;
+                                        }
+                                        ExplorerFolderEntry explorerFolderEntry = new ExplorerFolderEntry(fi);
+                                        directChildEntries.add(explorerFolderEntry);
+                                    }
+
+                                    singleSubscriber.onSuccess(directChildEntries);
+                                }
+                            });
+                        }
+                    }).subscribeOn(Schedulers.io());
+        } else {
+            if ((albumPath == null || albumPath.equals(MediaFolderEntry.OVERVIEW_PATH))/*
                     && overviewMode == 1*/) {
-            return getOverviewFolders(sort, filter).map(new Func1<List<FolderEntry>, List<? extends MediaEntry>>() {
+                return getOverviewFolders(sort, filter).map(new Func1<List<MediaFolderEntry>, List<MediaEntry>>() {
+                    @Override
+                    public List<MediaEntry> call(List<MediaFolderEntry> folderEntries) {
+                        return (List<MediaEntry>) (List<? extends MediaEntry>) folderEntries;
+                    }
+                });
+            }
+
+            return Single.create(new Single.OnSubscribe<List<MediaEntry>>() {
                 @Override
-                public List<? extends MediaEntry> call(List<FolderEntry> folderEntries) {
-                    return folderEntries;
+                public void call(SingleSubscriber<? super List<MediaEntry>> singleSubscriber) {
+                    List<MediaEntry> mediaEntries = new ArrayList<>();
+
+                    final String bucketName = new File(albumPath).getName();
+
+                    List<Class<? extends MediaEntry>> entryClasses = new ArrayList<>();
+                    final List<Uri> uris = new ArrayList<>();
+                    List<String> selections = new ArrayList<>();
+                    List<String[]> selectionArgs = new ArrayList<>();
+                    final List<String> sorts = new ArrayList<>();
+
+                    if (filter == MediaAdapter.FILTER_PHOTOS || filter == MediaAdapter.FILTER_ALL) {
+                        entryClasses.add(PhotoEntry.class);
+                        uris.add(MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+                        selections.add(MediaStore.Images.Media.BUCKET_DISPLAY_NAME + " = ?");
+                        selectionArgs.add(new String[]{bucketName});
+                        sorts.add(PhotoEntry.getSortQueryFromSortMode(sort));
+                    }
+                    if (filter == MediaAdapter.FILTER_VIDEOS || filter == MediaAdapter.FILTER_ALL) {
+                        entryClasses.add(VideoEntry.class);
+                        uris.add(MediaStore.Video.Media.EXTERNAL_CONTENT_URI);
+                        selections.add(MediaStore.Video.Media.BUCKET_DISPLAY_NAME + " = ?");
+                        selectionArgs.add(new String[]{bucketName});
+                        sorts.add(VideoEntry.getSortQueryFromSortMode(sort));
+                    }
+
+                    for (int i = 0; i < entryClasses.size(); i++) {
+                        Class<? extends MediaEntry> entryClass = entryClasses.get(i);
+                        MediaEntry[] entries = Inquiry.get()
+                                .selectFrom(uris.get(i), entryClass)
+                                .where(selections.get(i), selectionArgs.get(i))
+                                .sort(sorts.get(i))
+                                .all();
+                        if (entries != null) {
+                            Collections.addAll(mediaEntries, entries);
+                        }
+                    }
+                    singleSubscriber.onSuccess(mediaEntries);
                 }
-            });
-            }
-
-        return Single.create(new Single.OnSubscribe<List<? extends MediaEntry>>() {
-            @Override
-            public void call(SingleSubscriber<? super List<? extends MediaEntry>> singleSubscriber) {
-                List<MediaEntry> mediaEntries = new ArrayList<>();
-
-                final String bucketName = albumPath == null ? null : new File(albumPath).getName();
-
-                List<Class<? extends MediaEntry>> entryClasses = new ArrayList<>();
-                final List<Uri> uris = new ArrayList<>();
-                List<String> selections = new ArrayList<>();
-                List<String[]> selectionArgs = new ArrayList<>();
-                final List<String> sorts = new ArrayList<>();
-
-                if (filter == MediaAdapter.FILTER_PHOTOS || filter == MediaAdapter.FILTER_ALL) {
-                    entryClasses.add(PhotoEntry.class);
-                    uris.add(MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-                    selections.add(MediaStore.Images.Media.BUCKET_DISPLAY_NAME + " = ?");
-                    selectionArgs.add(new String[]{bucketName});
-                    sorts.add(PhotoEntry.getSortQueryFromSortMode(sort));
-                    }
-                if (filter == MediaAdapter.FILTER_VIDEOS || filter == MediaAdapter.FILTER_ALL) {
-                    entryClasses.add(VideoEntry.class);
-                    uris.add(MediaStore.Video.Media.EXTERNAL_CONTENT_URI);
-                    selections.add(MediaStore.Video.Media.BUCKET_DISPLAY_NAME + " = ?");
-                    selectionArgs.add(new String[]{bucketName});
-                    sorts.add(VideoEntry.getSortQueryFromSortMode(sort));
-                    }
-
-                for (int i = 0; i < entryClasses.size(); i++) {
-                    Class<? extends MediaEntry> entryClass = entryClasses.get(i);
-                    MediaEntry[] entries = Inquiry.get()
-                            .selectFrom(uris.get(i), entryClass)
-                            .where(selections.get(i), selectionArgs.get(i))
-                            .sort(sorts.get(i))
-                            .all();
-                    if (entries != null) {
-                        Collections.addAll(mediaEntries, entries);
-                    }
-                    }
-                singleSubscriber.onSuccess(mediaEntries);
-            }
-        }).subscribeOn(Schedulers.io());
+            }).subscribeOn(Schedulers.io());
 
 
             /*final Handler mHandler = new Handler();
@@ -454,7 +440,7 @@ public class LocalAccount extends Account {
                     }
                 }
             }).start();*/
-        //}
+        }
         //return null;
     }
 /*

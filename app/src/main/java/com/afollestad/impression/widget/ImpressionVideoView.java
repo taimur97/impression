@@ -42,12 +42,14 @@ public class ImpressionVideoView extends VideoView {
             mDuration.setText(minutesAndSeconds(getDuration()));
             mSeeker.setProgress(getCurrentPosition());
             mSeeker.setMax(getDuration());
-            if (isPlaying())
+            if (isPlaying()) {
                 mUpdateHandler.postDelayed(updateSeekerTask, 150);
+            }
         }
     };
     private boolean mWasPlaying;
     private boolean mClickedOverlay;
+
     public ImpressionVideoView(Context context) {
         super(context);
     }
@@ -73,7 +75,9 @@ public class ImpressionVideoView extends VideoView {
                         super.onAnimationEnd(animation);
                         if (dest == 0f) {
                             view.setVisibility(View.GONE);
-                        } else view.setVisibility(View.VISIBLE);
+                        } else {
+                            view.setVisibility(View.VISIBLE);
+                        }
                     }
                 });
         if (delay) {
@@ -186,7 +190,9 @@ public class ImpressionVideoView extends VideoView {
             @Override
             public void onStartTrackingTouch(SeekBar seekBar) {
                 mWasPlaying = isPlaying();
-                if (mWasPlaying) mOverlay.performClick();
+                if (mWasPlaying) {
+                    mOverlay.performClick();
+                }
                 reset(mSeekerFrame);
             }
 
@@ -207,7 +213,9 @@ public class ImpressionVideoView extends VideoView {
     private String minutesAndSeconds(long millis) {
         String minutes = TimeUnit.MILLISECONDS.toSeconds(millis) / 60 + ":";
         String seconds = TimeUnit.MILLISECONDS.toSeconds(millis) % 60 + "";
-        if (seconds.length() == 1) seconds = "0" + seconds;
+        if (seconds.length() == 1) {
+            seconds = "0" + seconds;
+        }
         return minutes + seconds;
     }
 }

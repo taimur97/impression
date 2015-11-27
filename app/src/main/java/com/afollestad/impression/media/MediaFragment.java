@@ -1,7 +1,6 @@
 package com.afollestad.impression.media;
 
 import android.app.Activity;
-import android.app.Fragment;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
@@ -21,11 +20,12 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import com.afollestad.impression.R;
-import com.afollestad.impression.api.FolderEntry;
 import com.afollestad.impression.api.MediaEntry;
+import com.afollestad.impression.api.MediaFolderEntry;
 import com.afollestad.impression.providers.SortMemoryProvider;
 import com.afollestad.impression.utils.PrefUtils;
 import com.afollestad.impression.widget.breadcrumbs.Crumb;
+import com.trello.rxlifecycle.components.RxFragment;
 
 import java.io.File;
 
@@ -34,7 +34,7 @@ import static android.app.Activity.RESULT_OK;
 /**
  * @author Aidan Follestad (afollestad)
  */
-public class MediaFragment extends Fragment implements MediaView {
+public class MediaFragment extends RxFragment implements MediaView {
 
 
     @MediaAdapter.SortMode
@@ -59,7 +59,9 @@ public class MediaFragment extends Fragment implements MediaView {
 
     public final void setListShown(boolean shown) {
         View v = getView();
-        if (v == null || getActivity() == null) return;
+        if (v == null || getActivity() == null) {
+            return;
+        }
         if (shown) {
             v.findViewById(R.id.list).setVisibility(mAdapter.getItemCount() > 0 ? View.VISIBLE : View.GONE);
             v.findViewById(R.id.empty).setVisibility(mAdapter.getItemCount() == 0 ? View.VISIBLE : View.GONE);
@@ -138,18 +140,21 @@ public class MediaFragment extends Fragment implements MediaView {
 
     @Override
     public void saveScrollPositionInto(Crumb crumb) {
-        if (crumb == null)
+        if (crumb == null) {
             return;
+        }
         crumb.setScrollPosition(((GridLayoutManager) mRecyclerView.getLayoutManager()).findFirstVisibleItemPosition());
         final View firstChild = mRecyclerView.getChildAt(0);
-        if (firstChild != null)
+        if (firstChild != null) {
             crumb.setScrollOffset((int) firstChild.getY());
+        }
     }
 
     @Override
     public void restoreScrollPositionFrom(Crumb crumb) {
-        if (crumb == null)
+        if (crumb == null) {
             return;
+        }
         final int scrollY = crumb.getScrollPosition();
         if (scrollY > -1 && scrollY < getAdapter().getItemCount()) {
             ((GridLayoutManager) mRecyclerView.getLayoutManager()).scrollToPositionWithOffset(scrollY, crumb.getScrollOffset());
@@ -209,10 +214,15 @@ public class MediaFragment extends Fragment implements MediaView {
                 int videoCount = 0;
                 int photoCount = 0;
                 for (MediaEntry e : entries) {
-                    if (e.isFolder()) folderCount++;
-                        //else if (e.isAlbum()) albumCount++;
-                    else if (e.isVideo()) videoCount++;
-                    else photoCount++;
+                    if (e.isFolder()) {
+                        folderCount++;
+                    }
+                    //else if (e.isAlbum()) albumCount++;
+                    else if (e.isVideo()) {
+                        videoCount++;
+                    } else {
+                        photoCount++;
+                    }
                 }
                 final StringBuilder sb = new StringBuilder();
                 if (albumCount > 1) {
@@ -221,24 +231,36 @@ public class MediaFragment extends Fragment implements MediaView {
                     sb.append(getString(R.string.one_album));
                 }
                 if (folderCount > 1) {
-                    if (sb.length() > 0) sb.append(", ");
+                    if (sb.length() > 0) {
+                        sb.append(", ");
+                    }
                     sb.append(getString(R.string.x_folders, folderCount));
                 } else if (folderCount == 1) {
-                    if (sb.length() > 0) sb.append(", ");
+                    if (sb.length() > 0) {
+                        sb.append(", ");
+                    }
                     sb.append(getString(R.string.one_folder));
                 }
                 if (photoCount > 1) {
-                    if (sb.length() > 0) sb.append(", ");
+                    if (sb.length() > 0) {
+                        sb.append(", ");
+                    }
                     sb.append(getString(R.string.x_photos, photoCount));
                 } else if (photoCount == 1) {
-                    if (sb.length() > 0) sb.append(", ");
+                    if (sb.length() > 0) {
+                        sb.append(", ");
+                    }
                     sb.append(getString(R.string.one_photo));
                 }
                 if (videoCount > 1) {
-                    if (sb.length() > 0) sb.append(", ");
+                    if (sb.length() > 0) {
+                        sb.append(", ");
+                    }
                     sb.append(getString(R.string.x_videos, videoCount));
                 } else if (videoCount == 1) {
-                    if (sb.length() > 0) sb.append(", ");
+                    if (sb.length() > 0) {
+                        sb.append(", ");
+                    }
                     sb.append(getString(R.string.one_video));
                 }
                 act.getSupportActionBar().setSubtitle(sb.toString());
@@ -252,8 +274,6 @@ public class MediaFragment extends Fragment implements MediaView {
     public void onDestroy() {
         super.onDestroy();
         mPresenter.detachView();
-        if (getAdapter() != null)
-            getAdapter().changeContent(null, null, true, false);
     }
 
     public MediaPresenter getPresenter() {
@@ -301,7 +321,7 @@ public class MediaFragment extends Fragment implements MediaView {
         inflater.inflate(R.menu.fragment, menu);
 
         if (getActivity() != null) {
-            boolean isMain = mPresenter.getPath() == null || mPresenter.getPath().equals(FolderEntry.OVERVIEW_PATH);
+            boolean isMain = mPresenter.getPath() == null || mPresenter.getPath().equals(MediaFolderEntry.OVERVIEW_PATH);
             boolean isAlbumSelect = ((MainActivity) getActivity()).isSelectAlbumMode();
             menu.findItem(R.id.choose).setVisible(!isMain && isAlbumSelect);
             menu.findItem(R.id.viewMode).setVisible(!isAlbumSelect);
