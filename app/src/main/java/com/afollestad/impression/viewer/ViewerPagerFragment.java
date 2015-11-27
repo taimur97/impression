@@ -509,6 +509,11 @@ public class ViewerPagerFragment extends Fragment {
 
     public void finish() {
         recycleFullImageShowThumbnail();
+        if (getActivity() != null) {
+            ViewerActivity act = (ViewerActivity) getActivity();
+            act.invokeUi(false, null);
+            act.systemUIFocusChange();
+        }
     }
 
     private void loadVideo() {

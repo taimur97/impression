@@ -67,9 +67,8 @@ public class SortMemoryProvider extends ProviderBase {
         }
     }
 
-    public static
     @MediaAdapter.SortMode
-    int getSortMode(Context context, String path) {
+    public static int getSortMode(Context context, String path) {
         if (context == null) {
             return MediaAdapter.SORT_DEFAULT;
         } else if (path == null) {

@@ -3,7 +3,6 @@ package com.afollestad.impression.viewer;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
-import android.animation.ArgbEvaluator;
 import android.animation.ObjectAnimator;
 import android.annotation.TargetApi;
 import android.app.SharedElementCallback;
@@ -35,6 +34,7 @@ import android.transition.ChangeBounds;
 import android.transition.ChangeClipBounds;
 import android.transition.ChangeImageTransform;
 import android.transition.ChangeTransform;
+import android.transition.Transition;
 import android.transition.TransitionSet;
 import android.util.Log;
 import android.view.Gravity;
@@ -46,6 +46,7 @@ import android.view.Window;
 import android.widget.FrameLayout;
 import android.widget.Toast;
 
+import com.afollestad.impression.BuildConfig;
 import com.afollestad.impression.R;
 import com.afollestad.impression.api.MediaEntry;
 import com.afollestad.impression.fragments.dialog.SlideshowInitDialog;
@@ -79,10 +80,10 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
 
     public static final int UI_FADE_DELAY = 2750;
     public static final int UI_FADE_DURATION = 400;
+    public static final int SHARED_ELEMENT_TRANSITION_DURATION = 200;
     private static final int EDIT_REQUEST = 1000;
-
     private static final String STATE_CURRENT_POSITION = "state_current_position";
-
+    private static final String TAG = "ViewerActivity";
     public Toolbar mToolbar;
     private boolean mFinishedTransition;
     private List<MediaEntry> mEntries;
@@ -166,6 +167,12 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
         }
     };
 
+    private static void logSharedElementTransition(String message, boolean isReturning) {
+        if (BuildConfig.DEBUG) {
+            Log.i(TAG, String.format("%s: %s", isReturning ? "RETURNING" : "ENTERING", message));
+        }
+    }
+
     private ViewerPagerFragment getViewerPagerFragment(int index) {
         return (ViewerPagerFragment) getFragmentManager().findFragmentByTag("page:" + index);
     }
@@ -194,6 +201,8 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
         final SharedElementCallback enterCallback = new SharedElementCallback() {
             @Override
             public void onMapSharedElements(List<String> names, Map<String, View> sharedElements) {
+                logSharedElementTransition("onMapSharedElements(List<String>, Map<String, View>)", mIsReturningToMain);
+
                 if (mIsReturningToMain) {
                     View sharedView = getViewerPagerFragment(mCurrentPosition).getSharedElement();
                     names.clear();
@@ -204,6 +213,12 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
                         names.add(transName);
                         sharedElements.put(transName, sharedView);
                     }
+                }
+
+                //To "register" backgrounds
+                if (!mIsReturningToMain) {
+                    getWindow().setStatusBarColor(primaryColor());
+                    getWindow().setNavigationBarColor(Color.BLACK);
                 }
 
                 View decor = getWindow().getDecorView();
@@ -227,43 +242,41 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
                         names.add(Window.STATUS_BAR_BACKGROUND_TRANSITION_NAME);
                     sharedElements.put(Window.STATUS_BAR_BACKGROUND_TRANSITION_NAME, statusBar);
                 }
+
+                logSharedElementTransition("=== names: " + names.toString(), mIsReturningToMain);
+                logSharedElementTransition("=== sharedElements: " + Utils.setToString(sharedElements.keySet()), mIsReturningToMain);
             }
 
             @Override
             public void onSharedElementStart(List<String> sharedElementNames, List<View> sharedElements,
                                              List<View> sharedElementSnapshots) {
-                int black = ContextCompat.getColor(ViewerActivity.this, android.R.color.black);
-                int duration = 200;
+
+                logSharedElementTransition("onSharedElementStart(List<String>, List<View>, List<View>)", mIsReturningToMain);
+                logSharedElementsInfo(sharedElementNames, sharedElements);
 
                 View decor = getWindow().getDecorView();
                 View navigationBar = decor.findViewById(android.R.id.navigationBarBackground);
                 View statusBar = decor.findViewById(android.R.id.statusBarBackground);
 
                 if (!mIsReturningToMain) {
-                    int primaryColorDark = primaryColorDark();
-                    int viewerOverlayColor = ContextCompat.getColor(ViewerActivity.this, R.color.viewer_overlay);
 
-                    ObjectAnimator.ofObject(mToolbar, "backgroundColor", new ArgbEvaluator(), primaryColor(), viewerOverlayColor)
-                            .setDuration(duration)
-                            .start();
-                    if (navigationBar != null && PrefUtils.isColoredNavBar(ViewerActivity.this))
-                        ObjectAnimator.ofObject(navigationBar, "backgroundColor", new ArgbEvaluator(), primaryColorDark, black)
-                                .setDuration(duration)
+                    if (mToolbar != null) {
+                        ObjectAnimator.ofArgb(mToolbar, "backgroundColor", primaryColorDark(), Color.BLACK)
+                                .setDuration(SHARED_ELEMENT_TRANSITION_DURATION)
                                 .start();
-                    if (statusBar != null)
-                        ObjectAnimator.ofObject(statusBar, "backgroundColor", new ArgbEvaluator(), primaryColorDark, black)
-                                .setDuration(duration)
-                                .start();
-                } else {
-                    mToolbar.setBackgroundColor(primaryColor());
+                    }
 
-                    if (navigationBar != null && PrefUtils.isColoredNavBar(ViewerActivity.this))
-                        ObjectAnimator.ofObject(navigationBar, "backgroundColor", new ArgbEvaluator(), black, primaryColorDark())
-                                .setDuration(duration)
-                                .start();
+                    if (navigationBar != null) {
+                        if (PrefUtils.isColoredNavBar(ViewerActivity.this)) {
+                            ObjectAnimator.ofArgb(navigationBar, "backgroundColor", Color.BLACK, Color.BLACK)
+                                    .setDuration(SHARED_ELEMENT_TRANSITION_DURATION)
+                                    .start();
+                        }
+                    }
+
                     if (statusBar != null)
-                        ObjectAnimator.ofObject(statusBar, "backgroundColor", new ArgbEvaluator(), black, primaryColorDark())
-                                .setDuration(duration)
+                        ObjectAnimator.ofArgb(statusBar, "backgroundColor", primaryColor(), Color.BLACK)
+                                .setDuration(SHARED_ELEMENT_TRANSITION_DURATION)
                                 .start();
                 }
             }
@@ -271,9 +284,84 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
             @Override
             public void onSharedElementEnd(List<String> sharedElementNames, List<View> sharedElements,
                                            List<View> sharedElementSnapshots) {
+                logSharedElementTransition("onSharedElementEnd(List<String>, List<View>, List<View>)", mIsReturningToMain);
+                logSharedElementsInfo(sharedElementNames, sharedElements);
+
+                View decor = getWindow().getDecorView();
+                View navigationBar = decor.findViewById(android.R.id.navigationBarBackground);
+                View statusBar = decor.findViewById(android.R.id.statusBarBackground);
+
+                if (mIsReturningToMain) {
+                    if (mToolbar != null)
+                        ObjectAnimator.ofArgb(mToolbar, "backgroundColor", Color.BLACK, primaryColor())
+                                .setDuration(SHARED_ELEMENT_TRANSITION_DURATION)
+                                .start();
+
+                    if (navigationBar != null) {
+                        if (PrefUtils.isColoredNavBar(ViewerActivity.this)) {
+                            ObjectAnimator.ofArgb(navigationBar, "backgroundColor", Color.BLACK, primaryColorDark())
+                                    .setDuration(SHARED_ELEMENT_TRANSITION_DURATION)
+                                    .start();
+                        }
+                    }
+                    if (statusBar != null)
+                        ObjectAnimator.ofArgb(statusBar, "backgroundColor", Color.BLACK, primaryColorDark())
+                                .setDuration(SHARED_ELEMENT_TRANSITION_DURATION)
+                                .start();
+                }
+            }
+
+            private void logSharedElementsInfo(List<String> names, List<View> sharedElements) {
+                logSharedElementTransition("=== names: " + names.toString(), mIsReturningToMain);
+                logSharedElementTransition("=== infos:", mIsReturningToMain);
+                for (View view : sharedElements) {
+                    int[] loc = new int[2];
+                    //noinspection ResourceType
+                    view.getLocationInWindow(loc);
+                    logSharedElementTransition("====== " + view.getTransitionName() + ": " + "(" + loc[0] + ", " + loc[1] + ")", mIsReturningToMain);
+                }
             }
         };
         setEnterSharedElementCallback(enterCallback);
+
+        getWindow().getSharedElementEnterTransition().addListener(new Transition.TransitionListener() {
+            @Override
+            public void onTransitionStart(Transition transition) {
+
+            }
+
+            @Override
+            public void onTransitionEnd(Transition transition) {
+                mToolbar.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        //For DrawerLayout transparency
+                        mToolbar.setBackgroundColor(Color.TRANSPARENT);
+                        getWindow().setStatusBarColor(ContextCompat.getColor(
+                                ViewerActivity.this, android.R.color.transparent));
+                        getWindow().setNavigationBarColor(ContextCompat.getColor(
+                                ViewerActivity.this, android.R.color.transparent));
+                    }
+                }, 150);
+
+                getWindow().getSharedElementEnterTransition().removeListener(this);
+            }
+
+            @Override
+            public void onTransitionCancel(Transition transition) {
+
+            }
+
+            @Override
+            public void onTransitionPause(Transition transition) {
+
+            }
+
+            @Override
+            public void onTransitionResume(Transition transition) {
+
+            }
+        });
     }
 
     @Override
@@ -484,13 +572,24 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
 
         final TransitionSet transition = new TransitionSet();
 
-        transition.addTransition(new ChangeBounds());
-        transition.addTransition(new ChangeTransform());
-        transition.addTransition(new ChangeClipBounds());
-        transition.addTransition(new ChangeImageTransform());
+        ChangeBounds transition1 = new ChangeBounds();
+        transition.addTransition(transition1);
+        ChangeTransform transition2 = new ChangeTransform();
+        transition.addTransition(transition2);
+        ChangeClipBounds transition3 = new ChangeClipBounds();
+        transition.addTransition(transition3);
+        ChangeImageTransform transition4 = new ChangeImageTransform();
+        transition.addTransition(transition4);
 
-        transition.setDuration(150);
-        transition.setInterpolator(new FastOutSlowInInterpolator());
+        transition.setDuration(SHARED_ELEMENT_TRANSITION_DURATION);
+
+        //Android framework bug? Interpolator set on TransitionSet doesn't work
+        FastOutSlowInInterpolator interpolator = new FastOutSlowInInterpolator();
+        transition1.setInterpolator(interpolator);
+        transition2.setInterpolator(interpolator);
+        transition3.setInterpolator(interpolator);
+        transition4.setInterpolator(interpolator);
+
         final ArcMotion pathMotion = new ArcMotion();
         pathMotion.setMaximumAngle(50);
         transition.setPathMotion(pathMotion);
@@ -657,8 +756,7 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
         getMenuInflater().inflate(R.menu.menu_viewer, menu);
         if (mEntries.size() > 0) {
             MediaEntry currentEntry = mEntries.get(mCurrentPosition);
-            //TODO
-            if (currentEntry == null /*|| currentEntry.isVideo()*/) {
+            if (currentEntry == null || currentEntry.isVideo()) {
                 menu.findItem(R.id.print).setVisible(false);
                 menu.findItem(R.id.edit).setVisible(false);
                 menu.findItem(R.id.set_as).setVisible(false);

@@ -9,6 +9,7 @@ import android.app.SharedElementCallback;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
@@ -25,12 +26,6 @@ import android.support.v7.view.menu.MenuPopupHelper;
 import android.support.v7.widget.ActionMenuView;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
-import android.transition.ArcMotion;
-import android.transition.ChangeBounds;
-import android.transition.ChangeClipBounds;
-import android.transition.ChangeImageTransform;
-import android.transition.ChangeTransform;
-import android.transition.TransitionSet;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Gravity;
@@ -135,7 +130,7 @@ public class MainActivity extends ThemedActivity
         mMediaCab = mediaCab;
     }
 
-    public BreadCrumbLayout getCrumbs() {
+    public BreadCrumbLayout getBreadCrumbLayout() {
         return mBreadCrumbLayout;
     }
 
@@ -212,9 +207,9 @@ public class MainActivity extends ThemedActivity
                     }
                 }
 
-                //Somehow this works (setting status bar color in both MediaFragment and here)
-                //to avoid image glitching through on when ViewActivity is first created.
-                getWindow().setStatusBarColor(primaryColorDark());
+                if (!mIsReenteringFromViewer) {
+                    getWindow().setStatusBarColor(primaryColorDark());
+                }
 
                 View decor = getWindow().getDecorView();
                 View navigationBar = decor.findViewById(android.R.id.navigationBarBackground);
@@ -262,8 +257,8 @@ public class MainActivity extends ThemedActivity
                         statusBar.post(new Runnable() {
                             @Override
                             public void run() {
-                                getWindow().setStatusBarColor(ContextCompat.getColor(
-                                        MainActivity.this, android.R.color.transparent));
+                                //For DrawerLayout transparency
+                                getWindow().setStatusBarColor(Color.TRANSPARENT);
                             }
                         });
                     }
@@ -272,37 +267,16 @@ public class MainActivity extends ThemedActivity
 
             private void logSharedElementsInfo(List<String> names, List<View> sharedElements) {
                 logSharedElementTransition("=== names: " + names.toString(), mIsReenteringFromViewer);
+                logSharedElementTransition("=== infos:", mIsReenteringFromViewer);
                 for (View view : sharedElements) {
                     int[] loc = new int[2];
                     //noinspection ResourceType
                     view.getLocationInWindow(loc);
-                    Log.i(TAG, "=== " + view.getTransitionName() + ": " + "(" + loc[0] + ", " + loc[1] + ")");
+                    logSharedElementTransition("====== " + view.getTransitionName() + ": " + "(" + loc[0] + ", " + loc[1] + ")", mIsReenteringFromViewer);
                 }
             }
         };
         setExitSharedElementCallback(mCallback);
-    }
-
-    private void setTransition() {
-        if(Build.VERSION.SDK_INT<Build.VERSION_CODES.LOLLIPOP){
-            return;
-        }
-
-        final TransitionSet transition = new TransitionSet();
-
-        transition.addTransition(new ChangeBounds());
-        transition.addTransition(new ChangeTransform());
-        transition.addTransition(new ChangeClipBounds());
-        transition.addTransition(new ChangeImageTransform());
-
-        transition.setDuration(150);
-        transition.setInterpolator(new FastOutSlowInInterpolator());
-        final ArcMotion pathMotion = new ArcMotion();
-        pathMotion.setMaximumAngle(50);
-        transition.setPathMotion(pathMotion);
-
-        getWindow().setSharedElementExitTransition(transition);
-        getWindow().setSharedElementReenterTransition(transition);
     }
 
     @Override
@@ -335,7 +309,6 @@ public class MainActivity extends ThemedActivity
         Inquiry.init(this);
 
         setupSharedElementCallback();
-        setTransition();
 
         mToolbar = (Toolbar) findViewById(R.id.toolbar);
         mToolbar.setSubtitleTextAppearance(this, R.style.ToolbarSubtitleStyle);
@@ -577,7 +550,7 @@ public class MainActivity extends ThemedActivity
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == SETTINGS_REQUEST && resultCode == Activity.RESULT_OK) {
             MediaFragment content = findMediaFragment();
-            if (content != null) content.reload();
+            if (content != null) content.getPresenter().reload();
             reloadNavDrawerAlbums();
         }
     }
@@ -670,7 +643,20 @@ public class MainActivity extends ThemedActivity
     @Override
     public boolean onPrepareOptionsMenu(final Menu menu) {
         invalidateMenuTint();
+        invalidateMenuIcons(menu);
         return super.onPrepareOptionsMenu(menu);
+    }
+
+    public void invalidateMenuIcons(final Menu menu) {
+        if (menu != null && menu.getClass().getSimpleName().equals("MenuBuilder")) {
+            try {
+                Field field = menu.getClass().getDeclaredField("mOptionalIconsVisible");
+                field.setAccessible(true);
+                field.setBoolean(menu, true);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     private void invalidateMenuTint() {

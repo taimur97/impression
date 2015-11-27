@@ -4,6 +4,7 @@ import android.content.Context;
 import android.os.Bundle;
 
 import com.afollestad.impression.MvpView;
+import com.afollestad.impression.api.MediaEntry;
 import com.afollestad.impression.widget.breadcrumbs.Crumb;
 
 interface MediaView extends MvpView {
@@ -20,10 +21,13 @@ interface MediaView extends MvpView {
 
     Bundle getArguments();
 
-    void setCrumb(Crumb crumb);
+    void saveScrollPositionInto(Crumb crumb);
 
-    void reload();
+    void invalidateEmptyText();
 
-    void saveScrollPosition();
+    void setListShown(boolean listShown);
 
+    void restoreScrollPositionFrom(Crumb crumb);
+
+    void invalidateSubtitle(MediaEntry[] allEntries);
 }

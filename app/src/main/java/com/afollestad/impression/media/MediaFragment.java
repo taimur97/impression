@@ -1,17 +1,14 @@
 package com.afollestad.impression.media;
 
-import android.Manifest;
 import android.app.Activity;
 import android.app.Fragment;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
-import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -23,24 +20,15 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import com.afollestad.impression.App;
 import com.afollestad.impression.R;
-import com.afollestad.impression.accounts.base.Account;
 import com.afollestad.impression.api.FolderEntry;
 import com.afollestad.impression.api.MediaEntry;
 import com.afollestad.impression.cab.MediaCab;
 import com.afollestad.impression.providers.SortMemoryProvider;
 import com.afollestad.impression.utils.PrefUtils;
-import com.afollestad.impression.utils.Utils;
 import com.afollestad.impression.widget.breadcrumbs.Crumb;
 
 import java.io.File;
-import java.util.List;
-
-import rx.Single;
-import rx.SingleSubscriber;
-import rx.android.schedulers.AndroidSchedulers;
-import rx.functions.Func1;
 
 import static android.app.Activity.RESULT_OK;
 
@@ -49,10 +37,9 @@ import static android.app.Activity.RESULT_OK;
  */
 public class MediaFragment extends Fragment implements MediaView {
 
-    protected
+
     @MediaAdapter.SortMode
-    int sortCache;
-    protected Crumb crumb;
+    protected int sortCache;
     private RecyclerView mRecyclerView;
     private MediaAdapter mAdapter;
     private MediaPresenter mPresenter;
@@ -71,7 +58,7 @@ public class MediaFragment extends Fragment implements MediaView {
         }
     }
 
-    final void setListShown(boolean shown) {
+    public final void setListShown(boolean shown) {
         View v = getView();
         if (v == null || getActivity() == null) return;
         if (shown) {
@@ -88,8 +75,8 @@ public class MediaFragment extends Fragment implements MediaView {
 
     @Override
     public void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
         mPresenter.onSaveInstanceState(outState);
+        super.onSaveInstanceState(outState);
     }
 
     @Nullable
@@ -106,7 +93,7 @@ public class MediaFragment extends Fragment implements MediaView {
         mRecyclerView = (RecyclerView) view.findViewById(R.id.list);
         mRecyclerView.setScrollBarStyle(View.SCROLLBARS_INSIDE_OVERLAY);
 
-        mPresenter.onViewCreated();
+        mPresenter.onViewCreated(savedInstanceState);
     }
 
     @Override
@@ -150,7 +137,8 @@ public class MediaFragment extends Fragment implements MediaView {
         }
     }
 
-    public void saveScrollPosition() {
+    @Override
+    public void saveScrollPositionInto(Crumb crumb) {
         if (crumb == null)
             return;
         crumb.setScrollPosition(((GridLayoutManager) mRecyclerView.getLayoutManager()).findFirstVisibleItemPosition());
@@ -159,7 +147,8 @@ public class MediaFragment extends Fragment implements MediaView {
             crumb.setScrollOffset((int) firstChild.getY());
     }
 
-    private void restoreScrollPosition() {
+    @Override
+    public void restoreScrollPositionFrom(Crumb crumb) {
         if (crumb == null)
             return;
         final int scrollY = crumb.getScrollPosition();
@@ -168,44 +157,22 @@ public class MediaFragment extends Fragment implements MediaView {
         }
     }
 
-    protected final void setFilterMode(@MediaAdapter.FileFilterMode int mode) {
+    private void setFilterMode(@MediaAdapter.FileFilterMode int mode) {
         PrefUtils.setFilterMode(getActivity(), mode);
-        reload();
+        getPresenter().reload();
         getActivity().invalidateOptionsMenu();
     }
 
-    protected final void setSortMode(@MediaAdapter.SortMode int mode, String rememberPath) {
+    private void setSortMode(@MediaAdapter.SortMode int mode, String rememberPath) {
         sortCache = mode;
         SortMemoryProvider.save(getActivity(), rememberPath, mode);
         mAdapter.setSortMode(mode);
-        reload();
+        getPresenter().reload();
         getActivity().invalidateOptionsMenu();
     }
 
 
-    private Single<List<? extends MediaEntry>> getAllEntries() {
-        /*if (getActivity() == null) return Observable.empty().toSingle();*/
-        return App.getCurrentAccount(getActivity())
-                .flatMap(new Func1<Account, Single<List<? extends MediaEntry>>>() {
-                    @Override
-                    public Single<List<? extends MediaEntry>> call(Account account) {
-                        if (!isAdded()) return null;
-                        if (account != null) {
-                            /*acc.getEntries(mPresenter.getPath(), PrefUtils.getOverviewMode(getActivity()),
-                            PrefUtils.isExplorerMode(getActivity()), PrefUtils.getFilterMode(getActivity()),
-                            SortMemoryProvider.getSortMode(getActivity(), mPresenter.getPath()), callback);*/
-                            return account.getEntries(mPresenter.getPath(),
-                                    PrefUtils.isExplorerMode(getActivity()),
-                                    PrefUtils.getFilterMode(getActivity()),
-                                    SortMemoryProvider.getSortMode(getActivity(),
-                                            mPresenter.getPath()));
-                        }
-                        return null;
-                    }
-                });
-    }
-
-    private void invalidateEmptyText() {
+    public void invalidateEmptyText() {
         @MediaAdapter.FileFilterMode int mode = PrefUtils.getFilterMode(getActivity());
         View v = getView();
         if (v != null) {
@@ -226,44 +193,8 @@ public class MediaFragment extends Fragment implements MediaView {
         }
     }
 
-    public final void reload() {
-        final Activity act = getActivity();
-        if (act == null || ContextCompat.checkSelfPermission(act, Manifest.permission.WRITE_EXTERNAL_STORAGE) !=
-                PackageManager.PERMISSION_GRANTED) {
-            return;
-        }
 
-        saveScrollPosition();
-        invalidateEmptyText();
-        setListShown(false);
-
-        if (getAdapter() != null)
-            getAdapter().clear();
-        getAllEntries()
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new SingleSubscriber<List<? extends MediaEntry>>() {
-                    @Override
-                    public void onSuccess(List<? extends MediaEntry> entries) {
-                        MediaEntry[] allEntries = entries.toArray(new MediaEntry[entries.size()]);
-                        if (!isAdded())
-                            return;
-                        else if (getAdapter() != null)
-                            getAdapter().addAll(allEntries);
-                        setListShown(true);
-                        restoreScrollPosition();
-                        invalidateSubtitle(allEntries);
-                    }
-
-                    @Override
-                    public void onError(Throwable error) {
-                        if (getActivity() == null) return;
-                        Utils.showErrorDialog(getActivity(), error);
-                        error.printStackTrace();
-                    }
-                });
-    }
-
-    private void invalidateSubtitle(MediaEntry[] entries) {
+    public void invalidateSubtitle(MediaEntry[] entries) {
         AppCompatActivity act = (AppCompatActivity) getActivity();
         if (act != null) {
             final boolean toolbarStats = PreferenceManager.getDefaultSharedPreferences(act)
@@ -321,6 +252,7 @@ public class MediaFragment extends Fragment implements MediaView {
     @Override
     public void onDestroy() {
         super.onDestroy();
+        mPresenter.detachView();
         if (getAdapter() != null)
             getAdapter().changeContent(null, null, true, false);
     }
@@ -345,8 +277,10 @@ public class MediaFragment extends Fragment implements MediaView {
         mPresenter.onResume();
     }
 
-    public void setCrumb(Crumb crumb) {
-        this.crumb = crumb;
+    @Override
+    public void onPause() {
+        super.onPause();
+        mPresenter.onPause();
     }
 
     @Override

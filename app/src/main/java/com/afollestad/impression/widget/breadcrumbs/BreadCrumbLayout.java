@@ -20,6 +20,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.afollestad.impression.R;
+import com.afollestad.impression.api.FolderEntry;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -182,7 +183,7 @@ public class BreadCrumbLayout extends HorizontalScrollView implements View.OnCli
         return success;
     }
 
-    void invalidateActivatedAll() {
+    private void invalidateActivatedAll() {
         for (int i = 0; i < mCrumbs.size(); i++) {
             Crumb crumb = mCrumbs.get(i);
             invalidateActivated(mChildFrame.getChildAt(i), mActive == mCrumbs.indexOf(crumb), false, i < mCrumbs.size() - 1)
@@ -190,12 +191,12 @@ public class BreadCrumbLayout extends HorizontalScrollView implements View.OnCli
         }
     }
 
-    void removeCrumbAt(int index) {
+    private void removeCrumbAt(int index) {
         mCrumbs.remove(index);
         mChildFrame.removeViewAt(index);
     }
 
-    void updateIndices() {
+    private void updateIndices() {
         for (int i = 0; i < mChildFrame.getChildCount(); i++)
             mChildFrame.getChildAt(i).setTag(i);
     }
@@ -206,20 +207,25 @@ public class BreadCrumbLayout extends HorizontalScrollView implements View.OnCli
             final List<String> newPathSet = new ArrayList<>();
 
 
-            if (!isTopPath(crumb.getPath())) {
-                File p = new File(crumb.getPath());
-                newPathSet.add(p.getAbsolutePath());
+            newPathSet.add(0, crumb.getPath());
 
-                while ((p = p.getParentFile()) != null) {
-                    newPathSet.add(0, p.getAbsolutePath());
-                    if (isTopPath(p.getPath()))
-                        break;
+            //TODO: figure out what to do with this for explorer mode
+            if (!isTopPath(crumb.getPath())) {
+                if (mTopPath.equals(FolderEntry.OVERVIEW_PATH)) {
+                    newPathSet.add(0, FolderEntry.OVERVIEW_PATH);
+                } else {
+                    File file = new File(crumb.getPath());
+                    while ((file = file.getParentFile()) != null) {
+                        newPathSet.add(0, file.getAbsolutePath());
+                        if (isTopPath(file.getAbsolutePath()))
+                            break;
+                    }
                 }
             }
 
             for (int index = 0; index < newPathSet.size(); index++) {
-                final String fi = newPathSet.get(index);
-                crumb = new Crumb(getContext(), fi);
+                final String path = newPathSet.get(index);
+                crumb = new Crumb(getContext(), path);
 
                 // Restore scroll positions saved before clearing
                 if (mOldCrumbs != null) {

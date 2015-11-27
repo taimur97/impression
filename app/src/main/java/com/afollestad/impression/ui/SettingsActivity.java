@@ -1,16 +1,14 @@
 package com.afollestad.impression.ui;
 
 import android.annotation.SuppressLint;
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Intent;
-import android.content.SharedPreferences;
-import android.content.pm.PackageInfo;
-import android.content.pm.PackageManager;
+import android.graphics.Color;
+import android.os.Build;
 import android.os.Bundle;
 import android.preference.Preference;
 import android.preference.PreferenceFragment;
-import android.preference.PreferenceManager;
-import android.preference.TwoStatePreference;
 import android.support.annotation.ColorInt;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.Toolbar;
@@ -19,6 +17,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.ListView;
 
+import com.afollestad.impression.BuildConfig;
 import com.afollestad.impression.R;
 import com.afollestad.impression.ui.base.ThemedActivity;
 import com.afollestad.impression.utils.PrefUtils;
@@ -98,50 +97,27 @@ public class SettingsActivity extends ThemedActivity implements ColorChooserDial
 
     public static class SettingsFragment extends PreferenceFragment {
 
-        private void invalidateOverviewMode() {
-            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
-            TwoStatePreference overviewMode = (TwoStatePreference) findPreference("overview_mode");
-            final int currentMode = prefs.getInt("overview_mode", 1);
-            overviewMode.setChecked(currentMode == 0);
-        }
-
         @Override
         public void onCreate(Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
             addPreferencesFromResource(R.xml.settings);
 
-            findPreference("about").setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+            findPreference(PrefUtils.ABOUT).setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
                 @Override
                 public boolean onPreferenceClick(Preference preference) {
-                    try {
-                        Activity a = getActivity();
-                        PackageInfo pInfo = a.getPackageManager().getPackageInfo(a.getPackageName(), 0);
-                        new MaterialDialog.Builder(a)
-                                .title(getString(R.string.about_dialog_title, pInfo.versionName))
-                                .positiveText(R.string.dismiss)
-                                .content(Html.fromHtml(getString(R.string.about_body)))
-                                .iconRes(R.drawable.ic_launcher)
-                                .build()
-                                .show();
-                    } catch (PackageManager.NameNotFoundException e) {
-                        e.printStackTrace();
-                    }
+                    Activity act = getActivity();
+                    new MaterialDialog.Builder(act)
+                            .title(getString(R.string.about_dialog_title, BuildConfig.VERSION_NAME))
+                            .positiveText(R.string.dismiss)
+                            .content(Html.fromHtml(getString(R.string.about_body)))
+                            .iconRes(R.drawable.ic_launcher)
+                            .linkColor(((SettingsActivity) getActivity()).accentColor())
+                            .show();
                     return true;
                 }
             });
 
-            invalidateOverviewMode();
-            findPreference("overview_mode").setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
-                @Override
-                public boolean onPreferenceChange(Preference preference, Object newValue) {
-                    PreferenceManager.getDefaultSharedPreferences(getActivity()).edit()
-                            .putInt("overview_mode", ((Boolean) newValue) ? 0 : 1).commit();
-                    invalidateOverviewMode();
-                    return true;
-                }
-            });
-
-            findPreference("excluded_folders").setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+            findPreference(PrefUtils.EXCLUDED_FOLDERS).setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
                 @Override
                 public boolean onPreferenceClick(Preference preference) {
                     getActivity().startActivityForResult(new Intent(getActivity(), ExcludedFolderActivity.class), EXCLUDED_REQUEST);
@@ -149,7 +125,7 @@ public class SettingsActivity extends ThemedActivity implements ColorChooserDial
                 }
             });
 
-            findPreference("dark_theme").setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+            findPreference(PrefUtils.DARK_THEME).setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
                 @Override
                 public boolean onPreferenceChange(Preference preference, Object newValue) {
                     if (getActivity() != null)
@@ -158,16 +134,23 @@ public class SettingsActivity extends ThemedActivity implements ColorChooserDial
                 }
             });
 
-            findPreference(PrefUtils.COLORED_NAVBAR).setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
-                @Override
-                public boolean onPreferenceChange(Preference preference, Object newValue) {
-                    if (getActivity() != null)
-                        getActivity().recreate();
-                    return true;
-                }
-            });
+            Preference colorNavBar = findPreference(PrefUtils.COLORED_NAVBAR);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                colorNavBar.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+                    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+                    @Override
+                    public boolean onPreferenceChange(Preference preference, Object newValue) {
+                        int color = ((Boolean) newValue) ? ((ThemedActivity) getActivity()).primaryColor() : Color.BLACK;
+                        getActivity().getWindow().setNavigationBarColor(color);
+                        return true;
+                    }
+                });
+            } else {
+                colorNavBar.setEnabled(false);
+                colorNavBar.setSummary(R.string.only_available_api21);
+            }
 
-            findPreference("include_subfolders").setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+            findPreference(PrefUtils.INCLUDE_SUBFOLDERS).setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
                 @Override
                 public boolean onPreferenceChange(Preference preference, Object newValue) {
                     getActivity().setResult(RESULT_OK);
@@ -175,7 +158,7 @@ public class SettingsActivity extends ThemedActivity implements ColorChooserDial
                 }
             });
 
-            ImpressionPreference primaryColor = (ImpressionPreference) findPreference("primary_color");
+            ImpressionPreference primaryColor = (ImpressionPreference) findPreference(PrefUtils.PRIMARY_COLOR);
             primaryColor.setColor(((ThemedActivity) getActivity()).primaryColor(), Utils.resolveColor(getActivity(), R.attr.colorAccent));
             primaryColor.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
                 @Override
@@ -193,7 +176,7 @@ public class SettingsActivity extends ThemedActivity implements ColorChooserDial
             });
 
 
-            ImpressionPreference accentColor = (ImpressionPreference) findPreference("accent_color");
+            ImpressionPreference accentColor = (ImpressionPreference) findPreference(PrefUtils.ACCENT_COLOR);
             accentColor.setColor(((ThemedActivity) getActivity()).accentColor(), Utils.resolveColor(getActivity(), R.attr.colorAccent));
             accentColor.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
                 @Override

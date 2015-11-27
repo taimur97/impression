@@ -183,7 +183,7 @@ public class MediaCab implements Serializable, MaterialCab.Callback {
                     public void run() {
                         mDialog.dismiss();
                         finish();
-                        mFragment.reload();
+                        mFragment.getPresenter().reload();
                         mContext.reloadNavDrawerAlbums();
                     }
                 });
@@ -283,7 +283,7 @@ public class MediaCab implements Serializable, MaterialCab.Callback {
                     public void run() {
                         mDialog.dismiss();
                         finish();
-                        mFragment.reload();
+                        mFragment.getPresenter().reload();
                         mContext.reloadNavDrawerAlbums();
                     }
                 });
@@ -409,7 +409,7 @@ public class MediaCab implements Serializable, MaterialCab.Callback {
     }
 
     private void selectAll() {
-        List<MediaEntry> adapterPics = ((MediaAdapter) mFragment.getAdapter()).getMedia().getMedia();
+        List<MediaEntry> adapterPics = ((MediaAdapter) mFragment.getAdapter()).getMediaWrapper().getMedia();
         for (MediaEntry p : adapterPics)
             toggleEntry(p, true);
     }

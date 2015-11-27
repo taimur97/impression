@@ -202,13 +202,13 @@ public class NavDrawerAdapter extends RecyclerView.Adapter<NavDrawerAdapter.View
     public static class Entry {
 
         private final String mPath;
-        private boolean mAdd;
-        private boolean mIncluded;
+        private boolean mIsAddIncludedFolderEntry;
+        private boolean mIsIncludedFolder;
 
         public Entry(String path, boolean add, boolean included) {
             mPath = path;
-            mAdd = add;
-            mIncluded = included;
+            mIsAddIncludedFolderEntry = add;
+            mIsIncludedFolder = included;
         }
 
         public String getName() {
@@ -222,23 +222,23 @@ public class NavDrawerAdapter extends RecyclerView.Adapter<NavDrawerAdapter.View
         }
 
         public boolean isAdd() {
-            return mAdd;
+            return mIsAddIncludedFolderEntry;
         }
 
         public boolean isIncluded() {
-            return mIncluded;
+            return mIsIncludedFolder;
         }
 
         public void copy(Entry other) {
-            this.mAdd = other.isAdd();
-            this.mIncluded = other.isIncluded();
+            this.mIsAddIncludedFolderEntry = other.isAdd();
+            this.mIsIncludedFolder = other.isIncluded();
         }
 
         @Override
         public boolean equals(Object o) {
             if (!(o instanceof Entry)) return false;
             Entry oe = (Entry) o;
-            return oe.mPath.equals(mPath) && oe.mAdd == mAdd && oe.mIncluded == mIncluded;
+            return oe.mPath.equals(mPath) && oe.mIsAddIncludedFolderEntry == mIsAddIncludedFolderEntry && oe.mIsIncludedFolder == mIsIncludedFolder;
         }
     }
 }

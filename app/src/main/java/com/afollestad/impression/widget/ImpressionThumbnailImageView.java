@@ -29,7 +29,7 @@ import java.lang.ref.WeakReference;
 /**
  * @author Aidan Follestad (afollestad)
  */
-public class ImpressionImageView extends ImageView {
+public class ImpressionThumbnailImageView extends ImageView {
 
     private MediaEntry mEntry;
     private WeakReference<View> mProgress;
@@ -40,12 +40,12 @@ public class ImpressionImageView extends ImageView {
     private int mSelectedColor;
     private boolean mIsGif;
 
-    public ImpressionImageView(Context context) {
+    public ImpressionThumbnailImageView(Context context) {
         super(context);
         init(context);
     }
 
-    public ImpressionImageView(Context context, AttributeSet attrs) {
+    public ImpressionThumbnailImageView(Context context, AttributeSet attrs) {
         super(context, attrs);
         init(context);
     }
@@ -115,19 +115,21 @@ public class ImpressionImageView extends ImageView {
             if (mCheck.getWidth() > getMeasuredWidth())
                 targetDimen = getMeasuredWidth();
             if (isActivated()) {
-                if (mEntry != null && !mEntry.isFolder())
+                if (mEntry != null && !mEntry.isFolder()) {
                     canvas.drawColor(mSelectedColor);
+                }
+
                 canvas.drawBitmap(mCheck,
                         (getMeasuredWidth() / 2) - (targetDimen / 2),
                         (getMeasuredHeight() / 2) - (targetDimen / 2),
                         null);
-            } else if (mIsGif) {
+            } else if (mEntry != null && !mEntry.isFolder() && mIsGif) {
                 canvas.drawColor(mPlayOverlay);
                 canvas.drawBitmap(mGif,
                         (getMeasuredWidth() / 2) - (targetDimen / 2),
                         (getMeasuredHeight() / 2) - (targetDimen / 2),
                         null);
-            } else if (mEntry != null && mEntry.isVideo()) {
+            } else if (mEntry != null && !mEntry.isFolder() && mEntry.isVideo()) {
                 canvas.drawColor(mPlayOverlay);
                 canvas.drawBitmap(mPlay,
                         (getMeasuredWidth() / 2) - (targetDimen / 2),

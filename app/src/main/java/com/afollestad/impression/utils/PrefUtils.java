@@ -20,9 +20,13 @@ public abstract class PrefUtils {
     public static final String GRID_SIZE_PREFIX = "grid_size_";
     public static final String OVERVIEW_MODE = "overview_mode";
     public static final String FILTER_MODE = "filter_mode";
-    public static final String INCLUDE_SUBFOLDERS_INCLUDED = "include_subfolders_included";
+    public static final String INCLUDE_SUBFOLDERS = "include_subfolders";
     public static final String ACTIVE_ACCOUNT_ID = "active_account";
     public static final String SORT_MODE = "sort_mode";
+    public static final String ABOUT = "about";
+    public static final String EXCLUDED_FOLDERS = "excluded_folders";
+    public static final String PRIMARY_COLOR = "primary_color";
+    public static final String ACCENT_COLOR = "accent_color";
 
     public static boolean isDarkTheme(Context context) {
         return PreferenceManager.getDefaultSharedPreferences(context).getBoolean(DARK_THEME, false);
@@ -61,9 +65,8 @@ public abstract class PrefUtils {
         PreferenceManager.getDefaultSharedPreferences(context).edit().putInt(GRID_SIZE_PREFIX + orientation, gridSize).apply();
     }
 
-    public static int getOverviewMode(Context context) {
-        if (context == null) return 1;
-        return PreferenceManager.getDefaultSharedPreferences(context).getInt(OVERVIEW_MODE, 1);
+    public static boolean getOverviewAllMediaMode(Context context) {
+        return PreferenceManager.getDefaultSharedPreferences(context).getBoolean(OVERVIEW_MODE, false);
     }
 
     public static
@@ -79,7 +82,7 @@ public abstract class PrefUtils {
     }
 
     public static boolean isSubfoldersIncluded(Context context) {
-        return PreferenceManager.getDefaultSharedPreferences(context).getBoolean(INCLUDE_SUBFOLDERS_INCLUDED, true);
+        return PreferenceManager.getDefaultSharedPreferences(context).getBoolean(INCLUDE_SUBFOLDERS, true);
     }
 
     public static int getActiveAccountId(Context context) {

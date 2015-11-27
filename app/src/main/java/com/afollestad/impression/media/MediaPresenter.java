@@ -1,7 +1,9 @@
 package com.afollestad.impression.media;
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.net.Uri;
 import android.os.Build;
@@ -9,10 +11,14 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.ActivityOptionsCompat;
+import android.support.v4.content.ContextCompat;
+import android.util.Log;
 import android.view.View;
 
+import com.afollestad.impression.App;
 import com.afollestad.impression.MvpPresenter;
 import com.afollestad.impression.R;
+import com.afollestad.impression.accounts.base.Account;
 import com.afollestad.impression.api.FolderEntry;
 import com.afollestad.impression.api.MediaEntry;
 import com.afollestad.impression.cab.MediaCab;
@@ -20,14 +26,22 @@ import com.afollestad.impression.providers.SortMemoryProvider;
 import com.afollestad.impression.utils.PrefUtils;
 import com.afollestad.impression.utils.Utils;
 import com.afollestad.impression.viewer.ViewerActivity;
-import com.afollestad.impression.widget.ImpressionImageView;
+import com.afollestad.impression.widget.ImpressionThumbnailImageView;
+import com.afollestad.impression.widget.breadcrumbs.Crumb;
 
 import java.io.File;
+import java.util.List;
+
+import rx.Single;
+import rx.SingleSubscriber;
+import rx.android.schedulers.AndroidSchedulers;
+import rx.functions.Func1;
 
 public class MediaPresenter extends MvpPresenter<MediaView> {
 
     public static final String INIT_PATH = "path";
     private static final String STATE_PATH = "state_path";
+    private static final String TAG = "MediaPresenter";
 
     private String mPath;
     private boolean mLastDarkTheme;
@@ -38,6 +52,13 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
         args.putString(INIT_PATH, albumPath);
         frag.setArguments(args);
         return frag;
+    }
+
+    public void onPause() {
+        if (isViewAttached()) {
+            //noinspection ConstantConditions
+            getView().saveScrollPositionInto(findCrumbForCurrentPath((MainActivity) getView().getContextCompat()));
+        }
     }
 
     public void setGridModeOn(boolean gridMode) {
@@ -64,13 +85,20 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
         getView().getAdapter().updateGridColumns();
     }
 
-    public void onViewCreated() {
+    public void onViewCreated(Bundle savedInstanceState) {
         if (isViewAttached()) {
             //noinspection ConstantConditions
             final boolean gridMode = PrefUtils.isGridMode(getView().getContextCompat());
             getView().initializeRecyclerView(gridMode, PrefUtils.getGridColumns(getView().getContextCompat()), createAdapter());
 
-            setPath(mPath);
+            if (savedInstanceState == null) {
+                setPath(mPath);
+            } else {
+                MediaEntry[] mediaEntries = getView().getAdapter().restoreInstanceState(savedInstanceState);
+                reloadFinished(mediaEntries);
+
+                onPathSet((MainActivity) getView().getContextCompat());
+            }
         }
     }
 
@@ -89,6 +117,7 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
     }
 
     protected void onResume() {
+        //noinspection ConstantConditions
         if (isViewAttached() && getView().getContextCompat() != null) {
             MainActivity act = (MainActivity) getView().getContextCompat();
             if (act.getMediaCab() != null) {
@@ -107,6 +136,11 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
 
     protected void onSaveInstanceState(Bundle bundle) {
         bundle.putString(STATE_PATH, mPath);
+        if (isViewAttached()) {
+            //noinspection ConstantConditions
+            getView().getAdapter().saveInstanceState(bundle);
+        }
+        Log.e(TAG, "onSaveInstanceState: " + bundle.toString());
     }
 
     protected void onOptionsItemSelected(int itemId) {
@@ -119,7 +153,7 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
                 MainActivity act = (MainActivity) getView().getContextCompat();
                 boolean currentExplorerMode = PrefUtils.isExplorerMode(act);
                 PrefUtils.setExplorerMode(act, !currentExplorerMode);
-                getView().reload();
+                reload();
                 updateTitle();
                 act.invalidateOptionsMenu();
                 act.invalidateExplorerMode();
@@ -132,6 +166,7 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
             return;
         }
 
+        //noinspection ConstantConditions
         MainActivity activity = ((MainActivity) getView().getContextCompat());
 
         String title;
@@ -162,20 +197,105 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
      */
     public void setPath(String directory) {
         if (isViewAttached()) {
-            getView().saveScrollPosition();
-            mPath = directory;
-
             final MainActivity mainActivity = (MainActivity) getView().getContextCompat();
 
-            updateTitle();
-            mainActivity.invalidateMenuArrow(mPath);
-            mainActivity.supportInvalidateOptionsMenu();
-            getView().setCrumb(mainActivity.getCrumbs().findCrumb(mPath));
-            getView().reload();
+            getView().saveScrollPositionInto(findCrumbForCurrentPath(mainActivity));
+
+            mPath = directory;
+
+            onPathSet(mainActivity);
+
+            reload();
         }
     }
 
-    protected MediaAdapter createAdapter() {
+    private Single<List<? extends MediaEntry>> getAllEntries() {
+        if (!isViewAttached()) {
+            return null;
+        }
+        //noinspection ConstantConditions
+        return App.getCurrentAccount(getView().getContextCompat())
+                .flatMap(new Func1<Account, Single<List<? extends MediaEntry>>>() {
+                    @Override
+                    public Single<List<? extends MediaEntry>> call(Account account) {
+                        //if (!isAdded()) return null;
+                        if (account != null) {
+                            /*acc.getEntries(mPresenter.getPath(), PrefUtils.getOverviewAllMediaMode(getActivity()),
+                            PrefUtils.isExplorerMode(getActivity()), PrefUtils.getFilterMode(getActivity()),
+                            SortMemoryProvider.getSortMode(getActivity(), mPresenter.getPath()), callback);*/
+                            return account.getEntries(getPath(),
+                                    PrefUtils.isExplorerMode(getView().getContextCompat()),
+                                    PrefUtils.getFilterMode(getView().getContextCompat()),
+                                    SortMemoryProvider.getSortMode(getView().getContextCompat(), getPath()));
+                        }
+                        return null;
+                    }
+                });
+    }
+
+    public final void reload() {
+        if (!isViewAttached()) {
+            return;
+        }
+
+        final Activity act = (Activity) getView().getContextCompat();
+        if (act == null || ContextCompat.checkSelfPermission(act, Manifest.permission.WRITE_EXTERNAL_STORAGE) !=
+                PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+
+
+        getView().invalidateEmptyText();
+        getView().setListShown(false);
+
+        if (getView().getAdapter() != null) {
+            getView().getAdapter().clear();
+        }
+
+        //noinspection ConstantConditions
+        getAllEntries()
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new SingleSubscriber<List<? extends MediaEntry>>() {
+                    @Override
+                    public void onSuccess(List<? extends MediaEntry> entries) {
+                        MediaEntry[] allEntries = entries.toArray(new MediaEntry[entries.size()]);
+                       /* if (!isAdded())
+                            return;
+                        else */
+                        if (getView().getAdapter() != null)
+                            getView().getAdapter().addAll(allEntries);
+
+                        reloadFinished(allEntries);
+                    }
+
+                    @Override
+                    public void onError(Throwable error) {
+                        error.printStackTrace();
+                        if (getView().getContextCompat() == null) return;
+                        Utils.showErrorDialog(getView().getContextCompat(), error);
+                    }
+                });
+    }
+
+    private void reloadFinished(MediaEntry[] allEntries) {
+        final MainActivity mainActivity = (MainActivity) getView().getContextCompat();
+
+        getView().setListShown(true);
+        getView().restoreScrollPositionFrom(findCrumbForCurrentPath(mainActivity));
+        getView().invalidateSubtitle(allEntries);
+    }
+
+    private Crumb findCrumbForCurrentPath(MainActivity mainActivity) {
+        return mainActivity.getBreadCrumbLayout().findCrumb(mPath);
+    }
+
+    private void onPathSet(MainActivity mainActivity) {
+        updateTitle();
+        mainActivity.invalidateMenuArrow(mPath);
+        mainActivity.supportInvalidateOptionsMenu();
+    }
+
+    private MediaAdapter createAdapter() {
         if (isViewAttached()) {
             MainActivity act = (MainActivity) getView().getContextCompat();
             MediaAdapter.Callback callback = new MediaCallbackImpl();
@@ -232,10 +352,10 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
                     if (pic.isFolder() && pic instanceof FolderEntry) {
                         act.switchAlbum(((FolderEntry) pic).folderPath());
                     } else {
-                        ImpressionImageView iv = (ImpressionImageView) view.findViewById(R.id.image);
+                        ImpressionThumbnailImageView iv = (ImpressionThumbnailImageView) view.findViewById(R.id.image);
                         int width = iv.getWidth();
                         int height = iv.getHeight();
-                        ViewerActivity.MediaWrapper wrapper = getView().getAdapter().getMedia();
+                        ViewerActivity.MediaWrapper wrapper = getView().getAdapter().getMediaWrapper();
                         final Intent intent = new Intent(act, ViewerActivity.class)
                                 .putExtra(ViewerActivity.EXTRA_MEDIA_ENTRIES, wrapper)
                                 .putExtra(ViewerActivity.EXTRA_CURRENT_ITEM_POSITION, index)
@@ -246,9 +366,7 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
                                 act, iv, transName);
 
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                            //Somehow this works (setting status bar color in both MainActivity and here)
-                            //to avoid image glitching through on when ViewActivity is first created.
-                            //TODO: Look into why this works and whether some code is unnecessary
+                            //Setting status bar here to "register" MainActivity as having a status bar background
                             act.getWindow().setStatusBarColor(act.primaryColorDark());
                             View statusBar = act.getWindow().getDecorView().findViewById(android.R.id.statusBarBackground);
                             if (statusBar != null) {

@@ -22,6 +22,8 @@
         <item name="empty_image_background">@color/material_indigo_100</item>
 
         <item name="windowActionModeOverlay">true</item>
+
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
     </style>
 
     <style name="_ParentThemeDark" parent="Theme.AppCompat.NoActionBar">
@@ -48,6 +50,8 @@
         <item name="empty_image_background">@color/nav_drawer_dark</item>
 
         <item name="windowActionModeOverlay">true</item>
+
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
     </style>
 
     <style name="AppTheme.Viewer" parent="@style/_ParentTheme">

@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Bundle;
 import android.provider.MediaStore;
 import android.support.annotation.IntDef;
 import android.support.v4.view.ViewCompat;
@@ -19,12 +20,13 @@ import com.afollestad.impression.api.OldAlbumEntry;
 import com.afollestad.impression.utils.PrefUtils;
 import com.afollestad.impression.utils.Utils;
 import com.afollestad.impression.viewer.ViewerActivity;
-import com.afollestad.impression.widget.ImpressionImageView;
+import com.afollestad.impression.widget.ImpressionThumbnailImageView;
 
 import java.io.File;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -38,20 +40,24 @@ public class MediaAdapter extends RecyclerView.Adapter<MediaAdapter.ViewHolder> 
     public static final int SORT_MODIFIED_DATE_ASC = 2;
     public static final int SORT_MODIFIED_DATE_DESC = 3;
     public static final int SORT_DEFAULT = SORT_MODIFIED_DATE_ASC;
+
     public static final int FILTER_ALL = 0;
     public static final int FILTER_PHOTOS = 1;
     public static final int FILTER_VIDEOS = 2;
+
     public static final int VIEW_TYPE_GRID = 0;
     public static final int VIEW_TYPE_GRID_FOLDER = 1;
     public static final int VIEW_TYPE_LIST = 2;
+    public static final String STATE_ENTRIES = "state_entries";
+
     private final Context mContext;
     private final Callback mCallback;
     private final List<MediaEntry> mEntries;
     private final List<String> mCheckedPaths;
     private final boolean mSelectAlbumMode;
-    private
+
     @SortMode
-    int mSortMode;
+    private int mSortMode;
     private boolean mGridMode;
     private int mDefaultImageBackground;
     private int mEmptyImageBackground;
@@ -61,12 +67,13 @@ public class MediaAdapter extends RecyclerView.Adapter<MediaAdapter.ViewHolder> 
         mSortMode = sort;
         mGridMode = PrefUtils.isGridMode(context);
         mCallback = callback;
-        mEntries = new ArrayList<>();
         mCheckedPaths = new ArrayList<>();
         mSelectAlbumMode = selectAlbumMode;
 
         mDefaultImageBackground = Utils.resolveColor(context, R.attr.default_image_background);
         mEmptyImageBackground = Utils.resolveColor(context, R.attr.empty_image_background);
+
+        mEntries = new ArrayList<>();
     }
 
     @Override
@@ -108,7 +115,7 @@ public class MediaAdapter extends RecyclerView.Adapter<MediaAdapter.ViewHolder> 
         notifyDataSetChanged();
     }
 
-    public ViewerActivity.MediaWrapper getMedia() {
+    public ViewerActivity.MediaWrapper getMediaWrapper() {
         return new ViewerActivity.MediaWrapper(mEntries, false);
     }
 
@@ -304,6 +311,24 @@ public class MediaAdapter extends RecyclerView.Adapter<MediaAdapter.ViewHolder> 
         }
     }
 
+    public void saveInstanceState(Bundle out) {
+        out.putParcelableArray(STATE_ENTRIES, mEntries.toArray(new MediaEntry[mEntries.size()]));
+    }
+
+    public MediaEntry[] restoreInstanceState(Bundle in) {
+        MediaEntry[] mediaEntryArray = (MediaEntry[]) in.getParcelableArray(STATE_ENTRIES);
+
+        if (mediaEntryArray == null) {
+            return null;
+        }
+
+        List<MediaEntry> mediaEntries = new ArrayList<>(Arrays.asList(mediaEntryArray));
+        mEntries.addAll(mediaEntries);
+        notifyDataSetChanged();
+
+        return mediaEntryArray;
+    }
+
     @Override
     public int getItemCount() {
         return mEntries.size();
@@ -328,7 +353,7 @@ public class MediaAdapter extends RecyclerView.Adapter<MediaAdapter.ViewHolder> 
     public class ViewHolder extends RecyclerView.ViewHolder {
 
         public final View view;
-        public final ImpressionImageView image;
+        public final ImpressionThumbnailImageView image;
         public final View imageProgress;
         public final View titleFrame;
         public final TextView title;
@@ -337,7 +362,7 @@ public class MediaAdapter extends RecyclerView.Adapter<MediaAdapter.ViewHolder> 
         public ViewHolder(View v) {
             super(v);
             view = v;
-            image = (ImpressionImageView) v.findViewById(R.id.image);
+            image = (ImpressionThumbnailImageView) v.findViewById(R.id.image);
             imageProgress = v.findViewById(R.id.imageProgress);
             titleFrame = v.findViewById(R.id.titleFrame);
             title = (TextView) v.findViewById(R.id.title);
