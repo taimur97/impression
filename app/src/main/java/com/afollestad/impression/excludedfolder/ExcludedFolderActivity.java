@@ -1,4 +1,4 @@
-package com.afollestad.impression.ui;
+package com.afollestad.impression.excludedfolder;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -10,10 +10,9 @@ import android.view.MenuItem;
 import android.view.View;
 
 import com.afollestad.impression.R;
-import com.afollestad.impression.adapters.ExcludedFolderAdapter;
+import com.afollestad.impression.base.ThemedActivity;
 import com.afollestad.impression.media.MainActivity;
 import com.afollestad.impression.providers.ExcludedFolderProvider;
-import com.afollestad.impression.ui.base.ThemedActivity;
 
 /**
  * @author Aidan Follestad (afollestad)

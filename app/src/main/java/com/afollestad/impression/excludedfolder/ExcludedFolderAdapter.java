@@ -1,4 +1,4 @@
-package com.afollestad.impression.adapters;
+package com.afollestad.impression.excludedfolder;
 
 import android.graphics.PorterDuff;
 import android.support.v7.widget.RecyclerView;
@@ -11,7 +11,6 @@ import android.widget.TextView;
 
 import com.afollestad.impression.R;
 import com.afollestad.impression.providers.ExcludedFolderProvider;
-import com.afollestad.impression.ui.ExcludedFolderActivity;
 import com.afollestad.impression.utils.Utils;
 import com.afollestad.materialdialogs.MaterialDialog;
 

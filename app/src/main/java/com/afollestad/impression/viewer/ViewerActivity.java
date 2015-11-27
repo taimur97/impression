@@ -49,9 +49,8 @@ import android.widget.Toast;
 import com.afollestad.impression.BuildConfig;
 import com.afollestad.impression.R;
 import com.afollestad.impression.api.MediaEntry;
-import com.afollestad.impression.fragments.dialog.SlideshowInitDialog;
+import com.afollestad.impression.base.ThemedActivity;
 import com.afollestad.impression.media.MainActivity;
-import com.afollestad.impression.ui.base.ThemedActivity;
 import com.afollestad.impression.utils.PrefUtils;
 import com.afollestad.impression.utils.ScrimUtil;
 import com.afollestad.impression.utils.TimeUtils;
@@ -99,8 +98,6 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
     private boolean mIsReturningToMain;
 
     private boolean mAllVideos;
-
-    private boolean mSystemUIFocus = false;
 
     private long mSlideshowDelay;
     private boolean mSlideshowLoop;
@@ -549,9 +546,7 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
             @Override
             public void onSystemUiVisibilityChange(int visibility) {
                 if (visibility == View.VISIBLE) {
-                    invokeUi(false);
-                    mSystemUIFocus = false; // this is inverted by the method below
-                    systemUIFocusChange();
+                    uiTapped(false);
                 }
             }
         });
@@ -632,7 +627,7 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
         mPager.setCurrentItem(mCurrentPosition);
     }
 
-    private void hideSystemUI() {
+    private void hideSystemUi() {
         // Set the IMMERSIVE flag.
         // Set the content to appear under the system bars so that the content
         // doesn't resize when the system bars hide and show.
@@ -647,35 +642,30 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
 
     // This snippet shows the system bars. It does this by removing all the flags
     // except for the ones that make the content appear under the system bars.
-    private void showSystemUI() {
+    private void showSystemUi() {
         getWindow().getDecorView().setSystemUiVisibility(
                 View.SYSTEM_UI_FLAG_LAYOUT_STABLE
                         | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
                         | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
     }
 
-    public void systemUIFocusChange() {
-        mSystemUIFocus = !mSystemUIFocus;
-        if (mSystemUIFocus) {
-            showSystemUI();
-            if (mTimer != null) {
-                mTimer.cancel();
-                mTimer.purge();
+    private void postSystemUiHide() {
+        if (mTimer != null) {
+            mTimer.cancel();
+            mTimer.purge();
+        }
+        mTimer = new Timer();
+        mTimer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        hideSystemUi();
+                    }
+                });
             }
-            mTimer = new Timer();
-            mTimer.schedule(new TimerTask() {
-                @Override
-                public void run() {
-                    mSystemUIFocus = false;
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            hideSystemUI();
-                        }
-                    });
-                }
-            }, UI_FADE_DELAY);
-        } else hideSystemUI();
+        }, UI_FADE_DELAY);
     }
 
     @Override
@@ -690,14 +680,14 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
     public void onOptionsMenuClosed(Menu menu) {
         super.onOptionsMenuClosed(menu);
         // Resume the fade animation
-        invokeUi(false);
+        uiTapped(false);
     }
 
-    private void invokeUi(boolean tapped) {
-        invokeUi(tapped, null);
+    private void uiTapped(boolean tapped) {
+        uiTapped(tapped, null);
     }
 
-    public void invokeUi(boolean tapped, final ToolbarFadeListener listener) {
+    public void uiTapped(boolean tapped, final ToolbarFadeListener listener) {
         if (mUiAnimatorSet != null) {
             mUiAnimatorSet.cancel();
         }
@@ -719,10 +709,14 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
                     if (listener != null) listener.onFade();
                 }
             });
+            hideSystemUi();
         } else {
             mToolbar.setAlpha(1f);
             mTopScrim.setAlpha(1f);
             mBottomScrim.setAlpha(1f);
+
+            showSystemUi();
+            postSystemUiHide();
 
             mUiAnimatorSet.setStartDelay(UI_FADE_DELAY);
         }
@@ -735,8 +729,8 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
     protected void onStart() {
         super.onStart();
         // Start the toolbar fader
-        invokeUi(false);
-        systemUIFocusChange();
+        uiTapped(false);
+        showSystemUi();
     }
 
     @Override

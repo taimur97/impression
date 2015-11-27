@@ -1,4 +1,4 @@
-package com.afollestad.impression.adapters;
+package com.afollestad.impression.navdrawer;
 
 import android.content.Context;
 import android.graphics.PorterDuff;
@@ -11,7 +11,7 @@ import android.widget.TextView;
 
 import com.afollestad.impression.R;
 import com.afollestad.impression.api.FolderEntry;
-import com.afollestad.impression.ui.base.ThemedActivity;
+import com.afollestad.impression.base.ThemedActivity;
 import com.afollestad.impression.utils.Utils;
 
 import java.io.File;
@@ -23,7 +23,7 @@ import java.util.List;
 /**
  * @author Aidan Follestad (afollestad)
  */
-public class NavDrawerAdapter extends RecyclerView.Adapter<NavDrawerAdapter.ViewHolder> implements View.OnClickListener, View.OnLongClickListener {
+public class NavDrawerAdapter extends RecyclerView.Adapter<NavDrawerAdapter.ViewHolder> {
 
     private final Context mContext;
     private final List<Entry> mEntries;
@@ -56,28 +56,6 @@ public class NavDrawerAdapter extends RecyclerView.Adapter<NavDrawerAdapter.View
         mCheckedItem = index;
         notifyDataSetChanged();
     }
-
-    @Override
-    public void onClick(View v) {
-        if (mCallback != null) {
-            Integer index = (Integer) v.getTag();
-            Entry entry = mEntries.get(index);
-            mCallback.onEntrySelected(index, entry, false);
-        }
-    }
-
-    @Override
-    public boolean onLongClick(View v) {
-        if (mCallback != null) {
-            Integer index = (Integer) v.getTag();
-            Entry entry = mEntries.get(index);
-            if (entry.isAdd()) return false;
-            mCallback.onEntrySelected(index, entry, true);
-            return true;
-        }
-        return false;
-    }
-
     public void add(Entry entry) {
         if (mEntries.contains(entry)) return;
         mEntries.add(entry);
@@ -135,17 +113,12 @@ public class NavDrawerAdapter extends RecyclerView.Adapter<NavDrawerAdapter.View
             }
             holder.textView.setText(entry.getName());
         }
-        holder.view.setTag(position);
         holder.view.setActivated(mCheckedItem == position);
         if (holder.view.isActivated()) {
             holder.textView.setTextColor(((ThemedActivity) mContext).accentColor());
         } else {
             holder.textView.setTextColor(Utils.resolveColor(mContext, android.R.attr.textColorPrimary));
         }
-        holder.view.setOnClickListener(this);
-        if (position > 0)
-            holder.view.setOnLongClickListener(this);
-        else holder.view.setOnLongClickListener(null);
     }
 
     @Override
@@ -160,22 +133,6 @@ public class NavDrawerAdapter extends RecyclerView.Adapter<NavDrawerAdapter.View
 
     public interface Callback {
         void onEntrySelected(int index, Entry entry, boolean longClick);
-    }
-
-    protected static class ViewHolder extends RecyclerView.ViewHolder {
-
-        final View view;
-        final View vivider;
-        final ImageView icon;
-        final TextView textView;
-
-        public ViewHolder(View v) {
-            super(v);
-            view = v.findViewById(R.id.viewFrame);
-            vivider = ((ViewGroup) v).getChildAt(0);
-            icon = (ImageView) v.findViewById(R.id.icon);
-            textView = (TextView) v.findViewById(R.id.title);
-        }
     }
 
     private static class NavDrawerSorter implements Comparator<Entry> {
@@ -239,6 +196,47 @@ public class NavDrawerAdapter extends RecyclerView.Adapter<NavDrawerAdapter.View
             if (!(o instanceof Entry)) return false;
             Entry oe = (Entry) o;
             return oe.mPath.equals(mPath) && oe.mIsAddIncludedFolderEntry == mIsAddIncludedFolderEntry && oe.mIsIncludedFolder == mIsIncludedFolder;
+        }
+    }
+
+    protected class ViewHolder extends RecyclerView.ViewHolder {
+
+        final View view;
+        final View vivider;
+        final ImageView icon;
+        final TextView textView;
+
+        public ViewHolder(View v) {
+            super(v);
+            view = v.findViewById(R.id.viewFrame);
+            vivider = ((ViewGroup) v).getChildAt(0);
+            icon = (ImageView) v.findViewById(R.id.icon);
+            textView = (TextView) v.findViewById(R.id.title);
+
+            v.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (mCallback != null) {
+                        int index = getAdapterPosition();
+                        Entry entry = mEntries.get(index);
+                        mCallback.onEntrySelected(index, entry, false);
+                    }
+                }
+            });
+
+            v.setOnLongClickListener(new View.OnLongClickListener() {
+                @Override
+                public boolean onLongClick(View v) {
+                    int index = getAdapterPosition();
+                    if (mCallback != null && index > 0) {
+                        Entry entry = mEntries.get(index);
+                        if (entry.isAdd()) return false;
+                        mCallback.onEntrySelected(index, entry, true);
+                        return true;
+                    }
+                    return false;
+                }
+            });
         }
     }
 }

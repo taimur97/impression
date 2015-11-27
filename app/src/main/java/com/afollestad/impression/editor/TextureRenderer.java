@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.afollestad.impression.ui.editor;
+package com.afollestad.impression.editor;
 
 import android.opengl.GLES20;
 

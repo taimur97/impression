@@ -11,7 +11,7 @@
  * governing permissions and limitations under the License. 
  */
 
-package com.afollestad.impression.ui.editor.cropwindow.edge;
+package com.afollestad.impression.editor.cropwindow.edge;
 
 /**
  * Simple class to hold a pair of Edges.

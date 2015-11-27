@@ -1,4 +1,4 @@
-package com.afollestad.impression.ui.editor;
+package com.afollestad.impression.editor;
 
 import android.graphics.Bitmap;
 import android.graphics.Color;

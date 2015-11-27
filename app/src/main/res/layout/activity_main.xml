@@ -102,7 +102,7 @@
 
         <fragment
             android:id="@+id/navigation_drawer"
-            android:name="com.afollestad.impression.fragments.NavDrawerFragment"
+            android:name="com.afollestad.impression.navdrawer.NavDrawerFragment"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:tag="NAV_DRAWER"

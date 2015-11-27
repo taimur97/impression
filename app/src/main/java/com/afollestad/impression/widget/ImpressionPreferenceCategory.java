@@ -1,6 +1,7 @@
 package com.afollestad.impression.widget;
 
 import android.content.Context;
+import android.content.res.ColorStateList;
 import android.preference.PreferenceCategory;
 import android.support.annotation.NonNull;
 import android.util.AttributeSet;
@@ -29,6 +30,8 @@ public class ImpressionPreferenceCategory extends PreferenceCategory {
     @Override
     protected void onBindView(@NonNull View view) {
         super.onBindView(view);
-        ((TextView) view.findViewById(android.R.id.title)).setTextColor(ThemeSingleton.get().positiveColor);
+        ColorStateList positiveColor = ThemeSingleton.get().positiveColor;
+        if (positiveColor != null)
+            ((TextView) view.findViewById(android.R.id.title)).setTextColor(positiveColor);
     }
 }

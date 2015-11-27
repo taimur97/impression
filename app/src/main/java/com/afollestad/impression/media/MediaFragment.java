@@ -23,7 +23,6 @@ import android.widget.TextView;
 import com.afollestad.impression.R;
 import com.afollestad.impression.api.FolderEntry;
 import com.afollestad.impression.api.MediaEntry;
-import com.afollestad.impression.cab.MediaCab;
 import com.afollestad.impression.providers.SortMemoryProvider;
 import com.afollestad.impression.utils.PrefUtils;
 import com.afollestad.impression.widget.breadcrumbs.Crumb;

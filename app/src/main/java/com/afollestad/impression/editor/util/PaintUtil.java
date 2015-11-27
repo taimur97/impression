@@ -11,7 +11,7 @@
  * governing permissions and limitations under the License. 
  */
 
-package com.afollestad.impression.ui.editor.util;
+package com.afollestad.impression.editor.util;
 
 import android.content.Context;
 import android.graphics.Color;

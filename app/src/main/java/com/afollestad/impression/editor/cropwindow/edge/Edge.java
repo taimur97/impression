@@ -11,12 +11,12 @@
  * governing permissions and limitations under the License. 
 */
 
-package com.afollestad.impression.ui.editor.cropwindow.edge;
+package com.afollestad.impression.editor.cropwindow.edge;
 
 import android.graphics.Rect;
 import android.view.View;
 
-import com.afollestad.impression.ui.editor.util.AspectRatioUtil;
+import com.afollestad.impression.editor.util.AspectRatioUtil;
 
 /**
  * Enum representing an edge in the crop window.

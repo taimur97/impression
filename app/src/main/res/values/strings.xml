@@ -129,7 +129,7 @@
     <string name="copying">Copying…</string>
     <string name="moving">Moving…</string>
     <string name="include_subfolders">Include Subfolders</string>
-    <string name="include_subfolders_desc">Exclude subfolders of exluded albums</string>
+    <string name="include_subfolders_desc">Exclude subfolders of excluded albums</string>
     <string name="include_subfolders_included_desc">Display subfolders inside of included folders</string>
     <string name="choose_album">Choose an album…</string>
     <string name="invalid_file_path_error">This file does not exist or Impression does not have permission to access it.</string>

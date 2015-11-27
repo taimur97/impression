@@ -511,8 +511,7 @@ public class ViewerPagerFragment extends Fragment {
         recycleFullImageShowThumbnail();
         if (getActivity() != null) {
             ViewerActivity act = (ViewerActivity) getActivity();
-            act.invokeUi(false, null);
-            act.systemUIFocusChange();
+            act.uiTapped(false, null);
         }
     }
 
@@ -572,8 +571,7 @@ public class ViewerPagerFragment extends Fragment {
     public void invokeToolbar(ViewerActivity.ToolbarFadeListener callback) {
         if (getActivity() != null) {
             ViewerActivity act = (ViewerActivity) getActivity();
-            act.invokeUi(true, callback);
-            act.systemUIFocusChange();
+            act.uiTapped(true, callback);
         }
     }
 

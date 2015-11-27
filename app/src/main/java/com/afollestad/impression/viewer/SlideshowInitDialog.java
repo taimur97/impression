@@ -1,4 +1,4 @@
-package com.afollestad.impression.fragments.dialog;
+package com.afollestad.impression.viewer;
 
 import android.app.Activity;
 import android.app.Dialog;

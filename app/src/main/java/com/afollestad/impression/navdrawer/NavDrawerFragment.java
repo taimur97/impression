@@ -1,4 +1,4 @@
-package com.afollestad.impression.fragments;
+package com.afollestad.impression.navdrawer;
 
 import android.Manifest;
 import android.app.Fragment;
@@ -24,14 +24,13 @@ import android.widget.Toast;
 
 import com.afollestad.impression.R;
 import com.afollestad.impression.accounts.base.Account;
-import com.afollestad.impression.adapters.NavDrawerAdapter;
 import com.afollestad.impression.api.FolderEntry;
+import com.afollestad.impression.base.ThemedActivity;
 import com.afollestad.impression.media.MainActivity;
 import com.afollestad.impression.media.MediaAdapter;
 import com.afollestad.impression.providers.AccountProvider;
 import com.afollestad.impression.providers.ExcludedFolderProvider;
 import com.afollestad.impression.providers.IncludedFolderProvider;
-import com.afollestad.impression.ui.base.ThemedActivity;
 import com.afollestad.impression.utils.PrefUtils;
 import com.afollestad.impression.utils.Utils;
 import com.afollestad.materialdialogs.MaterialDialog;

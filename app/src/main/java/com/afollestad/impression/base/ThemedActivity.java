@@ -1,4 +1,4 @@
-package com.afollestad.impression.ui.base;
+package com.afollestad.impression.base;
 
 import android.annotation.TargetApi;
 import android.app.ActivityManager;

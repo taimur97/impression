@@ -25,13 +25,13 @@
             android:title="@string/toolbar_stats"
             android:widgetLayout="@layout/preference_dynamiccheckbox" />
 
-        <CheckBoxPreference
+        <!--<CheckBoxPreference
             android:key="overview_mode"
             android:layout="@layout/preference_custom"
             android:persistent="false"
             android:summary="@string/overview_mode_desc"
             android:title="@string/overview_display"
-            android:widgetLayout="@layout/preference_dynamiccheckbox" />
+            android:widgetLayout="@layout/preference_dynamiccheckbox" />-->
 
     </com.afollestad.impression.widget.ImpressionPreferenceCategory>
 

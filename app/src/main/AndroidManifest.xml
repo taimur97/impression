@@ -76,7 +76,7 @@
         </activity>
 
         <activity
-            android:name=".ui.editor.EditorActivity"
+            android:name=".editor.EditorActivity"
             android:label=""
             android:theme="@style/AppTheme.Viewer">
 
@@ -91,7 +91,7 @@
         </activity>
 
         <activity
-            android:name=".ui.ExcludedFolderActivity"
+            android:name=".excludedfolder.ExcludedFolderActivity"
             android:label="@string/excluded_folders" />
 
         <provider

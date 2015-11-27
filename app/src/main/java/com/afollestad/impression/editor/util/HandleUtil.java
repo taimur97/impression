@@ -11,14 +11,14 @@
  * governing permissions and limitations under the License. 
  */
 
-package com.afollestad.impression.ui.editor.util;
+package com.afollestad.impression.editor.util;
 
 import android.content.Context;
 import android.util.Pair;
 import android.util.TypedValue;
 
-import com.afollestad.impression.ui.editor.cropwindow.CropOverlayView;
-import com.afollestad.impression.ui.editor.cropwindow.handle.Handle;
+import com.afollestad.impression.editor.cropwindow.CropOverlayView;
+import com.afollestad.impression.editor.cropwindow.handle.Handle;
 
 /**
  * Utility class to perform basic operations with Handles.

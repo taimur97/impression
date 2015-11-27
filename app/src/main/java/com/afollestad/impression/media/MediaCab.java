@@ -1,4 +1,4 @@
-package com.afollestad.impression.cab;
+package com.afollestad.impression.media;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
@@ -17,9 +17,6 @@ import android.view.MenuItem;
 
 import com.afollestad.impression.R;
 import com.afollestad.impression.api.MediaEntry;
-import com.afollestad.impression.media.MainActivity;
-import com.afollestad.impression.media.MediaAdapter;
-import com.afollestad.impression.media.MediaFragment;
 import com.afollestad.impression.providers.ExcludedFolderProvider;
 import com.afollestad.impression.utils.TimeUtils;
 import com.afollestad.impression.utils.Utils;

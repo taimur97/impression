@@ -11,13 +11,13 @@
  * governing permissions and limitations under the License. 
  */
 
-package com.afollestad.impression.ui.editor.cropwindow.handle;
+package com.afollestad.impression.editor.cropwindow.handle;
 
 import android.graphics.Rect;
 
-import com.afollestad.impression.ui.editor.cropwindow.edge.Edge;
-import com.afollestad.impression.ui.editor.cropwindow.edge.EdgePair;
-import com.afollestad.impression.ui.editor.util.AspectRatioUtil;
+import com.afollestad.impression.editor.cropwindow.edge.Edge;
+import com.afollestad.impression.editor.cropwindow.edge.EdgePair;
+import com.afollestad.impression.editor.util.AspectRatioUtil;
 
 /**
  * Abstract helper class to handle operations on a crop window Handle.

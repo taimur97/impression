@@ -11,7 +11,7 @@
  * governing permissions and limitations under the License. 
  */
 
-package com.afollestad.impression.ui.editor.cropwindow;
+package com.afollestad.impression.editor.cropwindow;
 
 import android.content.Context;
 import android.graphics.Canvas;
@@ -25,11 +25,11 @@ import android.util.TypedValue;
 import android.view.MotionEvent;
 import android.view.View;
 
-import com.afollestad.impression.ui.editor.cropwindow.edge.Edge;
-import com.afollestad.impression.ui.editor.cropwindow.handle.Handle;
-import com.afollestad.impression.ui.editor.util.AspectRatioUtil;
-import com.afollestad.impression.ui.editor.util.HandleUtil;
-import com.afollestad.impression.ui.editor.util.PaintUtil;
+import com.afollestad.impression.editor.cropwindow.edge.Edge;
+import com.afollestad.impression.editor.cropwindow.handle.Handle;
+import com.afollestad.impression.editor.util.AspectRatioUtil;
+import com.afollestad.impression.editor.util.HandleUtil;
+import com.afollestad.impression.editor.util.PaintUtil;
 
 /**
  * A custom View representing the crop window and the shaded background outside

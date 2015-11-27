@@ -19,7 +19,8 @@ import android.widget.ListView;
 
 import com.afollestad.impression.BuildConfig;
 import com.afollestad.impression.R;
-import com.afollestad.impression.ui.base.ThemedActivity;
+import com.afollestad.impression.base.ThemedActivity;
+import com.afollestad.impression.excludedfolder.ExcludedFolderActivity;
 import com.afollestad.impression.utils.PrefUtils;
 import com.afollestad.impression.utils.Utils;
 import com.afollestad.impression.widget.ImpressionPreference;
