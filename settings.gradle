@@ -1,1 +1,1 @@
-include ':app', ':subsampling-scale-image-view'
+include ':app', ':subsampling-scale-image-view', ':library', ':camera'
