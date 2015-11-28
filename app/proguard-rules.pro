@@ -16,7 +16,32 @@
 #   public *;
 #}
 
--keep class !android.support.v7.internal.view.menu.**,** {*;}
+-keepattributes SourceFile,LineNumberTable
+
+#Reflection for icons in menus, etc.
+-keep class android.support.v7.view.menu.** {*;}
+-keep class android.support.v7.widget.ActionMenuPresenter {*;}
+-keep class android.support.v7.widget.ActionMenuView {*;}
+
+#RxJava/RxAndroid
+-dontwarn sun.misc.**
+
+-keepclassmembers class rx.internal.util.unsafe.*ArrayQueue*Field* {
+   long producerIndex;
+   long consumerIndex;
+}
+
+-keepclassmembers class rx.internal.util.unsafe.BaseLinkedQueueProducerNodeRef {
+   rx.internal.util.atomic.LinkedQueueNode producerNode;
+   rx.internal.util.atomic.LinkedQueueNode consumerNode;
+}
+
+#Glide
+-keep public class * implements com.bumptech.glide.module.GlideModule
+-keep public enum com.bumptech.glide.load.resource.bitmap.ImageHeaderParser$** {
+    **[] $VALUES;
+    public *;
+}
+
 -dontwarn
 -ignorewarnings
--dontshrink
