@@ -25,13 +25,14 @@
             android:title="@string/toolbar_stats"
             android:widgetLayout="@layout/preference_dynamiccheckbox" />
 
-        <!--<CheckBoxPreference
+        <CheckBoxPreference
+            android:enabled="false"
             android:key="overview_mode"
             android:layout="@layout/preference_custom"
             android:persistent="false"
-            android:summary="@string/overview_mode_desc"
+            android:summary="Currently disabled. May come back in future version"
             android:title="@string/overview_display"
-            android:widgetLayout="@layout/preference_dynamiccheckbox" />-->
+            android:widgetLayout="@layout/preference_dynamiccheckbox" />
 
     </com.afollestad.impression.widget.ImpressionPreferenceCategory>
 
@@ -70,10 +71,11 @@
 
     <com.afollestad.impression.widget.ImpressionPreferenceCategory
         android:key="included_folder_category"
-        android:title="@string/included_folders">
+        android:title="Included Folders - Currently disabled">
 
         <CheckBoxPreference
             android:defaultValue="true"
+            android:enabled="false"
             android:key="include_subfolders"
             android:layout="@layout/preference_custom"
             android:persistent="true"
