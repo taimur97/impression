@@ -56,7 +56,7 @@
         </activity>
 
         <activity
-            android:name=".ui.SettingsActivity"
+            android:name=".settings.SettingsActivity"
             android:label="@string/settings"
             android:theme="@style/AppTheme.Settings" />
 

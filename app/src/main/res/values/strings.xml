@@ -116,20 +116,20 @@
     <string name="modified_desc">Date descend</string>
     <string name="modified_asc">Date ascend</string>
     <string name="name_desc">Name descend</string>
-    <string name="excluded_folders">Excluded Albums</string>
-    <string name="excluded_folders_desc">Edit the albums that will not be shown in the application.</string>
+    <string name="excluded_folders">Excluded Folders</string>
+    <string name="excluded_folders_desc">Edit the folders that will not be shown in the application.</string>
     <string name="draw">Draw</string>
     <string name="copy_to">Copy To…</string>
     <string name="move_to">Move To…</string>
     <string name="dark_mode">Dark Mode</string>
     <string name="dark_mode_desc">Apply a dark background to the app</string>
-    <string name="no_excluded_folders">No albums have been excluded yet!</string>
+    <string name="no_excluded_folders">No folders have been excluded.</string>
     <string name="add">Add</string>
     <string name="go_up">Go up…</string>
     <string name="copying">Copying…</string>
     <string name="moving">Moving…</string>
     <string name="include_subfolders">Include Subfolders</string>
-    <string name="include_subfolders_desc">Exclude subfolders of excluded albums</string>
+    <string name="include_subfolders_desc">Exclude subfolders of excluded folders</string>
     <string name="include_subfolders_included_desc">Display subfolders inside of included folders</string>
     <string name="choose_album">Choose an album…</string>
     <string name="invalid_file_path_error">This file does not exist or Impression does not have permission to access it.</string>
@@ -178,8 +178,8 @@
     <string name="x_albums">%1$d albums</string>
 
     <string name="behavior">Behavior</string>
-    <string name="toolbar_stats">Toolbar Album Stats</string>
-    <string name="toolbar_stats_desc">Display the number of photos and videos in an album in the toolbar</string>
+    <string name="toolbar_stats">Toolbar Folder Stats</string>
+    <string name="toolbar_stats_desc">Display the number of photos and videos in a folder in the toolbar</string>
     <string name="empty">empty</string>
     <string name="share_using">Share using…</string>
     <string name="permission_needed">Permission Needed</string>

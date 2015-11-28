@@ -1,4 +1,4 @@
-package com.afollestad.impression.ui;
+package com.afollestad.impression.settings;
 
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
@@ -104,7 +104,7 @@ public class SettingsActivity extends ThemedActivity implements ColorChooserDial
             super.onCreate(savedInstanceState);
             addPreferencesFromResource(R.xml.settings);
 
-            findPreference(PrefUtils.ABOUT).setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+            findPreference(PrefUtils.OPEN_ABOUT).setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
                 @Override
                 public boolean onPreferenceClick(Preference preference) {
                     Activity act = getActivity();
@@ -119,7 +119,7 @@ public class SettingsActivity extends ThemedActivity implements ColorChooserDial
                 }
             });
 
-            findPreference(PrefUtils.EXCLUDED_FOLDERS).setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+            findPreference(PrefUtils.OPEN_EXCLUDED_FOLDERS).setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
                 @Override
                 public boolean onPreferenceClick(Preference preference) {
                     getActivity().startActivityForResult(new Intent(getActivity(), ExcludedFolderActivity.class), EXCLUDED_REQUEST);
@@ -161,7 +161,7 @@ public class SettingsActivity extends ThemedActivity implements ColorChooserDial
                 }
             });
 
-            ImpressionPreference primaryColor = (ImpressionPreference) findPreference(PrefUtils.PRIMARY_COLOR);
+            ImpressionPreference primaryColor = (ImpressionPreference) findPreference(PrefUtils.PRIMARY_COLOR_PREFIX);
             primaryColor.setColor(((ThemedActivity) getActivity()).primaryColor(), Utils.resolveColor(getActivity(), R.attr.colorAccent));
             primaryColor.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
                 @Override
@@ -181,7 +181,7 @@ public class SettingsActivity extends ThemedActivity implements ColorChooserDial
             });
 
 
-            ImpressionPreference accentColor = (ImpressionPreference) findPreference(PrefUtils.ACCENT_COLOR);
+            ImpressionPreference accentColor = (ImpressionPreference) findPreference(PrefUtils.ACCENT_COLOR_PREFIX);
             accentColor.setColor(((ThemedActivity) getActivity()).accentColor(), Utils.resolveColor(getActivity(), R.attr.colorAccent));
             accentColor.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
                 @Override

@@ -14,6 +14,7 @@ import com.afollestad.impression.api.MediaFolderEntry;
 import com.afollestad.impression.api.PhotoEntry;
 import com.afollestad.impression.api.VideoEntry;
 import com.afollestad.impression.media.MediaAdapter;
+import com.afollestad.impression.providers.ExcludedFolderProvider;
 import com.afollestad.impression.providers.IncludedFolderProvider;
 import com.afollestad.impression.utils.PrefUtils;
 import com.afollestad.impression.utils.Utils;
@@ -24,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
@@ -70,45 +72,13 @@ public class LocalAccount extends Account {
 
     @Override
     public Single<Set<MediaFolderEntry>> getMediaFolders(@MediaAdapter.SortMode final int sortMode, @MediaAdapter.FileFilterMode int filter) {
-        //mAlbumCallbacks.add(callback);
-        final Uri[] uris;
-        /*String[][] projections;
-        String[] sorts;*/
-        if (filter == MediaAdapter.FILTER_PHOTOS) {
-            uris = new Uri[]{
-                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI
-            };
-            /*projections = new String[][]{
-                    new PhotoEntry().projection()
-            };
-            sorts = new String[]{
-                    PhotoEntry.getSortQueryFromSortMode(sortMode)
-            };*/
-        } else if (filter == MediaAdapter.FILTER_VIDEOS) {
-            uris = new Uri[]{
-                    MediaStore.Video.Media.EXTERNAL_CONTENT_URI
-            };
-           /* projections = new String[][]{
-                    new VideoEntry().projection()
-            };
-            sorts = new String[]{
-                    VideoEntry.sortMode(sortMode)
-            };*/
-        } else {
-            uris = new Uri[]{
-                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                    MediaStore.Video.Media.EXTERNAL_CONTENT_URI
-            };
-            /*projections = new String[][]{
-                    new PhotoEntry().projection(),
-                    new VideoEntry().projection()
-            };
-            sorts = new String[]{
-                    PhotoEntry.getSortQueryFromSortMode(sortMode),
-                    VideoEntry.sortMode(sortMode)
-            };*/
+        final List<Uri> uris = new ArrayList<>();
+        if (filter == MediaAdapter.FILTER_PHOTOS || filter == MediaAdapter.FILTER_ALL) {
+            uris.add(MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
         }
-
+        if (filter == MediaAdapter.FILTER_VIDEOS || filter == MediaAdapter.FILTER_ALL) {
+            uris.add(MediaStore.Video.Media.EXTERNAL_CONTENT_URI);
+        }
 
         return Single.create(new Single.OnSubscribe<Set<MediaFolderEntry>>() {
             @Override
@@ -116,7 +86,7 @@ public class LocalAccount extends Account {
                 Set<MediaFolderEntry> folders = new TreeSet<>(new Comparator<MediaFolderEntry>() {
                     @Override
                     public int compare(MediaFolderEntry lhs, MediaFolderEntry rhs) {
-                        if (lhs.bucketId().equals(rhs.bucketId())) {
+                        if (lhs.data().equals(rhs.data())) {
                             return 0;
                         } else {
                             return PrefUtils.getSortComparator(getContext(), sortMode).compare(lhs, rhs);
@@ -137,49 +107,22 @@ public class LocalAccount extends Account {
                     }
                     Log.e(TAG, Arrays.toString(albums));
                 }
+
+                for (Iterator<MediaFolderEntry> iterator = folders.iterator(); iterator.hasNext(); ) {
+                    MediaFolderEntry entry = iterator.next();
+                    if (ExcludedFolderProvider.contains(getContext(), entry.data())) {
+                        iterator.remove();
+                    }
+                }
+
                 singleSubscriber.onSuccess(folders);
             }
         }).subscribeOn(Schedulers.io());
-
-        /*new AsyncCursor(getContext())
-                .uris(uris)
-                .projections(projections)
-                .sorts(sorts)
-                .selections(new String[]{
-                        null,
-                        null
-                })
-                .selectionArgs(new String[][]{
-                        null,
-                        null
-                })
-                .query().subscribeOn(Schedulers.io())
-                .flatMap(new Func1<Pair<Cursor[], Uri[]>, Single<OldAlbumEntry[]>>() {
-                    @Override
-                    public Single<OldAlbumEntry[]> call(Pair<Cursor[], Uri[]> cursors) {
-                        return toEntries(cursors.first, cursors.second);
-                    }
-                })
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new SingleSubscriber<MediaEntry[]>() {
-                    @Override
-                    public void onSuccess(MediaEntry[] value) {
-                        mAlbumCallbacks.poll().onAlbums((OldAlbumEntry[]) value);
-                    }
-
-                    @Override
-                    public void onError(Throwable error) {
-
-                    }
-                });*/
     }
 
     //TODO
     @Override
     public Single<List<MediaFolderEntry>> getIncludedFolders(final @MediaAdapter.FileFilterMode int filter) {
-        // mPreEntries = preEntries;
-        //mIncludedFolderCallbacks.add(callback);
-
         return Single.create(new Single.OnSubscribe<List<MediaFolderEntry>>() {
             @Override
             public void call(SingleSubscriber<? super List<MediaFolderEntry>> singleSubscriber) {
@@ -204,37 +147,6 @@ public class LocalAccount extends Account {
                 singleSubscriber.onSuccess(allMediaFolders);
             }
         }).subscribeOn(Schedulers.io());
-
-        /*new AsyncCursor(getContext())
-                .uris(new Uri[]{
-                        IncludedFolderProvider.CONTENT_URI
-                })
-                .projections(new String[][]{
-                        new String[]{"path"}
-                })
-                .sorts(new String[]{null})
-                .selections(new String[]{null})
-                .selectionArgs(new String[][]{null})
-                .query()
-                .subscribeOn(Schedulers.io())
-                .flatMap(new Func1<Pair<Cursor[], Uri[]>, Single<OldAlbumEntry[]>>() {
-                    @Override
-                    public Single<OldAlbumEntry[]> call(Pair<Cursor[], Uri[]> cursors) {
-                        return toEntries(cursors.first, cursors.second);
-                    }
-                })
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new SingleSubscriber<MediaEntry[]>() {
-                    @Override
-                    public void onSuccess(MediaEntry[] value) {
-                        mIncludedFolderCallbacks.poll().onAlbums((OldAlbumEntry[]) value);
-                    }
-
-                    @Override
-                    public void onError(Throwable error) {
-
-                    }
-                });*/
     }
 
     private Single<List<MediaFolderEntry>> getMediaFoldersInFolder(final File root, final @MediaAdapter.FileFilterMode int filter) {
@@ -300,8 +212,6 @@ public class LocalAccount extends Account {
                                                final @MediaAdapter.FileFilterMode int filter,
                                                final @MediaAdapter.SortMode int sort) {
         if (explorerMode) {
-            /*if (albumPath == null || albumPath.trim().equals(MediaFolderEntry.OVERVIEW_PATH))
-                albumPath = Environment.getExternalStorageDirectory().getAbsolutePath();*/
             return getEntries(albumPath, false, filter, sort)
                     .flatMap(new Func1<List<MediaEntry>, Single<List<MediaEntry>>>() {
                         @Override

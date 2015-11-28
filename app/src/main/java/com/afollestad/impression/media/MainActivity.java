@@ -47,7 +47,7 @@ import com.afollestad.impression.base.ThemedActivity;
 import com.afollestad.impression.navdrawer.NavDrawerFragment;
 import com.afollestad.impression.providers.IncludedFolderProvider;
 import com.afollestad.impression.providers.SortMemoryProvider;
-import com.afollestad.impression.ui.SettingsActivity;
+import com.afollestad.impression.settings.SettingsActivity;
 import com.afollestad.impression.utils.PrefUtils;
 import com.afollestad.impression.utils.Utils;
 import com.afollestad.impression.widget.breadcrumbs.BreadCrumbLayout;
@@ -545,11 +545,11 @@ public class MainActivity extends ThemedActivity
             startActivityForResult(new Intent(this, SettingsActivity.class), SETTINGS_REQUEST);
             return true;
         } else if (item.getItemId() == android.R.id.home) {
-            if (mAnimatedDrawerToggle.getOffset() == 1) {
-                onBackPressed();
-                return true;
-            } else if (isSelectAlbumMode()) {
+            if (isSelectAlbumMode()) {
                 finish();
+                return true;
+            } else if (mAnimatedDrawerToggle.getOffset() == 1) {
+                onBackPressed();
                 return true;
             }
         }

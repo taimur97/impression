@@ -13,6 +13,9 @@ import com.afollestad.impression.media.MediaNameSorter;
 import java.util.Comparator;
 
 public abstract class PrefUtils {
+    public static final String OPEN_ABOUT = "about";
+    public static final String OPEN_EXCLUDED_FOLDERS = "excluded_folders";
+
     public static final String DARK_THEME = "dark_theme";
     public static final String EXPLORER_MODE = "explorer_mode";
     public static final String COLORED_NAVBAR = "colored_navbar";
@@ -23,10 +26,9 @@ public abstract class PrefUtils {
     public static final String INCLUDE_SUBFOLDERS = "include_subfolders";
     public static final String ACTIVE_ACCOUNT_ID = "active_account";
     public static final String SORT_MODE = "sort_mode";
-    public static final String ABOUT = "about";
-    public static final String EXCLUDED_FOLDERS = "excluded_folders";
-    public static final String PRIMARY_COLOR = "primary_color";
-    public static final String ACCENT_COLOR = "accent_color";
+    public static final String PRIMARY_COLOR_PREFIX = "primary_color";
+    public static final String ACCENT_COLOR_PREFIX = "accent_color";
+    public static final String EXCLUDE_SUBFOLDERS = "exclude_subfolders";
 
     public static boolean isDarkTheme(Context context) {
         return PreferenceManager.getDefaultSharedPreferences(context).getBoolean(DARK_THEME, false);
@@ -118,5 +120,9 @@ public abstract class PrefUtils {
             case MediaAdapter.SORT_MODIFIED_DATE_DESC:
                 return new MediaModifiedSorter(true);
         }
+    }
+
+    public static boolean isExcludeSubfolders(Context context) {
+        return PreferenceManager.getDefaultSharedPreferences(context).getBoolean(EXCLUDE_SUBFOLDERS, true);
     }
 }

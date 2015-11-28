@@ -35,11 +35,11 @@ public abstract class ThemedActivity extends AppCompatActivity {
     }
 
     public boolean isDarkTheme() {
-        return PreferenceManager.getDefaultSharedPreferences(this).getBoolean("dark_theme", false);
+        return PreferenceManager.getDefaultSharedPreferences(this).getBoolean(PrefUtils.DARK_THEME, false);
     }
 
     public int primaryColor() {
-        String key = "primary_color";
+        String key = PrefUtils.PRIMARY_COLOR_PREFIX;
         if (mLastDarkTheme) {
             key += "_dark";
         } else {
@@ -51,13 +51,13 @@ public abstract class ThemedActivity extends AppCompatActivity {
     }
 
     protected void primaryColor(int newColor) {
-        String key = "primary_color";
+        String key = PrefUtils.PRIMARY_COLOR_PREFIX;
         if (mLastDarkTheme) {
             key += "_dark";
         } else {
             key += "_light";
         }
-        PreferenceManager.getDefaultSharedPreferences(this).edit().putInt(key, newColor).commit();
+        PreferenceManager.getDefaultSharedPreferences(this).edit().putInt(key, newColor).apply();
     }
 
     public int primaryColorDark() {
@@ -65,7 +65,7 @@ public abstract class ThemedActivity extends AppCompatActivity {
     }
 
     public int accentColor() {
-        String key = "accent_color";
+        String key = PrefUtils.ACCENT_COLOR_PREFIX;
         if (mLastDarkTheme) {
             key += "_dark";
         } else {
@@ -76,13 +76,13 @@ public abstract class ThemedActivity extends AppCompatActivity {
     }
 
     protected void accentColor(int newColor) {
-        String key = "accent_color";
+        String key = PrefUtils.ACCENT_COLOR_PREFIX;
         if (mLastDarkTheme) {
             key += "_dark";
         } else {
             key += "_light";
         }
-        PreferenceManager.getDefaultSharedPreferences(this).edit().putInt(key, newColor).commit();
+        PreferenceManager.getDefaultSharedPreferences(this).edit().putInt(key, newColor).apply();
     }
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)

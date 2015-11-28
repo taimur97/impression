@@ -94,7 +94,7 @@
 
         <CheckBoxPreference
             android:defaultValue="true"
-            android:key="include_subfolders"
+            android:key="exclude_subfolders"
             android:layout="@layout/preference_custom"
             android:persistent="true"
             android:summary="@string/include_subfolders_desc"
