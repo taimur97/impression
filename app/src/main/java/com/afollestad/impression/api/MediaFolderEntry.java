@@ -158,4 +158,14 @@ public class MediaFolderEntry extends PhotoEntry {
         dest.writeLong(this.dateTaken);
         dest.writeString(this._data);
     }
+
+    @Override
+    public int hashCode() {
+        return 31 * data().hashCode();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        return o instanceof MediaFolderEntry && data().equals(((MediaFolderEntry) o).data());
+    }
 }

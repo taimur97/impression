@@ -24,11 +24,10 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import java.util.TreeSet;
 
 import rx.Single;
 import rx.SingleSubscriber;
@@ -83,16 +82,7 @@ public class LocalAccount extends Account {
         return Single.create(new Single.OnSubscribe<Set<MediaFolderEntry>>() {
             @Override
             public void call(SingleSubscriber<? super Set<MediaFolderEntry>> singleSubscriber) {
-                Set<MediaFolderEntry> folders = new TreeSet<>(new Comparator<MediaFolderEntry>() {
-                    @Override
-                    public int compare(MediaFolderEntry lhs, MediaFolderEntry rhs) {
-                        if (lhs.data().equals(rhs.data())) {
-                            return 0;
-                        } else {
-                            return PrefUtils.getSortComparator(getContext(), sortMode).compare(lhs, rhs);
-                        }
-                    }
-                });
+                Set<MediaFolderEntry> folders = new HashSet<>();
                 for (Uri uri : uris) {
                     //WHERE (TRUE) GROUP BY (bucket_id),(bucket_display_name)
                     String bucketGroupBy = "1) GROUP BY (bucket_id),(bucket_display_name";
