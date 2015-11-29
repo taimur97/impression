@@ -206,5 +206,6 @@
     <string name="done">Done</string>
 
     <string name="only_available_api21">This feature is only available on Android 5.0 and above</string>
+    <string name="video">VIDEO</string>
 
 </resources>

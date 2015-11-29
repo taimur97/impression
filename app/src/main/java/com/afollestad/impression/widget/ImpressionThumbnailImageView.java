@@ -5,11 +5,14 @@ import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
 import android.util.AttributeSet;
+import android.view.Gravity;
 import android.view.View;
 import android.widget.ImageView;
 
@@ -34,10 +37,10 @@ public class ImpressionThumbnailImageView extends ImageView {
 
     private MediaEntry mEntry;
     private WeakReference<View> mProgress;
+
+    private Drawable mBadgeDrawable;
     private Bitmap mCheck;
-    private Bitmap mPlay;
-    private Bitmap mGif;
-    private int mPlayOverlay;
+
     private int mSelectedColor;
     private boolean mIsGif;
 
@@ -57,9 +60,6 @@ public class ImpressionThumbnailImageView extends ImageView {
         }
         final Resources r = getResources();
         mCheck = BitmapFactory.decodeResource(r, R.drawable.ic_check);
-        mPlay = BitmapFactory.decodeResource(r, R.drawable.ic_play);
-        mGif = BitmapFactory.decodeResource(r, R.drawable.ic_gif);
-        mPlayOverlay = ContextCompat.getColor(context, R.color.video_play_overlay);
         mSelectedColor = ContextCompat.getColor(context, R.color.picture_activated_overlay);
     }
 
@@ -86,6 +86,8 @@ public class ImpressionThumbnailImageView extends ImageView {
         }
         String ext = Utils.getExtension(entry.data());
         mIsGif = ext != null && ext.equalsIgnoreCase("gif");
+
+        mBadgeDrawable = new BadgeDrawable(getContext(), mIsGif ? "GIF" : getContext().getString(R.string.video), Color.WHITE);
 
         Glide.with(getContext())
                 .load(pathToLoad)
@@ -134,19 +136,25 @@ public class ImpressionThumbnailImageView extends ImageView {
                         (getMeasuredHeight() / 2) - (targetDimen / 2),
                         null);
             } else if (mEntry != null && !mEntry.isFolder() && mIsGif) {
-                canvas.drawColor(mPlayOverlay);
-                canvas.drawBitmap(mGif,
-                        (getMeasuredWidth() / 2) - (targetDimen / 2),
-                        (getMeasuredHeight() / 2) - (targetDimen / 2),
-                        null);
+                layoutBadge();
+                mBadgeDrawable.draw(canvas);
             } else if (mEntry != null && !mEntry.isFolder() && mEntry.isVideo()) {
-                canvas.drawColor(mPlayOverlay);
-                canvas.drawBitmap(mPlay,
-                        (getMeasuredWidth() / 2) - (targetDimen / 2),
-                        (getMeasuredHeight() / 2) - (targetDimen / 2),
-                        null);
+                layoutBadge();
+                mBadgeDrawable.draw(canvas);
             }
         }
+    }
+
+    private void layoutBadge() {
+        Rect badgeBounds = mBadgeDrawable.getBounds();
+        Gravity.apply(Gravity.END | Gravity.TOP,
+                mBadgeDrawable.getIntrinsicWidth(),
+                mBadgeDrawable.getIntrinsicHeight(),
+                new Rect(0, 0, getWidth(), getHeight()),
+                getResources().getDimensionPixelSize(R.dimen.list_top_bottom_padding),
+                getResources().getDimensionPixelSize(R.dimen.list_top_bottom_padding),
+                badgeBounds);
+        mBadgeDrawable.setBounds(badgeBounds);
     }
 
     @Override
