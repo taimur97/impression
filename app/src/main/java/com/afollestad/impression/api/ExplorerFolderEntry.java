@@ -1,8 +1,10 @@
 package com.afollestad.impression.api;
 
+import android.app.Activity;
 import android.content.Context;
 import android.os.Environment;
 import android.os.Parcel;
+import android.provider.MediaStore;
 
 import com.afollestad.impression.R;
 
@@ -34,7 +36,7 @@ public class ExplorerFolderEntry implements MediaEntry {
 
     @Override
     public long id() {
-        return 0;
+        return mFile.hashCode();
     }
 
     @Override
@@ -93,6 +95,25 @@ public class ExplorerFolderEntry implements MediaEntry {
     @Override
     public boolean isFolder() {
         return true;
+    }
+
+    @Override
+    public void delete(Activity context) {
+        deleteFile(mFile);
+
+        context.getContentResolver().delete(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                MediaStore.Images.Media.DATA + " = ?",
+                new String[]{mFile.getAbsolutePath()});
+    }
+
+    private void deleteFile(File parent) {
+        for (File file : parent.listFiles()) {
+            if (!file.isDirectory()) {
+                file.delete();
+            } else {
+                deleteFile(file);
+            }
+        }
     }
 
     @Override

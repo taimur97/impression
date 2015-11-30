@@ -71,6 +71,7 @@ public class MainActivity extends ThemedActivity
 
     public static final String EXTRA_CURRENT_ITEM_POSITION = "com.afollestad.impression.extra_current_item_position";
     public static final String EXTRA_OLD_ITEM_POSITION = "com.afollestad.impression.extra_old_item_position";
+    public static final String EXTRA_REMOVED_ITEMS = "com.afollestad.impression.removed_items";
 
     public static final String ACTION_SELECT_ALBUM = BuildConfig.APPLICATION_ID + ".SELECT_FOLDER";
 
@@ -490,25 +491,37 @@ public class MainActivity extends ThemedActivity
         super.onActivityReenter(resultCode, data);
         mIsReenteringFromViewer = true;
         mTmpState = new Bundle(data.getExtras());
-        int oldPosition = mTmpState.getInt(EXTRA_OLD_ITEM_POSITION);
-        int currentPosition = mTmpState.getInt(EXTRA_CURRENT_ITEM_POSITION);
+        final int oldPosition = mTmpState.getInt(EXTRA_OLD_ITEM_POSITION);
+        final int currentPosition = mTmpState.getInt(EXTRA_CURRENT_ITEM_POSITION);
+
+        Long[] removedEntryIds = (Long[]) data.getSerializableExtra(EXTRA_REMOVED_ITEMS);
+        findMediaFragment().getPresenter().remove(removedEntryIds);
 
         final RecyclerView recyclerView = findMediaFragment().getRecyclerView();
         if (recyclerView != null) {
-            if (oldPosition != currentPosition) {
-                recyclerView.scrollToPosition(currentPosition);
-            }
-
             postponeEnterTransition();
-            recyclerView.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
-                @Override
-                public boolean onPreDraw() {
-                    recyclerView.getViewTreeObserver().removeOnPreDrawListener(this);
 
-                    startPostponedEnterTransition();
-                    return true;
+            recyclerView.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    if (oldPosition != currentPosition) {
+                        recyclerView.scrollToPosition(currentPosition);
+                    }
+
+
+                    recyclerView.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
+                        @Override
+                        public boolean onPreDraw() {
+                            recyclerView.getViewTreeObserver().removeOnPreDrawListener(this);
+
+                            startPostponedEnterTransition();
+                            return true;
+                        }
+                    });
                 }
-            });
+                //TODO: Proper delay mechanism to wait for delete animation (or no delete animation)
+            }, 300);
+
         }
     }
 

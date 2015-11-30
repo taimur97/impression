@@ -2,6 +2,7 @@ package com.afollestad.impression.media;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
+import android.content.ActivityNotFoundException;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
@@ -12,12 +13,17 @@ import android.os.Bundle;
 import android.support.v4.widget.DrawerLayout;
 import android.text.Html;
 import android.util.Log;
+import android.util.Pair;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.Toast;
 
+import com.afollestad.impression.App;
 import com.afollestad.impression.R;
+import com.afollestad.impression.accounts.base.Account;
 import com.afollestad.impression.api.MediaEntry;
 import com.afollestad.impression.providers.ExcludedFolderProvider;
+import com.afollestad.impression.utils.PrefUtils;
 import com.afollestad.impression.utils.TimeUtils;
 import com.afollestad.impression.utils.Utils;
 import com.afollestad.impression.viewer.ViewerActivity;
@@ -35,6 +41,14 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.List;
+
+import rx.Observable;
+import rx.Single;
+import rx.SingleSubscriber;
+import rx.Subscriber;
+import rx.android.schedulers.AndroidSchedulers;
+import rx.functions.Func1;
+import rx.schedulers.Schedulers;
 
 /**
  * @author Aidan Follestad (afollestad)
@@ -95,7 +109,7 @@ public class MediaCab implements Serializable, MaterialCab.Callback {
     private void invalidateChecked() {
         if (mFragment != null && mMediaEntries.size() > 0) {
             for (MediaEntry e : mMediaEntries) {
-                ((MediaAdapter) mFragment.getAdapter()).setItemChecked(e, true);
+                (mFragment.getAdapter()).setItemChecked(e, true);
             }
         }
     }
@@ -144,7 +158,7 @@ public class MediaCab implements Serializable, MaterialCab.Callback {
         if (!found) {
             mMediaEntries.add(p);
         }
-        ((MediaAdapter) mFragment.getAdapter()).setItemChecked(p, forceCheckOn || !found);
+        (mFragment.getAdapter()).setItemChecked(p, forceCheckOn || !found);
         invalidate();
     }
 
@@ -194,55 +208,79 @@ public class MediaCab implements Serializable, MaterialCab.Callback {
         }).start();
     }
 
-    //TODO
     private void shareEntries() {
-        /*List<MediaEntry> toSend = new ArrayList<>();
-        for (MediaEntry e : mMediaEntries) {
-            if (e.isAlbum()) {
-                OldAlbumEntry album = (OldAlbumEntry) e;
-                Collections.addAll(toSend, album.getContents(mContext,
-                        album.bucketId() == OldAlbumEntry.ALBUM_ID_USEPATH));
-            } else {
-                toSend.add(e);
+        Single.create(new Single.OnSubscribe<List<MediaEntry>>() {
+            @Override
+            public void call(SingleSubscriber<? super List<MediaEntry>> singleSubscriber) {
+                final List<MediaEntry> toSend = new ArrayList<>();
+                for (final MediaEntry e : mMediaEntries) {
+                    if (e.isFolder()) {
+                        List<MediaEntry> entries = App.getCurrentAccount(mContext).flatMap(new Func1<Account, Single<List<MediaEntry>>>() {
+                            @Override
+                            public Single<List<MediaEntry>> call(Account account) {
+                                return account.getEntries(e.data(),
+                                        PrefUtils.isExplorerMode(mContext),
+                                        PrefUtils.getFilterMode(mContext),
+                                        PrefUtils.getSortMode(mContext));
+                            }
+                        }).toBlocking().value();
+                        toSend.addAll(entries);
+                    } else {
+                        toSend.add(e);
+                    }
+                }
+                singleSubscriber.onSuccess(toSend);
             }
-        }*/
-       /* if (toSend.size() > 0) {
-            if (toSend.size() == 1) {
-                String mime = toSend.get(0).isVideo() ? "video*//*" : "image*//*";
-                try {
-                    Intent intent = new Intent(Intent.ACTION_SEND)
-                            .setType(mime)
-                            .putExtra(Intent.EXTRA_STREAM, Uri.fromFile(new File(toSend.get(0).data())));
-                    mContext.startActivity(Intent.createChooser(intent, mContext.getString(R.string.share_using)));
-                } catch (ActivityNotFoundException e) {
-                    Toast.makeText(mContext, R.string.no_app_complete_action, Toast.LENGTH_SHORT).show();
-                }
-            } else {
-                ArrayList<Uri> uris = new ArrayList<>();
-                boolean foundPhotos = false;
-                boolean foundVideos = false;
-                for (MediaEntry p : toSend) {
-                    foundPhotos = foundPhotos || !p.isVideo();
-                    foundVideos = foundVideos || p.isVideo();
-                    uris.add(Uri.fromFile(new File(p.data())));
-                }*/
-        String mime = "*/*";
-                /*if (foundPhotos && !foundVideos) {
-                    mime = "image*//*";
-                } else if (foundVideos && !foundPhotos) {
-                    mime = "video*//*";
-                }
-                try {
-                    Intent intent = new Intent(Intent.ACTION_SEND_MULTIPLE)
-                            .setType(mime)
-                            .putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris);
-                    mContext.startActivity(Intent.createChooser(intent, mContext.getString(R.string.share_using)));
-                } catch (ActivityNotFoundException e) {
-                    Toast.makeText(mContext, R.string.no_app_complete_action, Toast.LENGTH_SHORT).show();
-                }
-            }
-        }
-        finish();*/
+        }).subscribeOn(Schedulers.io())
+
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new SingleSubscriber<List<MediaEntry>>() {
+                    @Override
+                    public void onSuccess(List<MediaEntry> toSend) {
+                        if (toSend.size() > 0) {
+                            if (toSend.size() == 1) {
+                                String mime = toSend.get(0).isVideo() ? "video*//*" : "image*//*";
+                                try {
+                                    Intent intent = new Intent(Intent.ACTION_SEND)
+                                            .setType(mime)
+                                            .putExtra(Intent.EXTRA_STREAM, Uri.fromFile(new File(toSend.get(0).data())));
+                                    mContext.startActivity(Intent.createChooser(intent, mContext.getString(R.string.share_using)));
+                                } catch (ActivityNotFoundException e) {
+                                    Toast.makeText(mContext, R.string.no_app_complete_action, Toast.LENGTH_SHORT).show();
+                                }
+                            } else {
+                                ArrayList<Uri> uris = new ArrayList<>();
+                                boolean foundPhotos = false;
+                                boolean foundVideos = false;
+                                for (MediaEntry p : toSend) {
+                                    foundPhotos = foundPhotos || !p.isVideo();
+                                    foundVideos = foundVideos || p.isVideo();
+                                    uris.add(Uri.fromFile(new File(p.data())));
+                                }
+                                String mime = "*/*";
+                                if (foundPhotos && !foundVideos) {
+                                    mime = "image*//*";
+                                } else if (foundVideos && !foundPhotos) {
+                                    mime = "video*//*";
+                                }
+                                try {
+                                    Intent intent = new Intent(Intent.ACTION_SEND_MULTIPLE)
+                                            .setType(mime)
+                                            .putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris);
+                                    mContext.startActivity(Intent.createChooser(intent, mContext.getString(R.string.share_using)));
+                                } catch (ActivityNotFoundException e) {
+                                    Toast.makeText(mContext, R.string.no_app_complete_action, Toast.LENGTH_SHORT).show();
+                                }
+                            }
+                        }
+                        finish();
+                    }
+
+                    @Override
+                    public void onError(Throwable error) {
+
+                    }
+                });
     }
 
     public void finishCopyMove(File dest, int requestCode) {
@@ -250,50 +288,85 @@ public class MediaCab implements Serializable, MaterialCab.Callback {
     }
 
     private void deleteEntries() {
-        //TODO
-        final List<MediaEntry> toDelete = new ArrayList<>();
-        for (MediaEntry e : mMediaEntries) {
-            /*if (e.isAlbum()) {
-                OldAlbumEntry album = (OldAlbumEntry) e;
-                Collections.addAll(toDelete, album.getContents(mContext,
-                        album.bucketId() == OldAlbumEntry.ALBUM_ID_USEPATH));
-            } else {
-                toDelete.add(e);
-            }*/
-        }
-        if (toDelete.size() == 0) {
-            finish();
-            return;
-        }
-
-        final ProgressDialog mDialog = new ProgressDialog(mContext);
-        mDialog.setMessage(mContext.getString(R.string.deleting));
-        mDialog.setIndeterminate(false);
-        mDialog.setMax(toDelete.size());
-        mDialog.setCancelable(true);
-        mDialog.show();
-        new Thread(new Runnable() {
+        Observable.create(new Observable.OnSubscribe<List<MediaEntry>>() {
             @Override
-            public void run() {
-                for (MediaEntry p : toDelete) {
-                    if (!mDialog.isShowing()) {
-                        break;
+            public void call(Subscriber<? super List<MediaEntry>> subscriber) {
+                final List<MediaEntry> toDelete = new ArrayList<>();
+                for (final MediaEntry e : mMediaEntries) {
+                    if (e.isFolder()) {
+                        List<MediaEntry> mediaEntries = App.getCurrentAccount(mContext).flatMap(new Func1<Account, Single<List<MediaEntry>>>() {
+                            @Override
+                            public Single<List<MediaEntry>> call(Account account) {
+                                return account.getEntries(e.data(),
+                                        PrefUtils.isExplorerMode(mContext),
+                                        PrefUtils.getFilterMode(mContext),
+                                        PrefUtils.getSortMode(mContext));
+                            }
+                        }).toBlocking().value();
+                        toDelete.addAll(mediaEntries);
+                    } else {
+                        toDelete.add(e);
                     }
-                    //TODO
-                    /*p.delete(mContext);*/
-                    mDialog.setProgress(mDialog.getProgress() + 1);
                 }
-                mContext.runOnUiThread(new Runnable() {
+                if (toDelete.size() == 0) {
+                    finish();
+                    subscriber.onCompleted();
+                }
+                subscriber.onNext(toDelete);
+                subscriber.onCompleted();
+            }
+        }).subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .map(new Func1<List<MediaEntry>, Pair<List<MediaEntry>, ProgressDialog>>() {
                     @Override
-                    public void run() {
-                        mDialog.dismiss();
+                    public Pair<List<MediaEntry>, ProgressDialog> call(List<MediaEntry> toDeleteEntries) {
+                        final ProgressDialog dialog = new ProgressDialog(mContext);
+                        dialog.setMessage(mContext.getString(R.string.deleting));
+                        dialog.setIndeterminate(false);
+                        dialog.setMax(toDeleteEntries.size());
+                        dialog.setCancelable(true);
+                        dialog.show();
+
+                        return new Pair<>(toDeleteEntries, dialog);
+                    }
+                })
+                .observeOn(Schedulers.io())
+                .map(new Func1<Pair<List<MediaEntry>, ProgressDialog>, Pair<Long[], ProgressDialog>>() {
+                    @Override
+                    public Pair<Long[], ProgressDialog> call(Pair<List<MediaEntry>, ProgressDialog> mediaEntriesAndDialog) {
+                        List<Long> removedIds = new ArrayList<>();
+                        for (MediaEntry p : mediaEntriesAndDialog.first) {
+                            if (!mediaEntriesAndDialog.second.isShowing()) {
+                                break;
+                            }
+                            p.delete(mContext);
+                            mediaEntriesAndDialog.second.setProgress(mediaEntriesAndDialog.second.getProgress() + 1);
+                            removedIds.add(p.id());
+                        }
+                        Long[] removedEntryIds = removedIds.toArray(new Long[removedIds.size()]);
+                        return new Pair<>(removedEntryIds, mediaEntriesAndDialog.second);
+                    }
+                })
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Subscriber<Pair<Long[], ProgressDialog>>() {
+                    @Override
+                    public void onCompleted() {
+
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+
+                    }
+
+                    @Override
+                    public void onNext(Pair<Long[], ProgressDialog> mediaEntryIdsAndDialog) {
+                        mediaEntryIdsAndDialog.second.dismiss();
                         finish();
-                        mFragment.getPresenter().reload();
+                        mFragment.getPresenter().remove(mediaEntryIdsAndDialog.first);
                         mContext.reloadNavDrawerAlbums();
                     }
                 });
-            }
-        }).start();
     }
 
     private void performCopy(Context context, MediaEntry src, File dst, boolean deleteAfter) throws IOException {
@@ -532,7 +605,7 @@ public class MediaCab implements Serializable, MaterialCab.Callback {
             mContext.getDrawerLayout().setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED);
         }
         if (mFragment != null) {
-            ((MediaAdapter) mFragment.getAdapter()).clearChecked();
+            (mFragment.getAdapter()).clearChecked();
         }
         mMediaEntries.clear();
         mCab = null;

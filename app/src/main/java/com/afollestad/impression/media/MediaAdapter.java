@@ -72,6 +72,8 @@ public class MediaAdapter extends RecyclerView.Adapter<MediaAdapter.ViewHolder> 
         mEmptyImageBackground = Utils.resolveColor(context, R.attr.empty_image_background);
 
         mEntries = new ArrayList<>();
+
+        setHasStableIds(true);
     }
 
     @Override
@@ -111,8 +113,20 @@ public class MediaAdapter extends RecyclerView.Adapter<MediaAdapter.ViewHolder> 
     }
 
     public void clearChecked() {
+        for (int i = 0; i < mEntries.size(); i++) {
+            for (String path : mCheckedPaths) {
+                if (mEntries.get(i).data().equals(path)) {
+                    notifyItemChanged(i);
+                    break;
+                }
+            }
+        }
         mCheckedPaths.clear();
-        notifyDataSetChanged();
+    }
+
+    @Override
+    public long getItemId(int position) {
+        return mEntries.get(position).id();
     }
 
     public ViewerActivity.MediaWrapper getMediaWrapper() {
@@ -121,6 +135,7 @@ public class MediaAdapter extends RecyclerView.Adapter<MediaAdapter.ViewHolder> 
 
     public void clear() {
         mEntries.clear();
+        notifyDataSetChanged();
     }
 
     private void add(MediaEntry e) {
@@ -153,6 +168,17 @@ public class MediaAdapter extends RecyclerView.Adapter<MediaAdapter.ViewHolder> 
             Collections.sort(mEntries, PrefUtils.getSortComparator(mContext, mSortMode));
         }
         notifyDataSetChanged();
+    }
+
+    public void remove(Long entryId) {
+        for (int i = 0; i < mEntries.size(); i++) {
+            MediaEntry entry = mEntries.get(i);
+            if (entry.id() == entryId) {
+                mEntries.remove(entry);
+                notifyItemRemoved(i);
+                i--;
+            }
+        }
     }
 
     public void updateGridModeOn() {

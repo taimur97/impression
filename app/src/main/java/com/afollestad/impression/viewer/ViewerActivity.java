@@ -85,7 +85,9 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
     private static final String TAG = "ViewerActivity";
     public Toolbar mToolbar;
     private boolean mFinishedTransition;
+
     private List<MediaEntry> mEntries;
+    private List<Long> mRemovedEntryIds;
 
     private ViewPager mPager;
     private ViewerPagerAdapter mAdapter;
@@ -454,6 +456,8 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
             mCurrentPosition = savedInstanceState.getInt(STATE_CURRENT_POSITION);
         }
 
+        mRemovedEntryIds = new ArrayList<>();
+
         boolean dontSetPos = false;
         if (getIntent() != null) {
             if (getIntent().hasExtra(EXTRA_MEDIA_ENTRIES)) {
@@ -686,9 +690,7 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
 
     @Override
     public boolean onMenuOpened(int featureId, Menu menu) {
-        if (mUiAnimatorSet != null) {
-            mUiAnimatorSet.cancel();
-        }
+        uiTapped(true);
         return super.onMenuOpened(featureId, menu);
     }
 
@@ -868,8 +870,8 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
                     .onPositive(new MaterialDialog.SingleButtonCallback() {
                         @Override
                         public void onClick(@NonNull MaterialDialog materialDialog, @NonNull DialogAction dialogAction) {
-                            //TODO
-                            /*mEntries.get(mCurrentPosition).delete(ViewerActivity.this);*/
+                            mEntries.get(mCurrentPosition).delete(ViewerActivity.this);
+                            mRemovedEntryIds.add(mEntries.get(mCurrentPosition).id());
                             mAdapter.remove(mCurrentPosition);
                             if (mEntries.size() == 0) {
                                 finish();
@@ -1019,6 +1021,7 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
             data.putExtra(MainActivity.EXTRA_OLD_ITEM_POSITION, getIntent().getIntExtra(MainActivity.EXTRA_CURRENT_ITEM_POSITION, 0));
         }
         data.putExtra(MainActivity.EXTRA_CURRENT_ITEM_POSITION, mCurrentPosition);
+        data.putExtra(MainActivity.EXTRA_REMOVED_ITEMS, mRemovedEntryIds.toArray(new Long[mRemovedEntryIds.size()]));
         setResult(RESULT_OK, data);
         super.finishAfterTransition();
     }

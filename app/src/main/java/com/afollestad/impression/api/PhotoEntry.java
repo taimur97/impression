@@ -1,11 +1,15 @@
 package com.afollestad.impression.api;
 
+import android.app.Activity;
 import android.content.Context;
 import android.os.Parcel;
 import android.provider.MediaStore;
+import android.widget.Toast;
 
 import com.afollestad.impression.media.MediaAdapter;
 import com.afollestad.inquiry.annotations.Column;
+
+import java.io.File;
 
 /**
  * @author Aidan Follestad (afollestad)
@@ -197,10 +201,10 @@ public class PhotoEntry implements MediaEntry {
         return height;
     }
 
-    /*@Override
+    @Override
     public void delete(final Activity context) {
         try {
-            final File currentFile = new File(_data);
+            final File currentFile = new File(data());
             context.getContentResolver().delete(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
                     MediaStore.Images.Media.DATA + " = ?",
                     new String[]{currentFile.getAbsolutePath()});
@@ -215,7 +219,7 @@ public class PhotoEntry implements MediaEntry {
                 }
             });
         }
-    }*/
+    }
 
    /* @Override
     public PhotoEntry load(File from) {

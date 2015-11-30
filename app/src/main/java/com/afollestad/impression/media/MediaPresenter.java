@@ -335,6 +335,14 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
         }
     }
 
+    public void remove(Long[] mediaEntries) {
+        if (isViewAttached()) {
+            for (Long entry : mediaEntries) {
+                getView().getAdapter().remove(entry);
+            }
+        }
+    }
+
     private class MediaCallbackImpl implements MediaAdapter.Callback {
 
         @Override

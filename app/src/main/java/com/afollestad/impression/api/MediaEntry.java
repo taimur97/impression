@@ -1,5 +1,6 @@
 package com.afollestad.impression.api;
 
+import android.app.Activity;
 import android.content.Context;
 import android.os.Parcelable;
 
@@ -43,5 +44,6 @@ public interface MediaEntry extends Parcelable /*extends CursorItem<T>, Serializ
     //boolean isExplorerFolder();
 
     /*boolean isFolder();*/
-    /*void delete(Activity context);*/
+
+    void delete(Activity context);
 }

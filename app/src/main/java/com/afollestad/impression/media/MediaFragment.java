@@ -63,12 +63,12 @@ public class MediaFragment extends RxFragment implements MediaView {
             return;
         }
         if (shown) {
-            v.findViewById(R.id.list).setVisibility(mAdapter.getItemCount() > 0 ? View.VISIBLE : View.GONE);
+            /*v.findViewById(R.id.list).setVisibility(mAdapter.getItemCount() > 0 ? View.VISIBLE : View.GONE);*/
             v.findViewById(R.id.empty).setVisibility(mAdapter.getItemCount() == 0 ? View.VISIBLE : View.GONE);
             v.findViewById(R.id.progress).setVisibility(View.GONE);
             mAdapter.notifyDataSetChanged();
         } else {
-            v.findViewById(R.id.list).setVisibility(View.GONE);
+            /*v.findViewById(R.id.list).setVisibility(View.GONE);*/
             v.findViewById(R.id.empty).setVisibility(View.GONE);
             v.findViewById(R.id.progress).setVisibility(View.VISIBLE);
         }

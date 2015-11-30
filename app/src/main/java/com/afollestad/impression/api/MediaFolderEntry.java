@@ -1,5 +1,6 @@
 package com.afollestad.impression.api;
 
+import android.app.Activity;
 import android.content.Context;
 import android.os.Environment;
 import android.os.Parcel;
@@ -80,7 +81,7 @@ public class MediaFolderEntry extends PhotoEntry {
     }
 
     public long id() {
-        return -1;
+        return bucketId.hashCode();
     }
 
     public String firstPath() {
@@ -167,5 +168,13 @@ public class MediaFolderEntry extends PhotoEntry {
     @Override
     public boolean equals(Object o) {
         return o instanceof MediaFolderEntry && data().equals(((MediaFolderEntry) o).data());
+    }
+
+    @Override
+    public void delete(final Activity context) {
+        //TODO
+        /*for(File file: new File(data()).listFiles()){
+            file.delete();
+        }*/
     }
 }
