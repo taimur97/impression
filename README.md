@@ -6,8 +6,8 @@ A material design gallery app for Android 4.1+
 
 Developed by Aidan Follestad, Daniel Ciao, and Marlon Jones.
 
-[G+ Community](https://plus.google.com/communities/103090123257670799691): Discussions and announcements
-[Releases Page](https://github.com/afollestad/impression/releases): Direct APK Downloads
+[G+ Community](https://plus.google.com/communities/103090123257670799691): Discussions and announcements  
+[Releases Page](https://github.com/afollestad/impression/releases): Direct APK Downloads  
 [Issues Page](https://github.com/afollestad/impression/issues): Bugs and feature requests
 
 ##License
