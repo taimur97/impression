@@ -8,7 +8,7 @@ android {
         opensource {
             keyAlias 'afollestad'
             keyPassword 'opensource'
-            storeFile file('../keystore.jks')
+            storeFile file('../oskeystore.jks')
             storePassword 'opensource'
         }
 
