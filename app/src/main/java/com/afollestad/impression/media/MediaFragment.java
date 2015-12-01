@@ -9,6 +9,7 @@ import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -28,6 +29,7 @@ import com.afollestad.impression.widget.breadcrumbs.Crumb;
 import com.trello.rxlifecycle.components.RxFragment;
 
 import java.io.File;
+import java.util.List;
 
 import static android.app.Activity.RESULT_OK;
 
@@ -66,7 +68,6 @@ public class MediaFragment extends RxFragment implements MediaView {
             /*v.findViewById(R.id.list).setVisibility(mAdapter.getItemCount() > 0 ? View.VISIBLE : View.GONE);*/
             v.findViewById(R.id.empty).setVisibility(mAdapter.getItemCount() == 0 ? View.VISIBLE : View.GONE);
             v.findViewById(R.id.progress).setVisibility(View.GONE);
-            mAdapter.notifyDataSetChanged();
         } else {
             /*v.findViewById(R.id.list).setVisibility(View.GONE);*/
             v.findViewById(R.id.empty).setVisibility(View.GONE);
@@ -103,6 +104,13 @@ public class MediaFragment extends RxFragment implements MediaView {
 
         mAdapter = adapter;
         mRecyclerView.setAdapter(mAdapter);
+
+        mRecyclerView.setItemAnimator(new DefaultItemAnimator() {
+            @Override
+            public boolean canReuseUpdatedViewHolder(RecyclerView.ViewHolder viewHolder) {
+                return true;
+            }
+        });
 
         if (gridMode) {
             mPresenter.setGridModeOn(true);
@@ -170,8 +178,7 @@ public class MediaFragment extends RxFragment implements MediaView {
     private void setSortMode(@MediaAdapter.SortMode int mode, String rememberPath) {
         sortCache = mode;
         SortMemoryProvider.save(getActivity(), rememberPath, mode);
-        mAdapter.setSortMode(mode);
-        getPresenter().reload();
+        mAdapter.updateSortMode(mode);
         getActivity().invalidateOptionsMenu();
     }
 
@@ -198,13 +205,13 @@ public class MediaFragment extends RxFragment implements MediaView {
     }
 
 
-    public void invalidateSubtitle(MediaEntry[] entries) {
+    public void invalidateSubtitle(List<MediaEntry> entries) {
         AppCompatActivity act = (AppCompatActivity) getActivity();
         if (act != null) {
             final boolean toolbarStats = PreferenceManager.getDefaultSharedPreferences(act)
                     .getBoolean("toolbar_album_stats", true);
             if (toolbarStats) {
-                if (entries == null || entries.length == 0) {
+                if (entries == null || entries.size() == 0) {
                     act.getSupportActionBar().setSubtitle(getString(R.string.empty));
                     return;
                 }
@@ -273,6 +280,7 @@ public class MediaFragment extends RxFragment implements MediaView {
     @Override
     public void onDestroy() {
         super.onDestroy();
+        mPresenter.onDestroy();
         mPresenter.detachView();
     }
 
@@ -335,10 +343,10 @@ public class MediaFragment extends RxFragment implements MediaView {
                 case MediaAdapter.SORT_NAME_DESC:
                     menu.findItem(R.id.sortNameDesc).setChecked(true);
                     break;
-                case MediaAdapter.SORT_MODIFIED_DATE_ASC:
+                case MediaAdapter.SORT_TAKEN_DATE_ASC:
                     menu.findItem(R.id.sortModifiedAsc).setChecked(true);
                     break;
-                case MediaAdapter.SORT_MODIFIED_DATE_DESC:
+                case MediaAdapter.SORT_TAKEN_DATE_DESC:
                     menu.findItem(R.id.sortModifiedDesc).setChecked(true);
                     break;
             }
@@ -419,10 +427,10 @@ public class MediaFragment extends RxFragment implements MediaView {
                 setSortMode(MediaAdapter.SORT_NAME_DESC, mSortRememberDir ? mPresenter.getPath() : null);
                 return true;
             case R.id.sortModifiedAsc:
-                setSortMode(MediaAdapter.SORT_MODIFIED_DATE_ASC, mSortRememberDir ? mPresenter.getPath() : null);
+                setSortMode(MediaAdapter.SORT_TAKEN_DATE_ASC, mSortRememberDir ? mPresenter.getPath() : null);
                 return true;
             case R.id.sortModifiedDesc:
-                setSortMode(MediaAdapter.SORT_MODIFIED_DATE_DESC, mSortRememberDir ? mPresenter.getPath() : null);
+                setSortMode(MediaAdapter.SORT_TAKEN_DATE_DESC, mSortRememberDir ? mPresenter.getPath() : null);
                 return true;
             case R.id.sortCurrentDir:
                 item.setChecked(!item.isChecked());

@@ -74,7 +74,7 @@ public class SortMemoryProvider extends ProviderBase {
     @MediaAdapter.SortMode
     public static int getSortMode(Context context, String path) {
         if (context == null) {
-            return MediaAdapter.SORT_DEFAULT;
+            return MediaAdapter.SORT_TAKEN_DATE_DESC;
         } else if (path == null) {
             //noinspection ResourceType
             return PrefUtils.getSortMode(context);

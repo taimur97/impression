@@ -90,7 +90,7 @@ public class ViewerPagerFragment extends Fragment {
     public static ViewerPagerFragment create(MediaEntry entry, int index, int width, int height) {
         ViewerPagerFragment frag = new ViewerPagerFragment();
         Bundle args = new Bundle();
-        args.putParcelable(INIT_MEDIA_ENTRY, entry);
+        args.putSerializable(INIT_MEDIA_ENTRY, entry);
         args.putInt(INIT_INDEX, index);
         args.putInt(INIT_WIDTH, width);
         args.putInt(INIT_HEIGHT, height);
@@ -118,7 +118,7 @@ public class ViewerPagerFragment extends Fragment {
 
         mIndex = getArguments().getInt(INIT_INDEX);
         if (getArguments().containsKey(INIT_MEDIA_ENTRY)) {
-            mEntry = getArguments().getParcelable(INIT_MEDIA_ENTRY);
+            mEntry = (MediaEntry) getArguments().getSerializable(INIT_MEDIA_ENTRY);
             mIsVideo = mEntry.isVideo();
         } else if (getArguments().containsKey(INIT_MEDIA_PATH)) {
             mMediaPath = getArguments().getString(INIT_MEDIA_PATH);

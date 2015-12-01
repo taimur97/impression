@@ -2,39 +2,45 @@ package com.afollestad.impression.viewer;
 
 import android.app.Fragment;
 import android.app.FragmentManager;
+import android.content.Context;
 import android.support.v4.view.PagerAdapter;
 
 import com.afollestad.impression.api.MediaEntry;
+import com.afollestad.impression.media.CurrentMediaEntriesSingleton;
+import com.afollestad.impression.media.MediaAdapter;
 import com.afollestad.impression.utils.FragmentStatePagerAdapter;
 
 import java.util.List;
 
-/**
- * @author Aidan Follestad (afollestad)
- */
 public class ViewerPagerAdapter extends FragmentStatePagerAdapter {
 
-    private final List<MediaEntry> mMedia;
+    private final Context mContext;
+    private final
+    @MediaAdapter.SortMode
+    int mSortMode;
+    private List<MediaEntry> mMedia;
     private int mThumbWidth;
     private int mThumbHeight;
 
     private int mInitialCurrent;
 
-    public ViewerPagerAdapter(FragmentManager fm, List<MediaEntry> media, int width, int height, int initialCurrent) {
+    public ViewerPagerAdapter(Context context, FragmentManager fm, int width, int height, int initialCurrent, @MediaAdapter.SortMode int sortMode) {
         super(fm);
-        mMedia = media;
+        mContext = context;
         mThumbWidth = width;
         mThumbHeight = height;
         mInitialCurrent = initialCurrent;
+        mSortMode = sortMode;
+
+        mMedia = CurrentMediaEntriesSingleton.getInstance().getMediaEntriesCopy(mContext, mSortMode);
     }
 
-    public void add(MediaEntry p) {
-        mMedia.add(0, p);
-        notifyDataSetChanged();
+    protected List<MediaEntry> getEntries() {
+        return mMedia;
     }
 
-    public void remove(int index) {
-        mMedia.remove(index);
+    public void updateEntries() {
+        mMedia = CurrentMediaEntriesSingleton.getInstance().getMediaEntriesCopy(mContext, mSortMode);
         notifyDataSetChanged();
     }
 

@@ -1,10 +1,8 @@
 package com.afollestad.impression.api;
 
 import android.content.Context;
-import android.os.Parcel;
 import android.provider.MediaStore;
 
-import com.afollestad.impression.media.MediaAdapter;
 import com.afollestad.inquiry.annotations.Column;
 
 /**
@@ -15,15 +13,6 @@ public class VideoEntry extends PhotoEntry {
 
     /*public String originalUri;*/
 
-    public static final Creator<VideoEntry> CREATOR = new Creator<VideoEntry>() {
-        public VideoEntry createFromParcel(Parcel source) {
-            return new VideoEntry(source);
-        }
-
-        public VideoEntry[] newArray(int size) {
-            return new VideoEntry[size];
-        }
-    };
     @Column(name = MediaStore.Video.Media._ID)
     protected long _id;
     @Column(name = MediaStore.Video.Media.DATA)
@@ -103,36 +92,6 @@ public class VideoEntry extends PhotoEntry {
     public void setRealIndex(int index) {
         mRealIndex = index;
     }*/
-
-    protected VideoEntry(Parcel in) {
-
-        this._id = in.readLong();
-        this._data = in.readString();
-        this.title = in.readString();
-        this._size = in.readLong();
-        this._displayName = in.readString();
-        this.mimeType = in.readString();
-        this.dateAdded = in.readLong();
-        this.dateTaken = in.readLong();
-        this.dateModified = in.readLong();
-        this.bucketDisplayName = in.readString();
-        this.bucketId = in.readString();
-        this.width = in.readInt();
-        this.height = in.readInt();
-    }
-
-    public static String getSortQueryFromSortMode(@MediaAdapter.SortMode int from) {
-        switch (from) {
-            default:
-                return MediaStore.Video.Media.DISPLAY_NAME + " DESC";
-            case MediaAdapter.SORT_NAME_ASC:
-                return MediaStore.Video.Media.DISPLAY_NAME + " ASC";
-            case MediaAdapter.SORT_MODIFIED_DATE_DESC:
-                return MediaStore.Video.Media.DATE_MODIFIED + " DESC";
-            case MediaAdapter.SORT_MODIFIED_DATE_ASC:
-                return MediaStore.Video.Media.DATE_MODIFIED + " ASC";
-        }
-    }
 
     @Override
     public long id() {
@@ -251,27 +210,5 @@ public class VideoEntry extends PhotoEntry {
     @Override
     public boolean isFolder() {
         return false;
-    }
-
-    @Override
-    public int describeContents() {
-        return 0;
-    }
-
-    @Override
-    public void writeToParcel(Parcel dest, int flags) {
-        dest.writeLong(this._id);
-        dest.writeString(this._data);
-        dest.writeString(this.title);
-        dest.writeLong(this._size);
-        dest.writeString(this._displayName);
-        dest.writeString(this.mimeType);
-        dest.writeLong(this.dateAdded);
-        dest.writeLong(this.dateTaken);
-        dest.writeLong(this.dateModified);
-        dest.writeString(this.bucketDisplayName);
-        dest.writeString(this.bucketId);
-        dest.writeInt(this.width);
-        dest.writeInt(this.height);
     }
 }

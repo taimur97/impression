@@ -7,6 +7,8 @@ import com.afollestad.impression.MvpView;
 import com.afollestad.impression.api.MediaEntry;
 import com.afollestad.impression.widget.breadcrumbs.Crumb;
 
+import java.util.List;
+
 interface MediaView extends MvpView {
 
     void initializeRecyclerView(boolean gridMode, int size, MediaAdapter adapter);
@@ -29,5 +31,5 @@ interface MediaView extends MvpView {
 
     void restoreScrollPositionFrom(Crumb crumb);
 
-    void invalidateSubtitle(MediaEntry[] allEntries);
+    void invalidateSubtitle(List<MediaEntry> allEntries);
 }

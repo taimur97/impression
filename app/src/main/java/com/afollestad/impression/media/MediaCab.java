@@ -10,6 +10,8 @@ import android.content.Intent;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Bundle;
+import android.provider.MediaStore;
+import android.support.annotation.WorkerThread;
 import android.support.v4.widget.DrawerLayout;
 import android.text.Html;
 import android.util.Log;
@@ -26,7 +28,6 @@ import com.afollestad.impression.providers.ExcludedFolderProvider;
 import com.afollestad.impression.utils.PrefUtils;
 import com.afollestad.impression.utils.TimeUtils;
 import com.afollestad.impression.utils.Utils;
-import com.afollestad.impression.viewer.ViewerActivity;
 import com.afollestad.materialcab.MaterialCab;
 import com.afollestad.materialdialogs.MaterialDialog;
 
@@ -73,15 +74,16 @@ public class MediaCab implements Serializable, MaterialCab.Callback {
     }
 
     public static MediaCab restoreState(Bundle in, MainActivity context) {
-        ViewerActivity.MediaWrapper wrapper = (ViewerActivity.MediaWrapper) in.getSerializable(STATE_MEDIACAB_ENTRIES);
-        if (wrapper != null) {
+        List<MediaEntry> mediaEntries = (List<MediaEntry>) in.getSerializable(STATE_MEDIACAB_ENTRIES);
+
+        if (mediaEntries != null) {
             MediaCab cab = new MediaCab(context);
-            //TODO
-            /*cab.mMediaEntries = wrapper.getMedia();*/
+            cab.mMediaEntries = mediaEntries;
             cab.mCab = MaterialCab.restoreState(in, context, cab);
             return cab;
+        } else {
+            return null;
         }
-        return null;
     }
 
     public void setFragment(MediaFragment frag, boolean invalidateChecked) {
@@ -116,7 +118,7 @@ public class MediaCab implements Serializable, MaterialCab.Callback {
 
     public void saveState(Bundle out) {
         mCab.saveState(out);
-        out.putParcelable(STATE_MEDIACAB_ENTRIES, new ViewerActivity.MediaWrapper(mMediaEntries, true));
+        out.putSerializable(STATE_MEDIACAB_ENTRIES, (Serializable) mMediaEntries);
     }
 
     public boolean isStarted() {
@@ -218,10 +220,11 @@ public class MediaCab implements Serializable, MaterialCab.Callback {
                         List<MediaEntry> entries = App.getCurrentAccount(mContext).flatMap(new Func1<Account, Single<List<MediaEntry>>>() {
                             @Override
                             public Single<List<MediaEntry>> call(Account account) {
+                                //noinspection ResourceType
                                 return account.getEntries(e.data(),
                                         PrefUtils.isExplorerMode(mContext),
                                         PrefUtils.getFilterMode(mContext),
-                                        PrefUtils.getSortMode(mContext));
+                                        -1);
                             }
                         }).toBlocking().value();
                         toSend.addAll(entries);
@@ -297,10 +300,11 @@ public class MediaCab implements Serializable, MaterialCab.Callback {
                         List<MediaEntry> mediaEntries = App.getCurrentAccount(mContext).flatMap(new Func1<Account, Single<List<MediaEntry>>>() {
                             @Override
                             public Single<List<MediaEntry>> call(Account account) {
+                                //noinspection ResourceType
                                 return account.getEntries(e.data(),
                                         PrefUtils.isExplorerMode(mContext),
                                         PrefUtils.getFilterMode(mContext),
-                                        PrefUtils.getSortMode(mContext));
+                                        -1);
                             }
                         }).toBlocking().value();
                         toDelete.addAll(mediaEntries);
@@ -331,24 +335,21 @@ public class MediaCab implements Serializable, MaterialCab.Callback {
                     }
                 })
                 .observeOn(Schedulers.io())
-                .map(new Func1<Pair<List<MediaEntry>, ProgressDialog>, Pair<Long[], ProgressDialog>>() {
+                .map(new Func1<Pair<List<MediaEntry>, ProgressDialog>, Pair<List<MediaEntry>, ProgressDialog>>() {
                     @Override
-                    public Pair<Long[], ProgressDialog> call(Pair<List<MediaEntry>, ProgressDialog> mediaEntriesAndDialog) {
-                        List<Long> removedIds = new ArrayList<>();
+                    public Pair<List<MediaEntry>, ProgressDialog> call(Pair<List<MediaEntry>, ProgressDialog> mediaEntriesAndDialog) {
                         for (MediaEntry p : mediaEntriesAndDialog.first) {
                             if (!mediaEntriesAndDialog.second.isShowing()) {
                                 break;
                             }
                             p.delete(mContext);
                             mediaEntriesAndDialog.second.setProgress(mediaEntriesAndDialog.second.getProgress() + 1);
-                            removedIds.add(p.id());
                         }
-                        Long[] removedEntryIds = removedIds.toArray(new Long[removedIds.size()]);
-                        return new Pair<>(removedEntryIds, mediaEntriesAndDialog.second);
+                        return mediaEntriesAndDialog;
                     }
                 })
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Subscriber<Pair<Long[], ProgressDialog>>() {
+                .subscribe(new Subscriber<Pair<List<MediaEntry>, ProgressDialog>>() {
                     @Override
                     public void onCompleted() {
 
@@ -360,15 +361,18 @@ public class MediaCab implements Serializable, MaterialCab.Callback {
                     }
 
                     @Override
-                    public void onNext(Pair<Long[], ProgressDialog> mediaEntryIdsAndDialog) {
+                    public void onNext(Pair<List<MediaEntry>, ProgressDialog> mediaEntryIdsAndDialog) {
                         mediaEntryIdsAndDialog.second.dismiss();
                         finish();
-                        mFragment.getPresenter().remove(mediaEntryIdsAndDialog.first);
+                        CurrentMediaEntriesSingleton.getInstance().removeAll(mediaEntryIdsAndDialog.first);
+
+                        mFragment.getPresenter().updateAdapterEntries();
                         mContext.reloadNavDrawerAlbums();
                     }
                 });
     }
 
+    @WorkerThread
     private void performCopy(Context context, MediaEntry src, File dst, boolean deleteAfter) throws IOException {
         dst = checkDuplicate(dst);
         InputStream in = new FileInputStream(src.data());
@@ -384,8 +388,7 @@ public class MediaCab implements Serializable, MaterialCab.Callback {
         ContentResolver r = context.getContentResolver();
         ContentValues values = new ContentValues();
         if (deleteAfter) {
-            //TODO
-            /*if (src.isVideo()) {
+            if (src.isVideo()) {
                 values.put(MediaStore.Video.VideoColumns.DATA, dst.getAbsolutePath());
                 r.update(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, values,
                         MediaStore.Video.VideoColumns.DATA + " = ?", new String[]{src.data()});
@@ -393,7 +396,7 @@ public class MediaCab implements Serializable, MaterialCab.Callback {
                 values.put(MediaStore.Images.ImageColumns.DATA, dst.getAbsolutePath());
                 r.update(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values,
                         MediaStore.Images.ImageColumns.DATA + " = ?", new String[]{src.data()});
-            }*/
+            }
             new File(src.data()).delete();
         } else {
             Log.i("UpdateMediaDatabase", "Scanning " + dst.getPath());
@@ -494,7 +497,8 @@ public class MediaCab implements Serializable, MaterialCab.Callback {
     }
 
     private void selectAll() {
-        List<MediaEntry> adapterPics = ((MediaAdapter) mFragment.getAdapter()).getMediaWrapper().getMedia();
+        List<MediaEntry> adapterPics = CurrentMediaEntriesSingleton.getInstance()
+                .getMediaEntriesCopy(mContext, MediaAdapter.SORT_NOSORT);
         for (MediaEntry p : adapterPics) {
             toggleEntry(p, true);
         }
@@ -506,8 +510,7 @@ public class MediaCab implements Serializable, MaterialCab.Callback {
         boolean foundDir = false;
         boolean allAlbumsOrFolders = true;
         for (MediaEntry e : mMediaEntries) {
-            //TODO
-           /* if (!e.isAlbum() && !e.isFolder()) allAlbumsOrFolders = false;*/
+            if (!e.isFolder()) allAlbumsOrFolders = false;
             if (e.isFolder()) {
                 foundDir = true;
                 break;
@@ -518,8 +521,8 @@ public class MediaCab implements Serializable, MaterialCab.Callback {
         menu.findItem(R.id.exclude).setVisible(allAlbumsOrFolders);
         if (mMediaEntries.size() > 0) {
             MediaEntry firstEntry = mMediaEntries.get(0);
-            //TODO
-            boolean canShow =/* mMediaEntries.size() == 1 && !firstEntry.isVideo() && !firstEntry.isAlbum();*/true;
+            boolean canShow = mMediaEntries.size() == 1 && !firstEntry.isVideo() && !firstEntry.isFolder();
+            ;
             menu.findItem(R.id.edit).setVisible(canShow);
             menu.findItem(R.id.details).setVisible(canShow);
         } else {

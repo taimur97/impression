@@ -7,8 +7,8 @@ import android.preference.PreferenceManager;
 import com.afollestad.impression.R;
 import com.afollestad.impression.api.MediaEntry;
 import com.afollestad.impression.media.MediaAdapter;
-import com.afollestad.impression.media.MediaModifiedSorter;
 import com.afollestad.impression.media.MediaNameSorter;
+import com.afollestad.impression.media.MediaTakenSorter;
 
 import java.util.Comparator;
 
@@ -99,26 +99,32 @@ public abstract class PrefUtils {
         PreferenceManager.getDefaultSharedPreferences(context).edit().putInt(ACTIVE_ACCOUNT_ID, accountId).apply();
     }
 
+    /**
+     * Do not use - use SortMemoryProvider
+     */
     @MediaAdapter.SortMode
     public static int getSortMode(Context context) {
         //noinspection ResourceType
-        return PreferenceManager.getDefaultSharedPreferences(context).getInt(SORT_MODE, MediaAdapter.SORT_DEFAULT);
+        return PreferenceManager.getDefaultSharedPreferences(context).getInt(SORT_MODE, MediaAdapter.SORT_TAKEN_DATE_DESC);
     }
 
+    /**
+     * Do not use - use SortMemoryProvider
+     */
     public static void setSortMode(Context context, @MediaAdapter.SortMode int mode) {
         PreferenceManager.getDefaultSharedPreferences(context).edit().putInt(SORT_MODE, mode).apply();
     }
 
     public static Comparator<MediaEntry> getSortComparator(Context context, @MediaAdapter.SortMode int mode) {
         switch (mode) {
-            default:
-                return new MediaNameSorter(context, false);
+            case MediaAdapter.SORT_TAKEN_DATE_DESC:
+                return new MediaTakenSorter(false);
+            case MediaAdapter.SORT_TAKEN_DATE_ASC:
+                return new MediaTakenSorter(true);
             case MediaAdapter.SORT_NAME_DESC:
                 return new MediaNameSorter(context, true);
-            case MediaAdapter.SORT_MODIFIED_DATE_ASC:
-                return new MediaModifiedSorter(false);
-            case MediaAdapter.SORT_MODIFIED_DATE_DESC:
-                return new MediaModifiedSorter(true);
+            default:
+                return new MediaNameSorter(context, false);
         }
     }
 

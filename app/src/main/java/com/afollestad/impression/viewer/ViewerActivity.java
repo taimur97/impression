@@ -20,8 +20,7 @@ import android.nfc.NfcAdapter;
 import android.nfc.NfcEvent;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Parcel;
-import android.os.Parcelable;
+import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.print.PrintHelper;
@@ -50,7 +49,9 @@ import com.afollestad.impression.BuildConfig;
 import com.afollestad.impression.R;
 import com.afollestad.impression.api.MediaEntry;
 import com.afollestad.impression.base.ThemedActivity;
+import com.afollestad.impression.media.CurrentMediaEntriesSingleton;
 import com.afollestad.impression.media.MainActivity;
+import com.afollestad.impression.providers.SortMemoryProvider;
 import com.afollestad.impression.utils.PrefUtils;
 import com.afollestad.impression.utils.ScrimUtil;
 import com.afollestad.impression.utils.TimeUtils;
@@ -72,10 +73,11 @@ import java.util.TimerTask;
  */
 public class ViewerActivity extends ThemedActivity implements SlideshowInitDialog.SlideshowCallback {
 
-    public static final String EXTRA_WIDTH = "com.afollestad.impression.width";
-    public static final String EXTRA_HEIGHT = "com.afollestad.impression.height";
-    public static final String EXTRA_MEDIA_ENTRIES = "com.afollestad.impression.media_entries";
-    public static final String EXTRA_CURRENT_ITEM_POSITION = "com.afollestad.impression.extra_current_item_position";
+    public static final String EXTRA_WIDTH = "com.afollestad.impression.Width";
+    public static final String EXTRA_HEIGHT = "com.afollestad.impression.Height";
+    public static final String EXTRA_ITEMS_READY = "com.afollestad.impression.ItemsReady";
+    public static final String EXTRA_PATH = "com.afollestad.impression.Path";
+    public static final String EXTRA_INIT_CURRENT_ITEM_POSITION = "com.afollestad.impression.CurrentItemPosition";
 
     public static final int UI_FADE_DELAY = 2750;
     public static final int UI_FADE_DURATION = 400;
@@ -85,9 +87,6 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
     private static final String TAG = "ViewerActivity";
     public Toolbar mToolbar;
     private boolean mFinishedTransition;
-
-    private List<MediaEntry> mEntries;
-    private List<Long> mRemovedEntryIds;
 
     private ViewPager mPager;
     private ViewerPagerAdapter mAdapter;
@@ -450,22 +449,20 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
 
         if (savedInstanceState == null) {
             if (getIntent() != null && getIntent().getExtras() != null) {
-                mCurrentPosition = getIntent().getExtras().getInt(EXTRA_CURRENT_ITEM_POSITION);
+                mCurrentPosition = getIntent().getExtras().getInt(EXTRA_INIT_CURRENT_ITEM_POSITION);
             }
         } else {
             mCurrentPosition = savedInstanceState.getInt(STATE_CURRENT_POSITION);
         }
 
-        mRemovedEntryIds = new ArrayList<>();
+        //mRemovedEntryIds = new ArrayList<>();
 
+        String path = Environment.getExternalStorageDirectory().getAbsolutePath();
         boolean dontSetPos = false;
-        if (getIntent() != null) {
-            if (getIntent().hasExtra(EXTRA_MEDIA_ENTRIES)) {
-                mEntries = ((MediaWrapper) getIntent().getParcelableExtra(EXTRA_MEDIA_ENTRIES)).getMedia();
-            } else if (getIntent().getData() != null) {
-                mEntries = new ArrayList<>();
+        if (getIntent() != null && (!getIntent().hasExtra(EXTRA_ITEMS_READY) || !CurrentMediaEntriesSingleton.instanceExists())) {
+            if (getIntent().getData() != null) {
+                List<MediaEntry> entries = new ArrayList<>();
                 Uri data = getIntent().getData();
-                String path = null;
                 if (data.getScheme() != null) {
                     path = data.toString();
                     if (data.getScheme().equals("file")) {
@@ -476,7 +473,7 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
                             final File file = new File(path);
                             //TODO
                             final List<MediaEntry> brothers = null/*Utils.getEntriesFromFolder(this, file.getParentFile(), false, false, MediaAdapter.FileFilterMode.FILTER_ALL)*/;
-                            mEntries.addAll(brothers);
+                            entries.addAll(brothers);
                             for (int i = 0; i < brothers.size(); i++) {
                                 if (brothers.get(i).data().equals(file.getAbsolutePath())) {
                                     mCurrentPosition = i;
@@ -502,7 +499,7 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
                             final File file = new File(tempPath);
                             //TODO
                             final List<MediaEntry> brothers = null/*Utils.getEntriesFromFolder(this, file.getParentFile(), false, false, MediaAdapter.FileFilterMode.FILTER_ALL)*/;
-                            mEntries.addAll(brothers);
+                            entries.addAll(brothers);
                             for (int i = 0; i < brothers.size(); i++) {
                                 if (brothers.get(i).data().equals(file.getAbsolutePath())) {
                                     mCurrentPosition = i;
@@ -515,6 +512,8 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
                         }
                     }
                 }
+
+                CurrentMediaEntriesSingleton.getInstance().set(entries);
 
                 if (path == null) {
                     new MaterialDialog.Builder(this)
@@ -532,27 +531,38 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
                     return;
                 }
             }
-
-            mAdapter = new ViewerPagerAdapter(getFragmentManager(),
-                    mEntries,
-                    getIntent().getIntExtra(EXTRA_WIDTH, -1),
-                    getIntent().getIntExtra(EXTRA_HEIGHT, -1),
-                    mCurrentPosition);
-            mPager = (ViewPager) findViewById(R.id.pager);
-            mPager.setOffscreenPageLimit(1);
-            mPager.setAdapter(mAdapter);
-
-            //TODO
-            processEntries(/*dontSetPos*/);
-
-            // When the view pager is swiped, fragments are notified if they're active or not
-            // And the menu updates based on the color mode (light or dark).
-
-            mPager.addOnPageChangeListener(mPagerListener);
-
-            mFinishedTransition = getIntent().getData() != null || Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP;
-            setupSharedElementCallback();
         }
+
+        mAdapter = new ViewerPagerAdapter(this, getFragmentManager(),
+                getIntent().getIntExtra(EXTRA_WIDTH, -1),
+                getIntent().getIntExtra(EXTRA_HEIGHT, -1),
+                mCurrentPosition,
+                SortMemoryProvider.getSortMode(this, path));
+        mPager = (ViewPager) findViewById(R.id.pager);
+        mPager.setOffscreenPageLimit(1);
+        mPager.setAdapter(mAdapter);
+
+
+        mAllVideos = true;
+        for (MediaEntry e : mAdapter.getEntries()) {
+            if (!e.isVideo()) {
+                mAllVideos = false;
+                break;
+            }
+        }
+        //TODO
+        /*if (!dontSetPos)
+            mCurrentPosition = translateToViewerIndex(mCurrentPosition);*/
+        mPager.setCurrentItem(mCurrentPosition);
+
+
+        // When the view pager is swiped, fragments are notified if they're active or not
+        // And the menu updates based on the color mode (light or dark).
+
+        mPager.addOnPageChangeListener(mPagerListener);
+
+        mFinishedTransition = getIntent().getData() != null || Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP;
+        setupSharedElementCallback();
 
         // Android Beam stuff
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 &&
@@ -613,12 +623,6 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
         getWindow().setSharedElementReturnTransition(transition);
     }
 
-    @Override
-    protected void onPause() {
-        super.onPause();
-        // mPager.removeOnPageChangeListener(mPagerListener);
-    }
-
     private int translateToViewerIndex(int remote) {
         //TODO
         /*for (int i = 0; i < mEntries.size(); i++) {
@@ -631,20 +635,6 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
             }
         }*/
         return 0;
-    }
-
-    //TODO
-    private void processEntries(/*boolean dontSetPos*/) {
-        mAllVideos = true;
-        for (MediaEntry e : mEntries) {
-            if (!e.isVideo()) {
-                mAllVideos = false;
-                break;
-            }
-        }
-        /*if (!dontSetPos)
-            mCurrentPosition = translateToViewerIndex(mCurrentPosition);*/
-        mPager.setCurrentItem(mCurrentPosition);
     }
 
     private void hideSystemUi() {
@@ -762,14 +752,14 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
     }
 
     private Uri getCurrentUri() {
-        return Uri.fromFile(new File(mEntries.get(mCurrentPosition).data()));
+        return Uri.fromFile(new File(mAdapter.getEntries().get(mCurrentPosition).data()));
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_viewer, menu);
-        if (mEntries.size() > 0) {
-            MediaEntry currentEntry = mEntries.get(mCurrentPosition);
+        if (mAdapter.getEntries().size() > 0) {
+            MediaEntry currentEntry = mAdapter.getEntries().get(mCurrentPosition);
             if (currentEntry == null || currentEntry.isVideo()) {
                 menu.findItem(R.id.print).setVisible(false);
                 menu.findItem(R.id.edit).setVisible(false);
@@ -806,7 +796,7 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == R.id.share) {
             try {
-                final String mime = mEntries.get(mCurrentPosition).isVideo() ? "video/*" : "image/*";
+                final String mime = mAdapter.getEntries().get(mCurrentPosition).isVideo() ? "video/*" : "image/*";
                 startActivity(new Intent(Intent.ACTION_SEND)
                         .setType(mime)
                         .putExtra(Intent.EXTRA_STREAM, getCurrentUri()));
@@ -838,14 +828,14 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
 //                public void run() {
             PrintHelper photoPrinter = new PrintHelper(ViewerActivity.this);
             photoPrinter.setScaleMode(PrintHelper.SCALE_MODE_FIT);
-            final File currentFile = new File(mEntries.get(mCurrentPosition).data());
+            final File currentFile = new File(mAdapter.getEntries().get(mCurrentPosition).data());
             Bitmap bitmap = loadBitmap(currentFile);
             photoPrinter.printBitmap(currentFile.getName(), bitmap);
 //                    bitmap.recycle();
 //                }
 //            }).start();
         } else if (item.getItemId() == R.id.details) {
-            final MediaEntry entry = mEntries.get(mCurrentPosition);
+            final MediaEntry entry = mAdapter.getEntries().get(mCurrentPosition);
             final File file = new File(entry.data());
             final Calendar cal = new GregorianCalendar();
             cal.setTimeInMillis(entry.dateTaken());
@@ -862,7 +852,7 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
                     .positiveText(R.string.dismiss)
                     .show();
         } else if (item.getItemId() == R.id.delete) {
-            final MediaEntry currentEntry = mEntries.get(mCurrentPosition);
+            final MediaEntry currentEntry = mAdapter.getEntries().get(mCurrentPosition);
             new MaterialDialog.Builder(this)
                     .content(currentEntry.isVideo() ? R.string.delete_confirm_video : R.string.delete_confirm_photo)
                     .positiveText(R.string.yes)
@@ -870,10 +860,10 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
                     .onPositive(new MaterialDialog.SingleButtonCallback() {
                         @Override
                         public void onClick(@NonNull MaterialDialog materialDialog, @NonNull DialogAction dialogAction) {
-                            mEntries.get(mCurrentPosition).delete(ViewerActivity.this);
-                            mRemovedEntryIds.add(mEntries.get(mCurrentPosition).id());
-                            mAdapter.remove(mCurrentPosition);
-                            if (mEntries.size() == 0) {
+                            CurrentMediaEntriesSingleton.getInstance().remove(mAdapter.getEntries().get(mCurrentPosition));
+
+                            mAdapter.updateEntries();
+                            if (mAdapter.getEntries().size() == 0) {
                                 finish();
                             }
                         }
@@ -895,10 +885,10 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
         invalidateOptionsMenu();
 
         while (true) {
-            MediaEntry e = mEntries.get(mCurrentPosition);
+            MediaEntry e = mAdapter.getEntries().get(mCurrentPosition);
             if (e.isVideo()) {
                 mCurrentPosition += 1;
-                if (mCurrentPosition > mEntries.size() - 1) {
+                if (mCurrentPosition > mAdapter.getEntries().size() - 1) {
                     mCurrentPosition = 0;
                 }
             } else {
@@ -919,10 +909,10 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
 
     private void performSlide() {
         int nextPage = mPager.getCurrentItem() + 1;
-        if (nextPage > mEntries.size() - 1) {
+        if (nextPage > mAdapter.getEntries().size() - 1) {
             nextPage = mSlideshowLoop ? 0 : -1;
         } else {
-            MediaEntry nextEntry = mEntries.get(nextPage);
+            MediaEntry nextEntry = mAdapter.getEntries().get(nextPage);
             if (nextEntry.isVideo()) {
                 final int fNextPage = nextPage;
                 runOnUiThread(new Runnable() {
@@ -1021,7 +1011,7 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
             data.putExtra(MainActivity.EXTRA_OLD_ITEM_POSITION, getIntent().getIntExtra(MainActivity.EXTRA_CURRENT_ITEM_POSITION, 0));
         }
         data.putExtra(MainActivity.EXTRA_CURRENT_ITEM_POSITION, mCurrentPosition);
-        data.putExtra(MainActivity.EXTRA_REMOVED_ITEMS, mRemovedEntryIds.toArray(new Long[mRemovedEntryIds.size()]));
+        //data.putExtra(MainActivity.EXTRA_REMOVED_ITEMS, mRemovedEntryIds.toArray(new Long[mRemovedEntryIds.size()]));
         setResult(RESULT_OK, data);
         super.finishAfterTransition();
     }
@@ -1038,52 +1028,6 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
         void onFade();
     }
 
-    public static class MediaWrapper implements Parcelable {
-
-        public static final Creator<MediaWrapper> CREATOR = new Creator<MediaWrapper>() {
-            public MediaWrapper createFromParcel(Parcel source) {
-                return new MediaWrapper(source);
-            }
-
-            public MediaWrapper[] newArray(int size) {
-                return new MediaWrapper[size];
-            }
-        };
-        private final List<MediaEntry> mMediaEntries;
-
-        public MediaWrapper(List<MediaEntry> mediaEntries, boolean allowFolders) {
-            mMediaEntries = new ArrayList<>();
-            for (int i = 0; i < mediaEntries.size(); i++) {
-                MediaEntry p = mediaEntries.get(i);
-                //TODO
-                /*p.setRealIndex(i);*/
-                if (allowFolders || !p.isFolder()) {
-                    mMediaEntries.add(p);
-                }
-            }
-        }
-
-
-        protected MediaWrapper(Parcel in) {
-            mMediaEntries = new ArrayList<>();
-            in.readList(this.mMediaEntries, MediaEntry.class.getClassLoader());
-        }
-
-        public List<MediaEntry> getMedia() {
-            return mMediaEntries;
-        }
-
-        @Override
-        public int describeContents() {
-            return 0;
-        }
-
-        @Override
-        public void writeToParcel(Parcel dest, int flags) {
-            dest.writeList(mMediaEntries);
-        }
-    }
-
     private class FileBeamCallback implements NfcAdapter.CreateBeamUrisCallback {
 
         public FileBeamCallback() {
@@ -1096,7 +1040,7 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
             }
             return new Uri[]{
                     Utils.getImageContentUri(ViewerActivity.this,
-                            new File(mEntries.get(mCurrentPosition).data()))
+                            new File(mAdapter.getEntries().get(mCurrentPosition).data()))
             };
         }
     }

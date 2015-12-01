@@ -4,12 +4,12 @@ import com.afollestad.impression.api.MediaEntry;
 
 import java.util.Comparator;
 
-public class MediaModifiedSorter implements Comparator<MediaEntry> {
+public class MediaTakenSorter implements Comparator<MediaEntry> {
 
-    private final boolean desc;
+    private final boolean asc;
 
-    public MediaModifiedSorter(boolean desc) {
-        this.desc = desc;
+    public MediaTakenSorter(boolean asc) {
+        this.asc = asc;
     }
 
     @Override
@@ -27,7 +27,7 @@ public class MediaModifiedSorter implements Comparator<MediaEntry> {
             left = 0L;
         }
 
-        if (desc) {
+        if (asc) {
             return left.compareTo(right);
         } else {
             return right.compareTo(left);

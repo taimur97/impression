@@ -3,10 +3,10 @@ package com.afollestad.impression.api;
 import android.app.Activity;
 import android.content.Context;
 import android.os.Environment;
-import android.os.Parcel;
 import android.provider.MediaStore;
 
 import com.afollestad.impression.R;
+import com.afollestad.impression.media.MediaAdapter;
 import com.afollestad.inquiry.annotations.Column;
 
 import java.io.File;
@@ -15,15 +15,7 @@ import java.io.File;
 public class MediaFolderEntry extends PhotoEntry {
 
     public static final String OVERVIEW_PATH = "OVERVIEW";
-    public static final Creator<MediaFolderEntry> CREATOR = new Creator<MediaFolderEntry>() {
-        public MediaFolderEntry createFromParcel(Parcel source) {
-            return new MediaFolderEntry(source);
-        }
 
-        public MediaFolderEntry[] newArray(int size) {
-            return new MediaFolderEntry[size];
-        }
-    };
     @Column(name = MediaStore.Images.Media._ID)
     protected long _id;
     @Column(name = MediaStore.Images.Media.DATA)
@@ -54,11 +46,17 @@ public class MediaFolderEntry extends PhotoEntry {
     public MediaFolderEntry() {
     }
 
-    protected MediaFolderEntry(Parcel in) {
-        this.bucketId = in.readString();
-        this.bucketDisplayName = in.readString();
-        this.dateTaken = in.readLong();
-        this._data = in.readString();
+    public static String getSortQueryForThumb(@MediaAdapter.SortMode int from) {
+        switch (from) {
+            case MediaAdapter.SORT_TAKEN_DATE_ASC:
+                return "MAX(" + MediaStore.Images.Media.DATE_TAKEN + ") ASC";
+            case MediaAdapter.SORT_TAKEN_DATE_DESC:
+                return "MAX(" + MediaStore.Images.Media.DATE_TAKEN + ") DESC";
+            case MediaAdapter.SORT_NAME_ASC:
+                return "MAX(" + MediaStore.Images.Media.DISPLAY_NAME + ") ASC";
+            default:
+                return "MAX(" + MediaStore.Images.Media.DISPLAY_NAME + ") DESC";
+        }
     }
 
     @Override
@@ -145,19 +143,6 @@ public class MediaFolderEntry extends PhotoEntry {
     @Override
     public String mimeType() {
         return "";
-    }
-
-    @Override
-    public int describeContents() {
-        return 0;
-    }
-
-    @Override
-    public void writeToParcel(Parcel dest, int flags) {
-        dest.writeString(this.bucketId);
-        dest.writeString(this.bucketDisplayName);
-        dest.writeLong(this.dateTaken);
-        dest.writeString(this._data);
     }
 
     @Override

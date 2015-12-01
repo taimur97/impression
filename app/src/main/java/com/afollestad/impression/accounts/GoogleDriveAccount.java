@@ -67,7 +67,7 @@ public class GoogleDriveAccount extends Account {
     }
 
 /*    @Override
-public Single<List<MediaFolderEntry>> getMediaFolders(@MediaAdapter.SortMode int getSortQueryFromSortMode, MediaAdapter.FileFilterMode filter, AlbumCallback callback) {
+public Single<List<MediaFolderEntry>> getMediaFolders(@MediaAdapter.SortMode int getSortQueryForThumb, MediaAdapter.FileFilterMode filter, AlbumCallback callback) {
     callback.onAlbums(null);
 }
 
@@ -76,6 +76,6 @@ public Single<List<MediaFolderEntry>> getMediaFolders(@MediaAdapter.SortMode int
     }
 
     @Override
-    public void getEntries(String albumPath, int overviewMode, boolean explorerMode, MediaAdapter.FileFilterMode filter, MediaAdapter.SortMode getSortQueryFromSortMode, EntriesCallback callback) {
+    public void getEntries(String albumPath, int overviewMode, boolean explorerMode, MediaAdapter.FileFilterMode filter, MediaAdapter.SortMode getSortQueryForThumb, EntriesCallback callback) {
     }*/
 }

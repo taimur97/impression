@@ -2,8 +2,6 @@ package com.afollestad.impression.media;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.os.Bundle;
-import android.os.Parcelable;
 import android.support.annotation.IntDef;
 import android.support.v4.view.ViewCompat;
 import android.support.v7.widget.RecyclerView;
@@ -16,13 +14,11 @@ import com.afollestad.impression.R;
 import com.afollestad.impression.api.MediaEntry;
 import com.afollestad.impression.utils.PrefUtils;
 import com.afollestad.impression.utils.Utils;
-import com.afollestad.impression.viewer.ViewerActivity;
 import com.afollestad.impression.widget.ImpressionThumbnailImageView;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -32,26 +28,23 @@ public class MediaAdapter extends RecyclerView.Adapter<MediaAdapter.ViewHolder> 
 
     public static final int SORT_NAME_ASC = 0;
     public static final int SORT_NAME_DESC = 1;
-    public static final int SORT_MODIFIED_DATE_ASC = 2;
-    public static final int SORT_MODIFIED_DATE_DESC = 3;
-    public static final int SORT_DEFAULT = SORT_MODIFIED_DATE_ASC;
-
+    public static final int SORT_TAKEN_DATE_ASC = 2;
+    public static final int SORT_TAKEN_DATE_DESC = 3;
+    public static final int SORT_NOSORT = 4;
     public static final int FILTER_ALL = 0;
     public static final int FILTER_PHOTOS = 1;
     public static final int FILTER_VIDEOS = 2;
-
     public static final int VIEW_TYPE_GRID = 0;
     public static final int VIEW_TYPE_GRID_FOLDER = 1;
     public static final int VIEW_TYPE_LIST = 2;
-    public static final String STATE_ENTRIES = "state_entries";
+    private static final int ACTIVATION_UPDATE = -42;
     private static final String TAG = "MediaAdapter";
 
     private final Context mContext;
     private final Callback mCallback;
-    private final List<MediaEntry> mEntries;
     private final List<String> mCheckedPaths;
     private final boolean mSelectAlbumMode;
-
+    private List<MediaEntry> mEntries;
     @SortMode
     private int mSortMode;
     private boolean mGridMode;
@@ -71,7 +64,7 @@ public class MediaAdapter extends RecyclerView.Adapter<MediaAdapter.ViewHolder> 
         mDefaultImageBackground = Utils.resolveColor(context, R.attr.default_image_background);
         mEmptyImageBackground = Utils.resolveColor(context, R.attr.empty_image_background);
 
-        mEntries = new ArrayList<>();
+        mEntries = CurrentMediaEntriesSingleton.getInstance().getMediaEntriesCopy(mContext, mSortMode);
 
         setHasStableIds(true);
     }
@@ -95,7 +88,7 @@ public class MediaAdapter extends RecyclerView.Adapter<MediaAdapter.ViewHolder> 
             for (int i = 0; i < mEntries.size(); i++) {
                 if (mEntries.get(i).data() != null &&
                         mEntries.get(i).data().equals(entry.data())) {
-                    notifyItemChanged(i);
+                    notifyItemChanged(i, ACTIVATION_UPDATE);
                     break;
                 }
             }
@@ -105,7 +98,7 @@ public class MediaAdapter extends RecyclerView.Adapter<MediaAdapter.ViewHolder> 
             }
             for (int i = 0; i < mEntries.size(); i++) {
                 if (mEntries.get(i).data().equals(entry.data())) {
-                    notifyItemChanged(i);
+                    notifyItemChanged(i, ACTIVATION_UPDATE);
                     break;
                 }
             }
@@ -116,7 +109,7 @@ public class MediaAdapter extends RecyclerView.Adapter<MediaAdapter.ViewHolder> 
         for (int i = 0; i < mEntries.size(); i++) {
             for (String path : mCheckedPaths) {
                 if (mEntries.get(i).data().equals(path)) {
-                    notifyItemChanged(i);
+                    notifyItemChanged(i, ACTIVATION_UPDATE);
                     break;
                 }
             }
@@ -129,56 +122,14 @@ public class MediaAdapter extends RecyclerView.Adapter<MediaAdapter.ViewHolder> 
         return mEntries.get(position).id();
     }
 
-    public ViewerActivity.MediaWrapper getMediaWrapper() {
-        return new ViewerActivity.MediaWrapper(mEntries, false);
-    }
-
     public void clear() {
         mEntries.clear();
         notifyDataSetChanged();
     }
 
-    private void add(MediaEntry e) {
-       /* if (e instanceof OldAlbumEntry) {
-            synchronized (mEntries) {
-                boolean found = false;
-                for (int i = 0; i < mEntries.size(); i++) {
-                    MediaEntry e2 = mEntries.get(i);
-                    if (e2.data().equals(e.data())) {
-                        found = true;
-                        mEntries.set(i, e);
-                        break;
-                    }
-                }
-                if (!found)
-                    mEntries.add(e);
-            }
-        } else {*/
-        mEntries.add(e);
-        /*}*/
-    }
-
-    public void addAll(MediaEntry[] entries) {
-        if (entries != null) {
-            for (MediaEntry e : entries) {
-                add(e);
-            }
-        }
-        if (mEntries.size() > 0) {
-            Collections.sort(mEntries, PrefUtils.getSortComparator(mContext, mSortMode));
-        }
+    public void updateEntriesAndSort() {
+        mEntries = CurrentMediaEntriesSingleton.getInstance().getMediaEntriesCopy(mContext, mSortMode);
         notifyDataSetChanged();
-    }
-
-    public void remove(Long entryId) {
-        for (int i = 0; i < mEntries.size(); i++) {
-            MediaEntry entry = mEntries.get(i);
-            if (entry.id() == entryId) {
-                mEntries.remove(entry);
-                notifyItemRemoved(i);
-                i--;
-            }
-        }
     }
 
     public void updateGridModeOn() {
@@ -190,8 +141,9 @@ public class MediaAdapter extends RecyclerView.Adapter<MediaAdapter.ViewHolder> 
         notifyDataSetChanged();
     }
 
-    public void setSortMode(@SortMode int mode) {
+    public void updateSortMode(@SortMode int mode) {
         mSortMode = mode;
+        updateEntriesAndSort();
     }
 
     public void updateExplorerMode() {
@@ -205,49 +157,12 @@ public class MediaAdapter extends RecyclerView.Adapter<MediaAdapter.ViewHolder> 
         notifyDataSetChanged();
     }
 
-    /*public void changeContent(Cursor cursor, Uri from, boolean clear, boolean explorerMode) {
-        if (cursor == null || from == null) {
-            mEntries.clear();
-            return;
-        }
-        if (clear) {
-            mEntries.clear();
-        }
-        final boolean photos = from.toString().equals(MediaStore.Images.Media.EXTERNAL_CONTENT_URI.toString());
-        while (cursor.moveToNext()) {
-            //TODO
-            *//*MediaEntry pic = (photos ? new PhotoEntry().load(cursor) : new VideoEntry().load(cursor));
-            mEntries.add(pic);*//*
-        }
-        cursor.close();
-        Collections.sort(mEntries, PrefUtils.getSortComparator(mContext, mSortMode));
-    }*/
-
-    /*public void changeContent(File[] content, boolean explorerMode, FileFilterMode mode) {
-        mEntries.clear();
-        if (content == null || content.length == 0) {
-            return;
-        }
-        //TODO
-        *//*for (File fi : content) {
-            if (!fi.isHidden()) {
-                if (fi.isDirectory()) {
-                    if (explorerMode)
-                        mEntries.add(new OldFolderEntry(fi));
-                } else {
-                    String mime = Utils.getMimeType(Utils.getExtension(fi.getName()));
-                    if (mime != null) {
-                        if (mime.startsWith("image/") && mode != FileFilterMode.FILTER_VIDEOS) {
-                            mEntries.add(new PhotoEntry().load(fi));
-                        } else if (mime.startsWith("video/") && mode != FileFilterMode.FILTER_PHOTOS) {
-                            mEntries.add(new VideoEntry().load(fi));
-                        }
-                    }
-                }
-            }
-        }*//*
-        Collections.sort(mEntries, PrefUtils.getSortComparator(mContext, mSortMode));
-    }*/
+    /**
+     * Use with caution. Don't modify.
+     */
+    public List<MediaEntry> getEntries() {
+        return mEntries;
+    }
 
     @Override
     public MediaAdapter.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
@@ -266,6 +181,20 @@ public class MediaAdapter extends RecyclerView.Adapter<MediaAdapter.ViewHolder> 
         }
         View v = LayoutInflater.from(mContext).inflate(layoutRes, parent, false);
         return new ViewHolder(v);
+    }
+
+    /**
+     * These payloads are awesome. More people should use these. USE THESE PEOPLE
+     */
+    @Override
+    public void onBindViewHolder(ViewHolder holder, int position, List<Object> payloads) {
+        if (payloads.isEmpty()) {
+            super.onBindViewHolder(holder, position, payloads);
+        } else {
+            if (payloads.contains(ACTIVATION_UPDATE)) {
+                holder.view.setActivated(mCheckedPaths.contains(mEntries.get(position).data()));
+            }
+        }
     }
 
     @Override
@@ -350,31 +279,13 @@ public class MediaAdapter extends RecyclerView.Adapter<MediaAdapter.ViewHolder> 
         }
     }
 
-    public void saveInstanceState(Bundle out) {
-        out.putParcelableArray(STATE_ENTRIES, mEntries.toArray(new MediaEntry[mEntries.size()]));
-    }
-
-    public MediaEntry[] restoreInstanceState(Bundle in) {
-        Parcelable[] mediaEntryArray = in.getParcelableArray(STATE_ENTRIES);
-
-        List<MediaEntry> mediaEntries = new ArrayList<>();
-        for (Parcelable parcelable : mediaEntryArray) {
-            mediaEntries.add((MediaEntry) parcelable);
-        }
-
-        mEntries.addAll(mediaEntries);
-        notifyDataSetChanged();
-
-        return mediaEntries.toArray(new MediaEntry[mediaEntries.size()]);
-    }
-
     @Override
     public int getItemCount() {
         return mEntries.size();
     }
 
     @SuppressLint("UniqueConstants")
-    @IntDef({SORT_NAME_ASC, SORT_NAME_DESC, SORT_MODIFIED_DATE_ASC, SORT_MODIFIED_DATE_DESC, SORT_DEFAULT})
+    @IntDef({SORT_NAME_ASC, SORT_NAME_DESC, SORT_TAKEN_DATE_ASC, SORT_TAKEN_DATE_DESC, SORT_NOSORT})
     @Retention(RetentionPolicy.SOURCE)
     public @interface SortMode {
     }

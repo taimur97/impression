@@ -64,10 +64,6 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
             //noinspection ConstantConditions
             getView().saveScrollPositionInto(findCrumbForCurrentPath((MainActivity) getView().getContextCompat()));
         }
-        if (mAllEntriesSubscription != null) {
-            mAllEntriesSubscription.unsubscribe();
-            mAllEntriesSubscription = null;
-        }
     }
 
     public void setGridModeOn(boolean gridMode) {
@@ -101,13 +97,16 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
     public void onViewCreated(Bundle savedInstanceState) {
         if (isViewAttached()) {
             //noinspection ConstantConditions
+
+            boolean instanceExists = CurrentMediaEntriesSingleton.instanceExists();
+
             final boolean gridMode = PrefUtils.isGridMode(getView().getContextCompat());
             getView().initializeRecyclerView(gridMode, PrefUtils.getGridColumns(getView().getContextCompat()), createAdapter());
 
-            if (savedInstanceState == null || !mLoaded) {
+            if (savedInstanceState == null || !mLoaded || !instanceExists) {
                 setPath(mPath);
             } else {
-                MediaEntry[] mediaEntries = getView().getAdapter().restoreInstanceState(savedInstanceState);
+                List<MediaEntry> mediaEntries = getView().getAdapter().getEntries();
                 reloadFinished(mediaEntries);
                 onPathSet((MainActivity) getView().getContextCompat());
             }
@@ -127,6 +126,13 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
             }
             //noinspection ConstantConditions
             mLastDarkTheme = PrefUtils.isDarkTheme(getView().getContextCompat());
+        }
+    }
+
+    protected void onDestroy() {
+        if (mAllEntriesSubscription != null) {
+            mAllEntriesSubscription.unsubscribe();
+            mAllEntriesSubscription = null;
         }
     }
 
@@ -151,10 +157,6 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
     protected void onSaveInstanceState(Bundle bundle) {
         bundle.putString(STATE_PATH, mPath);
         bundle.putBoolean(STATE_LOADED, mLoaded);
-        if (isViewAttached()) {
-            //noinspection ConstantConditions
-            getView().getAdapter().saveInstanceState(bundle);
-        }
         Log.e(TAG, "onSaveInstanceState: " + bundle.toString());
     }
 
@@ -239,9 +241,6 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
                     public Single<List<MediaEntry>> call(Account account) {
                         //if (!isAdded()) return null;
                         if (account != null) {
-                            /*acc.getEntries(mPresenter.getPath(), PrefUtils.getOverviewAllMediaMode(getActivity()),
-                            PrefUtils.isExplorerMode(getActivity()), PrefUtils.getFilterMode(getActivity()),
-                            SortMemoryProvider.getSortMode(getActivity(), mPresenter.getPath()), callback);*/
                             return account.getEntries(getPath(),
                                     PrefUtils.isExplorerMode(getView().getContextCompat()),
                                     PrefUtils.getFilterMode(getView().getContextCompat()),
@@ -253,8 +252,6 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
     }
 
     public final void reload() {
-        mLoaded = false;
-
         if (!isViewAttached()) {
             return;
         }
@@ -263,6 +260,11 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
         if (act == null || ContextCompat.checkSelfPermission(act, Manifest.permission.WRITE_EXTERNAL_STORAGE) !=
                 PackageManager.PERMISSION_GRANTED) {
             return;
+        }
+
+        mLoaded = false;
+        if (mAllEntriesSubscription != null) {
+            mAllEntriesSubscription.unsubscribe();
         }
 
 
@@ -283,15 +285,19 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
                 .subscribe(new SingleSubscriber<List<MediaEntry>>() {
                     @Override
                     public void onSuccess(List<MediaEntry> entries) {
-                        MediaEntry[] allEntries = entries.toArray(new MediaEntry[entries.size()]);
                        /* if (!isAdded())
                             return;
                         else */
-                        if (getView().getAdapter() != null) {
-                            getView().getAdapter().addAll(allEntries);
-                        }
 
-                        reloadFinished(allEntries);
+                        if (!isUnsubscribed()) {
+                            CurrentMediaEntriesSingleton.getInstance().set(entries);
+
+                            if (getView().getAdapter() != null) {
+                                getView().getAdapter().updateEntriesAndSort();
+                            }
+
+                            reloadFinished(entries);
+                        }
                     }
 
                     @Override
@@ -305,7 +311,13 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
                 });
     }
 
-    private void reloadFinished(MediaEntry[] allEntries) {
+    public void updateAdapterEntries() {
+        if (isViewAttached()) {
+            getView().getAdapter().updateEntriesAndSort();
+        }
+    }
+
+    private void reloadFinished(List<MediaEntry> allEntries) {
         final MainActivity mainActivity = (MainActivity) getView().getContextCompat();
 
         getView().setListShown(true);
@@ -335,13 +347,13 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
         }
     }
 
-    public void remove(Long[] mediaEntries) {
+    /*public void updateEntriesAndSort(Long[] mediaEntries) {
         if (isViewAttached()) {
             for (Long entry : mediaEntries) {
-                getView().getAdapter().remove(entry);
+                getView().getAdapter().updateEntriesAndSort(entry);
             }
         }
-    }
+    }*/
 
     private class MediaCallbackImpl implements MediaAdapter.Callback {
 
@@ -393,10 +405,11 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
                         ImpressionThumbnailImageView iv = (ImpressionThumbnailImageView) view.findViewById(R.id.image);
                         int width = iv.getWidth();
                         int height = iv.getHeight();
-                        ViewerActivity.MediaWrapper wrapper = getView().getAdapter().getMediaWrapper();
+                        //List<MediaEntry> entries= getView().getAdapter().getEntries();
                         final Intent intent = new Intent(act, ViewerActivity.class)
-                                .putExtra(ViewerActivity.EXTRA_MEDIA_ENTRIES, wrapper)
-                                .putExtra(ViewerActivity.EXTRA_CURRENT_ITEM_POSITION, index)
+                                .putExtra(ViewerActivity.EXTRA_PATH, mPath)
+                                .putExtra(ViewerActivity.EXTRA_ITEMS_READY, true)
+                                .putExtra(ViewerActivity.EXTRA_INIT_CURRENT_ITEM_POSITION, index)
                                 .putExtra(ViewerActivity.EXTRA_WIDTH, width)
                                 .putExtra(ViewerActivity.EXTRA_HEIGHT, height);
                         final String transName = "view_" + index;

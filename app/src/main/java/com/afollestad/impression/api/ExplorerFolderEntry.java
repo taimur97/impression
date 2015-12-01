@@ -3,7 +3,6 @@ package com.afollestad.impression.api;
 import android.app.Activity;
 import android.content.Context;
 import android.os.Environment;
-import android.os.Parcel;
 import android.provider.MediaStore;
 
 import com.afollestad.impression.R;
@@ -12,15 +11,6 @@ import java.io.File;
 
 public class ExplorerFolderEntry implements MediaEntry {
 
-    public static final Creator<ExplorerFolderEntry> CREATOR = new Creator<ExplorerFolderEntry>() {
-        public ExplorerFolderEntry createFromParcel(Parcel source) {
-            return new ExplorerFolderEntry(source);
-        }
-
-        public ExplorerFolderEntry[] newArray(int size) {
-            return new ExplorerFolderEntry[size];
-        }
-    };
     private File mFile;
 
     public ExplorerFolderEntry() {
@@ -28,10 +18,6 @@ public class ExplorerFolderEntry implements MediaEntry {
 
     public ExplorerFolderEntry(File file) {
         mFile = file;
-    }
-
-    protected ExplorerFolderEntry(Parcel in) {
-        this.mFile = (File) in.readSerializable();
     }
 
     @Override
@@ -114,15 +100,5 @@ public class ExplorerFolderEntry implements MediaEntry {
                 deleteFile(file);
             }
         }
-    }
-
-    @Override
-    public int describeContents() {
-        return 0;
-    }
-
-    @Override
-    public void writeToParcel(Parcel dest, int flags) {
-        dest.writeSerializable(this.mFile);
     }
 }

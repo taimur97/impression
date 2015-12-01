@@ -71,7 +71,7 @@ public class MainActivity extends ThemedActivity
 
     public static final String EXTRA_CURRENT_ITEM_POSITION = "com.afollestad.impression.extra_current_item_position";
     public static final String EXTRA_OLD_ITEM_POSITION = "com.afollestad.impression.extra_old_item_position";
-    public static final String EXTRA_REMOVED_ITEMS = "com.afollestad.impression.removed_items";
+    //public static final String EXTRA_REMOVED_ITEMS = "com.afollestad.impression.removed_items";
 
     public static final String ACTION_SELECT_ALBUM = BuildConfig.APPLICATION_ID + ".SELECT_FOLDER";
 
@@ -494,14 +494,13 @@ public class MainActivity extends ThemedActivity
         final int oldPosition = mTmpState.getInt(EXTRA_OLD_ITEM_POSITION);
         final int currentPosition = mTmpState.getInt(EXTRA_CURRENT_ITEM_POSITION);
 
-        Long[] removedEntryIds = (Long[]) data.getSerializableExtra(EXTRA_REMOVED_ITEMS);
-        findMediaFragment().getPresenter().remove(removedEntryIds);
+        findMediaFragment().getPresenter().updateAdapterEntries();
 
         final RecyclerView recyclerView = findMediaFragment().getRecyclerView();
         if (recyclerView != null) {
             postponeEnterTransition();
 
-            recyclerView.postDelayed(new Runnable() {
+            recyclerView.post(new Runnable() {
                 @Override
                 public void run() {
                     if (oldPosition != currentPosition) {
@@ -519,8 +518,7 @@ public class MainActivity extends ThemedActivity
                         }
                     });
                 }
-                //TODO: Proper delay mechanism to wait for delete animation (or no delete animation)
-            }, 300);
+            });
 
         }
     }

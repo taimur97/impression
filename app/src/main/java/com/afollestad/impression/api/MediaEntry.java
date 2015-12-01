@@ -2,9 +2,10 @@ package com.afollestad.impression.api;
 
 import android.app.Activity;
 import android.content.Context;
-import android.os.Parcelable;
 
-public interface MediaEntry extends Parcelable /*extends CursorItem<T>, Serializable*/ {
+import java.io.Serializable;
+
+public interface MediaEntry extends Serializable {
 
     /*int realIndex();
 

@@ -84,9 +84,9 @@ public class LocalAccount extends Account {
             public void call(SingleSubscriber<? super Set<MediaFolderEntry>> singleSubscriber) {
                 Set<MediaFolderEntry> folders = new HashSet<>();
                 for (Uri uri : uris) {
-                    //WHERE (TRUE) GROUP BY (bucket_id),(bucket_display_name)
+                    //WHERE (1) GROUP BY (bucket_id),(bucket_display_name)
                     String bucketGroupBy = "1) GROUP BY (bucket_id),(bucket_display_name";
-                    String bucketOrderBy = "MAX(datetaken) DESC";
+                    String bucketOrderBy = MediaFolderEntry.getSortQueryForThumb(sortMode);
                     MediaFolderEntry[] albums = Inquiry.get()
                             .selectFrom(uri, MediaFolderEntry.class)
                             .where(bucketGroupBy)
@@ -197,6 +197,9 @@ public class LocalAccount extends Account {
                 });
     }
 
+    /**
+     * @param sort Used only for thumbnails of overviews.
+     */
     @Override
     public Single<List<MediaEntry>> getEntries(final String albumPath, final boolean explorerMode,
                                                final @MediaAdapter.FileFilterMode int filter,
@@ -251,21 +254,18 @@ public class LocalAccount extends Account {
                     final List<Uri> uris = new ArrayList<>();
                     List<String> selections = new ArrayList<>();
                     List<String[]> selectionArgs = new ArrayList<>();
-                    final List<String> sorts = new ArrayList<>();
 
                     if (filter == MediaAdapter.FILTER_PHOTOS || filter == MediaAdapter.FILTER_ALL) {
                         entryClasses.add(PhotoEntry.class);
                         uris.add(MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
                         selections.add(MediaStore.Images.Media.BUCKET_DISPLAY_NAME + " = ?");
                         selectionArgs.add(new String[]{bucketName});
-                        sorts.add(PhotoEntry.getSortQueryFromSortMode(sort));
                     }
                     if (filter == MediaAdapter.FILTER_VIDEOS || filter == MediaAdapter.FILTER_ALL) {
                         entryClasses.add(VideoEntry.class);
                         uris.add(MediaStore.Video.Media.EXTERNAL_CONTENT_URI);
                         selections.add(MediaStore.Video.Media.BUCKET_DISPLAY_NAME + " = ?");
                         selectionArgs.add(new String[]{bucketName});
-                        sorts.add(VideoEntry.getSortQueryFromSortMode(sort));
                     }
 
                     for (int i = 0; i < entryClasses.size(); i++) {
@@ -273,7 +273,6 @@ public class LocalAccount extends Account {
                         MediaEntry[] entries = Inquiry.get()
                                 .selectFrom(uris.get(i), entryClass)
                                 .where(selections.get(i), selectionArgs.get(i))
-                                .sort(sorts.get(i))
                                 .all();
                         if (entries != null) {
                             Collections.addAll(mediaEntries, entries);
