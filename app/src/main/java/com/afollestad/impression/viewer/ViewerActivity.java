@@ -22,6 +22,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.print.PrintHelper;
 import android.support.v4.view.ViewPager;
@@ -457,80 +458,18 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
 
         //mRemovedEntryIds = new ArrayList<>();
 
-        String path = Environment.getExternalStorageDirectory().getAbsolutePath();
         boolean dontSetPos = false;
-        if (getIntent() != null && (!getIntent().hasExtra(EXTRA_ITEMS_READY) || !CurrentMediaEntriesSingleton.instanceExists())) {
-            if (getIntent().getData() != null) {
-                List<MediaEntry> entries = new ArrayList<>();
-                Uri data = getIntent().getData();
-                if (data.getScheme() != null) {
-                    path = data.toString();
-                    if (data.getScheme().equals("file")) {
-                        path = data.getPath();
-                        if (!new File(path).exists()) {
-                            path = null;
-                        } else {
-                            final File file = new File(path);
-                            //TODO
-                            final List<MediaEntry> brothers = null/*Utils.getEntriesFromFolder(this, file.getParentFile(), false, false, MediaAdapter.FileFilterMode.FILTER_ALL)*/;
-                            entries.addAll(brothers);
-                            for (int i = 0; i < brothers.size(); i++) {
-                                if (brothers.get(i).data().equals(file.getAbsolutePath())) {
-                                    mCurrentPosition = i;
-                                    dontSetPos = true;
-                                    break;
-                                }
-                            }
-                        }
-                    } else {
-                        String tempPath = null;
-                        try {
-                            Cursor cursor = getContentResolver().query(data, new String[]{"_data"}, null, null, null);
-                            if (cursor.moveToFirst()) {
-                                tempPath = cursor.getString(0);
-                            }
-                            cursor.close();
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                        if (tempPath != null) {
-                            // @author Viswanath Lekshmanan
-                            // #282 Fix to load all other photos in the same album when loading using URI
-                            final File file = new File(tempPath);
-                            //TODO
-                            final List<MediaEntry> brothers = null/*Utils.getEntriesFromFolder(this, file.getParentFile(), false, false, MediaAdapter.FileFilterMode.FILTER_ALL)*/;
-                            entries.addAll(brothers);
-                            for (int i = 0; i < brothers.size(); i++) {
-                                if (brothers.get(i).data().equals(file.getAbsolutePath())) {
-                                    mCurrentPosition = i;
-                                    dontSetPos = true;
-                                    break;
-                                }
-                            }
-                        } else {
-                            path = null;
-                        }
-                    }
-                }
 
-                CurrentMediaEntriesSingleton.getInstance().set(entries);
 
-                if (path == null) {
-                    new MaterialDialog.Builder(this)
-                            .title(R.string.error)
-                            .content(R.string.invalid_file_path_error)
-                            .positiveText(android.R.string.ok)
-                            .cancelable(false)
-                            .callback(new MaterialDialog.ButtonCallback() {
-                                @Override
-                                public void onPositive(MaterialDialog dialog) {
-                                    super.onPositive(dialog);
-                                    finish();
-                                }
-                            }).show();
-                    return;
-                }
-            }
+        String path = Environment.getExternalStorageDirectory().getAbsolutePath();
+        if (getIntent() != null && getIntent().hasExtra(EXTRA_PATH)) {
+            //noinspection ResourceType
+            path = getIntent().getStringExtra(EXTRA_PATH);
+        }
+
+        if (getIntent() != null && (!getIntent().hasExtra(EXTRA_ITEMS_READY) || !CurrentMediaEntriesSingleton.instanceExists()) && getIntent().getData() != null) {
+            path = reload();
+            if (path == null) return;
         }
 
         mAdapter = new ViewerPagerAdapter(this, getFragmentManager(),
@@ -588,6 +527,84 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
                 getNavigationBarHeight(false, true),
                 mToolbar.getPaddingBottom()
         );
+    }
+
+    @Nullable
+    private String reload() {
+        boolean dontSetPos;
+
+        String path = null;
+
+        List<MediaEntry> entries = new ArrayList<>();
+        Uri data = getIntent().getData();
+        if (data.getScheme() != null) {
+            path = data.toString();
+            if (data.getScheme().equals("file")) {
+                path = data.getPath();
+                if (!new File(path).exists()) {
+                    path = null;
+                } else {
+                    final File file = new File(path);
+                    //TODO
+                    final List<MediaEntry> brothers = null/*Utils.getEntriesFromFolder(this, file.getParentFile(), false, false, MediaAdapter.FileFilterMode.FILTER_ALL)*/;
+                    entries.addAll(brothers);
+                    for (int i = 0; i < brothers.size(); i++) {
+                        if (brothers.get(i).data().equals(file.getAbsolutePath())) {
+                            mCurrentPosition = i;
+                            dontSetPos = true;
+                            break;
+                        }
+                    }
+                }
+            } else {
+                String tempPath = null;
+                try {
+                    Cursor cursor = getContentResolver().query(data, new String[]{"_data"}, null, null, null);
+                    if (cursor.moveToFirst()) {
+                        tempPath = cursor.getString(0);
+                    }
+                    cursor.close();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                if (tempPath != null) {
+                    // @author Viswanath Lekshmanan
+                    // #282 Fix to load all other photos in the same album when loading using URI
+                    final File file = new File(tempPath);
+                    //TODO
+                    final List<MediaEntry> brothers = null/*Utils.getEntriesFromFolder(this, file.getParentFile(), false, false, MediaAdapter.FileFilterMode.FILTER_ALL)*/;
+                    entries.addAll(brothers);
+                    for (int i = 0; i < brothers.size(); i++) {
+                        if (brothers.get(i).data().equals(file.getAbsolutePath())) {
+                            mCurrentPosition = i;
+                            dontSetPos = true;
+                            break;
+                        }
+                    }
+                } else {
+                    path = null;
+                }
+            }
+        }
+
+        CurrentMediaEntriesSingleton.getInstance().set(entries);
+
+        if (path == null) {
+            new MaterialDialog.Builder(this)
+                    .title(R.string.error)
+                    .content(R.string.invalid_file_path_error)
+                    .positiveText(android.R.string.ok)
+                    .cancelable(false)
+                    .callback(new MaterialDialog.ButtonCallback() {
+                        @Override
+                        public void onPositive(MaterialDialog dialog) {
+                            super.onPositive(dialog);
+                            finish();
+                        }
+                    }).show();
+            return null;
+        }
+        return path;
     }
 
     private void setTransition() {

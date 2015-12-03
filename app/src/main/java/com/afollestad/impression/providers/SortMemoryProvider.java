@@ -5,6 +5,8 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
+import android.support.annotation.Nullable;
+import android.support.annotation.WorkerThread;
 
 import com.afollestad.impression.BuildConfig;
 import com.afollestad.impression.media.MediaAdapter;
@@ -44,7 +46,7 @@ public class SortMemoryProvider extends ProviderBase {
         }).start();
     }
 
-    public static void save(Context context, String path, @MediaAdapter.SortMode int mode) {
+    public static void save(Context context, @Nullable String path, @MediaAdapter.SortMode int mode) {
         if (context == null) {
             return;
         }
@@ -72,7 +74,7 @@ public class SortMemoryProvider extends ProviderBase {
     }
 
     @MediaAdapter.SortMode
-    public static int getSortMode(Context context, String path) {
+    public static int getSortMode(Context context, @Nullable String path) {
         if (context == null) {
             return MediaAdapter.SORT_TAKEN_DATE_DESC;
         } else if (path == null) {
@@ -94,6 +96,19 @@ public class SortMemoryProvider extends ProviderBase {
         }
         //noinspection ResourceType
         return mode;
+    }
+
+    @WorkerThread
+    public static boolean contains(Context context, String path) {
+        Cursor cursor = context.getContentResolver().query(CONTENT_URI,
+                null, "path = ?", new String[]{path}, null);
+        if (cursor != null) {
+            if (cursor.getCount() > 0) {
+                return true;
+            }
+            cursor.close();
+        }
+        return false;
     }
 
     public static void forget(Context context, String path) {

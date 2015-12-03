@@ -9,10 +9,13 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.ActivityOptionsCompat;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 
 import com.afollestad.impression.App;
@@ -48,6 +51,10 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
     private String mPath;
     private boolean mLastDarkTheme;
     private Subscription mAllEntriesSubscription;
+
+    @MediaAdapter.SortMode
+    private int mSortMode;
+    private boolean mSortRememberDir;
 
     private boolean mLoaded;
 
@@ -160,15 +167,28 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
         Log.e(TAG, "onSaveInstanceState: " + bundle.toString());
     }
 
-    protected void onOptionsItemSelected(int itemId) {
+    /**
+     * @param rememberPath Don't store, global
+     */
+    private void changeSortMode(@MediaAdapter.SortMode int mode, @Nullable String rememberPath) {
+        if (isViewAttached()) {
+            mSortMode = mode;
+            SortMemoryProvider.save(getView().getContextCompat(), rememberPath, mode);
+            getView().getAdapter().updateSortMode(mode);
+            ((Activity) getView().getContextCompat()).invalidateOptionsMenu();
+        }
+    }
+
+    protected void onOptionsItemSelected(MenuItem item) {
         if (!isViewAttached()) {
             return;
         }
 
-        switch (itemId) {
+        //noinspection ConstantConditions
+        MainActivity act = (MainActivity) getView().getContextCompat();
+
+        switch (item.getItemId()) {
             case R.id.viewExplorer:
-                //noinspection ConstantConditions
-                MainActivity act = (MainActivity) getView().getContextCompat();
                 boolean currentExplorerMode = PrefUtils.isExplorerMode(act);
                 PrefUtils.setExplorerMode(act, !currentExplorerMode);
 
@@ -176,9 +196,37 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
 
                 act.switchAlbum(null);
                 updateTitle();
-                act.invalidateOptionsMenu();
                 act.invalidateExplorerMode();
                 break;
+            case R.id.sortCurrentDir:
+                if (!item.isChecked()) {
+                    mSortRememberDir = true;
+                    changeSortMode(mSortMode, mPath);
+                } else {
+                    mSortRememberDir = false;
+                    SortMemoryProvider.forget(act, mPath);
+                    changeSortMode(SortMemoryProvider.getSortMode(act, null), null);
+                }
+                break;
+            case R.id.sortNameAsc:
+                changeSortMode(MediaAdapter.SORT_NAME_ASC, mSortRememberDir ? mPath : null);
+                break;
+            case R.id.sortNameDesc:
+                changeSortMode(MediaAdapter.SORT_NAME_DESC, mSortRememberDir ? mPath : null);
+                break;
+            case R.id.sortModifiedAsc:
+                changeSortMode(MediaAdapter.SORT_TAKEN_DATE_ASC, mSortRememberDir ? mPath : null);
+                break;
+            case R.id.sortModifiedDesc:
+                changeSortMode(MediaAdapter.SORT_TAKEN_DATE_DESC, mSortRememberDir ? mPath : null);
+                break;
+        }
+    }
+
+    public void onCreateOptionsMenu(Menu menu) {
+        if (isViewAttached()) {
+            //noinspection ConstantConditions
+            getView().onCreateSortMenuSelection(menu, mSortMode, mSortRememberDir);
         }
     }
 
@@ -335,6 +383,8 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
         updateTitle();
         mainActivity.invalidateMenuArrow(mPath);
         mainActivity.supportInvalidateOptionsMenu();
+        mSortRememberDir = SortMemoryProvider.contains(mainActivity, mPath);
+        mSortMode = SortMemoryProvider.getSortMode(mainActivity, mPath);
     }
 
     private MediaAdapter createAdapter() {

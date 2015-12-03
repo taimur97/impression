@@ -2,6 +2,7 @@ package com.afollestad.impression.media;
 
 import android.content.Context;
 import android.os.Bundle;
+import android.view.Menu;
 
 import com.afollestad.impression.MvpView;
 import com.afollestad.impression.api.MediaEntry;
@@ -32,4 +33,6 @@ interface MediaView extends MvpView {
     void restoreScrollPositionFrom(Crumb crumb);
 
     void invalidateSubtitle(List<MediaEntry> allEntries);
+
+    void onCreateSortMenuSelection(Menu menu, @MediaAdapter.SortMode int sortMode, boolean sortRememberDir);
 }

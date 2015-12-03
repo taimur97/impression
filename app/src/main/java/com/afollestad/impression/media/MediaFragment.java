@@ -23,7 +23,6 @@ import android.widget.TextView;
 import com.afollestad.impression.R;
 import com.afollestad.impression.api.MediaEntry;
 import com.afollestad.impression.api.MediaFolderEntry;
-import com.afollestad.impression.providers.SortMemoryProvider;
 import com.afollestad.impression.utils.PrefUtils;
 import com.afollestad.impression.widget.breadcrumbs.Crumb;
 import com.trello.rxlifecycle.components.RxFragment;
@@ -38,13 +37,10 @@ import static android.app.Activity.RESULT_OK;
  */
 public class MediaFragment extends RxFragment implements MediaView {
 
-
-    @MediaAdapter.SortMode
-    protected int sortCache;
     private RecyclerView mRecyclerView;
     private MediaAdapter mAdapter;
     private MediaPresenter mPresenter;
-    private boolean mSortRememberDir = false;
+
 
     RecyclerView getRecyclerView() {
         return mRecyclerView;
@@ -172,13 +168,6 @@ public class MediaFragment extends RxFragment implements MediaView {
     private void setFilterMode(@MediaAdapter.FileFilterMode int mode) {
         PrefUtils.setFilterMode(getActivity(), mode);
         getPresenter().reload();
-        getActivity().invalidateOptionsMenu();
-    }
-
-    private void setSortMode(@MediaAdapter.SortMode int mode, String rememberPath) {
-        sortCache = mode;
-        SortMemoryProvider.save(getActivity(), rememberPath, mode);
-        mAdapter.updateSortMode(mode);
         getActivity().invalidateOptionsMenu();
     }
 
@@ -323,6 +312,24 @@ public class MediaFragment extends RxFragment implements MediaView {
         ((MainActivity) getActivity()).setStatus(status);
     }
 
+    public void onCreateSortMenuSelection(Menu menu, @MediaAdapter.SortMode int sortMode, boolean sortRememberDir) {
+        switch (sortMode) {
+            default:
+                menu.findItem(R.id.sortNameAsc).setChecked(true);
+                break;
+            case MediaAdapter.SORT_NAME_DESC:
+                menu.findItem(R.id.sortNameDesc).setChecked(true);
+                break;
+            case MediaAdapter.SORT_TAKEN_DATE_ASC:
+                menu.findItem(R.id.sortModifiedAsc).setChecked(true);
+                break;
+            case MediaAdapter.SORT_TAKEN_DATE_DESC:
+                menu.findItem(R.id.sortModifiedDesc).setChecked(true);
+                break;
+        }
+        menu.findItem(R.id.sortCurrentDir).setChecked(sortRememberDir);
+    }
+
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         super.onCreateOptionsMenu(menu, inflater);
@@ -335,22 +342,8 @@ public class MediaFragment extends RxFragment implements MediaView {
             menu.findItem(R.id.viewMode).setVisible(!isAlbumSelect);
             menu.findItem(R.id.filter).setVisible(!isAlbumSelect);
 
-            sortCache = SortMemoryProvider.getSortMode(getActivity(), mPresenter.getPath());
-            switch (sortCache) {
-                default:
-                    menu.findItem(R.id.sortNameAsc).setChecked(true);
-                    break;
-                case MediaAdapter.SORT_NAME_DESC:
-                    menu.findItem(R.id.sortNameDesc).setChecked(true);
-                    break;
-                case MediaAdapter.SORT_TAKEN_DATE_ASC:
-                    menu.findItem(R.id.sortModifiedAsc).setChecked(true);
-                    break;
-                case MediaAdapter.SORT_TAKEN_DATE_DESC:
-                    menu.findItem(R.id.sortModifiedDesc).setChecked(true);
-                    break;
-            }
-            menu.findItem(R.id.sortCurrentDir).setChecked(mSortRememberDir);
+            //TODO: Transfer menu control to presenter
+            mPresenter.onCreateOptionsMenu(menu);
 
             @MediaAdapter.FileFilterMode int filterMode = PrefUtils.getFilterMode(getActivity());
             switch (filterMode) {
@@ -409,7 +402,7 @@ public class MediaFragment extends RxFragment implements MediaView {
                 mPresenter.setGridModeOn(!PrefUtils.isGridMode(getActivity()));
                 return true;
             case R.id.viewExplorer:
-                mPresenter.onOptionsItemSelected(item.getItemId());
+                mPresenter.onOptionsItemSelected(item);
                 return true;
             case R.id.filterAll:
                 setFilterMode(MediaAdapter.FILTER_ALL);
@@ -420,28 +413,12 @@ public class MediaFragment extends RxFragment implements MediaView {
             case R.id.filterVideos:
                 setFilterMode(MediaAdapter.FILTER_VIDEOS);
                 return true;
-            case R.id.sortNameAsc:
-                setSortMode(MediaAdapter.SORT_NAME_ASC, mPresenter.getPath());
-                return true;
-            case R.id.sortNameDesc:
-                setSortMode(MediaAdapter.SORT_NAME_DESC, mSortRememberDir ? mPresenter.getPath() : null);
-                return true;
-            case R.id.sortModifiedAsc:
-                setSortMode(MediaAdapter.SORT_TAKEN_DATE_ASC, mSortRememberDir ? mPresenter.getPath() : null);
-                return true;
-            case R.id.sortModifiedDesc:
-                setSortMode(MediaAdapter.SORT_TAKEN_DATE_DESC, mSortRememberDir ? mPresenter.getPath() : null);
-                return true;
             case R.id.sortCurrentDir:
-                item.setChecked(!item.isChecked());
-                if (item.isChecked()) {
-                    mSortRememberDir = true;
-                    setSortMode(sortCache, mPresenter.getPath());
-                } else {
-                    mSortRememberDir = false;
-                    SortMemoryProvider.forget(getActivity(), mPresenter.getPath());
-                    setSortMode(SortMemoryProvider.getSortMode(getActivity(), null), null);
-                }
+            case R.id.sortNameAsc:
+            case R.id.sortNameDesc:
+            case R.id.sortModifiedAsc:
+            case R.id.sortModifiedDesc:
+                mPresenter.onOptionsItemSelected(item);
                 return true;
             case R.id.gridSizeOne:
                 item.setChecked(!item.isChecked());
