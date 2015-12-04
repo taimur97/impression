@@ -130,10 +130,10 @@
     <string name="overview_display">Overview All Media Mode</string>
     <string name="overview_mode_desc">Display a continuous list of all media rather than albums</string>
     <string name="settings">Settings</string>
-    <string name="name_asc">Name ascend</string>
-    <string name="modified_desc">Date descend</string>
-    <string name="modified_asc">Date ascend</string>
-    <string name="name_desc">Name descend</string>
+    <string name="name_asc">Name: A-to-Z</string>
+    <string name="modified_desc">Date: New-to-Old</string>
+    <string name="modified_asc">Date: Old-to-New</string>
+    <string name="name_desc">Name: Z-to-A</string>
     <string name="excluded_folders">Excluded Folders</string>
     <string name="excluded_folders_desc">Edit the folders that will not be shown in the application.</string>
     <string name="draw">Draw</string>
