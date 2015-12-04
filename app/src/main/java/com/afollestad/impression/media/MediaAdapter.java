@@ -127,7 +127,7 @@ public class MediaAdapter extends RecyclerView.Adapter<MediaAdapter.ViewHolder> 
         notifyDataSetChanged();
     }
 
-    public void updateEntriesAndSort() {
+    public void updateEntriesFromSort() {
         mEntries = CurrentMediaEntriesSingleton.getInstance().getMediaEntriesCopy(mContext, mSortMode);
         notifyDataSetChanged();
     }
@@ -143,7 +143,7 @@ public class MediaAdapter extends RecyclerView.Adapter<MediaAdapter.ViewHolder> 
 
     public void updateSortMode(@SortMode int mode) {
         mSortMode = mode;
-        updateEntriesAndSort();
+        updateEntriesFromSort();
     }
 
     public void updateExplorerMode() {

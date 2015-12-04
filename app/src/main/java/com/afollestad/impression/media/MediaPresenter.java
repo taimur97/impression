@@ -114,7 +114,7 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
                 setPath(mPath);
             } else {
                 List<MediaEntry> mediaEntries = getView().getAdapter().getEntries();
-                reloadFinished(mediaEntries);
+                onReloadFinished(mediaEntries);
                 onPathSet((MainActivity) getView().getContextCompat());
             }
         }
@@ -340,11 +340,8 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
                         if (!isUnsubscribed()) {
                             CurrentMediaEntriesSingleton.getInstance().set(entries);
 
-                            if (getView().getAdapter() != null) {
-                                getView().getAdapter().updateEntriesAndSort();
-                            }
-
-                            reloadFinished(entries);
+                            updateAdapterEntries();
+                            onReloadFinished(entries);
                         }
                     }
 
@@ -361,18 +358,9 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
 
     public void updateAdapterEntries() {
         if (isViewAttached()) {
-            getView().getAdapter().updateEntriesAndSort();
+            getView().getAdapter().updateSortMode(mSortMode);
+            getView().getAdapter().updateEntriesFromSort();
         }
-    }
-
-    private void reloadFinished(List<MediaEntry> allEntries) {
-        final MainActivity mainActivity = (MainActivity) getView().getContextCompat();
-
-        getView().setListShown(true);
-        getView().restoreScrollPositionFrom(findCrumbForCurrentPath(mainActivity));
-        getView().invalidateSubtitle(allEntries);
-
-        mLoaded = true;
     }
 
     private Crumb findCrumbForCurrentPath(MainActivity mainActivity) {
@@ -387,6 +375,16 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
         mSortMode = SortMemoryProvider.getSortMode(mainActivity, mPath);
     }
 
+    private void onReloadFinished(List<MediaEntry> allEntries) {
+        final MainActivity mainActivity = (MainActivity) getView().getContextCompat();
+
+        getView().setListShown(true);
+        getView().restoreScrollPositionFrom(findCrumbForCurrentPath(mainActivity));
+        getView().invalidateSubtitle(allEntries);
+
+        mLoaded = true;
+    }
+
     private MediaAdapter createAdapter() {
         if (isViewAttached()) {
             MainActivity act = (MainActivity) getView().getContextCompat();
@@ -396,14 +394,6 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
             return null;
         }
     }
-
-    /*public void updateEntriesAndSort(Long[] mediaEntries) {
-        if (isViewAttached()) {
-            for (Long entry : mediaEntries) {
-                getView().getAdapter().updateEntriesAndSort(entry);
-            }
-        }
-    }*/
 
     private class MediaCallbackImpl implements MediaAdapter.Callback {
 
