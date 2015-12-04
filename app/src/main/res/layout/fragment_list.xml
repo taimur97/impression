@@ -3,15 +3,22 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <android.support.v7.widget.RecyclerView
-        android:id="@+id/list"
+    <android.support.v4.widget.SwipeRefreshLayout
+        android:id="@+id/swipe_refresh_layout"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:clipToPadding="false"
-        android:paddingBottom="@dimen/grid_spacing"
-        android:paddingLeft="@dimen/grid_spacing"
-        android:scrollbars="vertical"
-        tools:ignore="RtlHardcoded,RtlSymmetry" />
+        android:layout_height="match_parent">
+
+        <android.support.v7.widget.RecyclerView
+            android:id="@+id/list"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingBottom="@dimen/grid_spacing"
+            android:paddingLeft="@dimen/grid_spacing"
+            android:scrollbars="vertical"
+            tools:ignore="RtlHardcoded,RtlSymmetry" />
+
+    </android.support.v4.widget.SwipeRefreshLayout>
 
     <TextView
         android:id="@+id/empty"
@@ -26,11 +33,5 @@
         android:visibility="gone"
         tools:text="EMPTY IT'S EMPTY"
         tools:visibility="visible" />
-
-    <ProgressBar
-        android:id="@+id/progress"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center" />
 
 </FrameLayout>

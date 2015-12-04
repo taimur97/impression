@@ -176,6 +176,7 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
             SortMemoryProvider.save(getView().getContextCompat(), rememberPath, mode);
             getView().getAdapter().updateSortMode(mode);
             ((Activity) getView().getContextCompat()).invalidateOptionsMenu();
+            getView().scrollToTop();
         }
     }
 
@@ -299,6 +300,11 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
                 });
     }
 
+    public void onRefresh() {
+        reload();
+        getView().scrollToTop();
+    }
+
     public final void reload() {
         if (!isViewAttached()) {
             return;
@@ -359,7 +365,6 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
     public void updateAdapterEntries() {
         if (isViewAttached()) {
             getView().getAdapter().updateSortMode(mSortMode);
-            getView().getAdapter().updateEntriesFromSort();
         }
     }
 

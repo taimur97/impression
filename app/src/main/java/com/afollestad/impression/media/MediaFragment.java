@@ -8,6 +8,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.GridLayoutManager;
@@ -23,6 +24,7 @@ import android.widget.TextView;
 import com.afollestad.impression.R;
 import com.afollestad.impression.api.MediaEntry;
 import com.afollestad.impression.api.MediaFolderEntry;
+import com.afollestad.impression.base.ThemedActivity;
 import com.afollestad.impression.utils.PrefUtils;
 import com.afollestad.impression.widget.breadcrumbs.Crumb;
 import com.trello.rxlifecycle.components.RxFragment;
@@ -38,8 +40,11 @@ import static android.app.Activity.RESULT_OK;
 public class MediaFragment extends RxFragment implements MediaView {
 
     private RecyclerView mRecyclerView;
+    private SwipeRefreshLayout mSwipeRefreshLayout;
     private MediaAdapter mAdapter;
     private MediaPresenter mPresenter;
+    private View mEmptyView;
+    //private View mProgress;
 
 
     RecyclerView getRecyclerView() {
@@ -61,13 +66,11 @@ public class MediaFragment extends RxFragment implements MediaView {
             return;
         }
         if (shown) {
-            /*v.findViewById(R.id.list).setVisibility(mAdapter.getItemCount() > 0 ? View.VISIBLE : View.GONE);*/
-            v.findViewById(R.id.empty).setVisibility(mAdapter.getItemCount() == 0 ? View.VISIBLE : View.GONE);
-            v.findViewById(R.id.progress).setVisibility(View.GONE);
+            mEmptyView.setVisibility(mAdapter.getItemCount() == 0 ? View.VISIBLE : View.GONE);
+            mSwipeRefreshLayout.setRefreshing(false);
         } else {
-            /*v.findViewById(R.id.list).setVisibility(View.GONE);*/
             v.findViewById(R.id.empty).setVisibility(View.GONE);
-            v.findViewById(R.id.progress).setVisibility(View.VISIBLE);
+            mSwipeRefreshLayout.setRefreshing(true);
         }
     }
 
@@ -90,6 +93,16 @@ public class MediaFragment extends RxFragment implements MediaView {
         ((TextView) view.findViewById(R.id.empty)).setText(mPresenter.getEmptyText());
         mRecyclerView = (RecyclerView) view.findViewById(R.id.list);
         mRecyclerView.setScrollBarStyle(View.SCROLLBARS_INSIDE_OVERLAY);
+        mEmptyView = view.findViewById(R.id.empty);
+
+        mSwipeRefreshLayout = (SwipeRefreshLayout) view.findViewById(R.id.swipe_refresh_layout);
+        mSwipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                mPresenter.onRefresh();
+            }
+        });
+        mSwipeRefreshLayout.setColorSchemeColors(((ThemedActivity) getActivity()).accentColor());
 
         mPresenter.onViewCreated(savedInstanceState);
     }
@@ -111,6 +124,10 @@ public class MediaFragment extends RxFragment implements MediaView {
         if (gridMode) {
             mPresenter.setGridModeOn(true);
         }
+    }
+
+    public void scrollToTop() {
+        mRecyclerView.scrollToPosition(0);
     }
 
     public void updateGridModeOn(boolean gridMode) {

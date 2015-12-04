@@ -35,4 +35,6 @@ interface MediaView extends MvpView {
     void invalidateSubtitle(List<MediaEntry> allEntries);
 
     void onCreateSortMenuSelection(Menu menu, @MediaAdapter.SortMode int sortMode, boolean sortRememberDir);
+
+    void scrollToTop();
 }
