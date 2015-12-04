@@ -5,11 +5,18 @@ import android.content.Context;
 import android.os.Environment;
 import android.provider.MediaStore;
 
+import com.afollestad.impression.App;
 import com.afollestad.impression.R;
+import com.afollestad.impression.accounts.base.Account;
 import com.afollestad.impression.media.MediaAdapter;
+import com.afollestad.impression.utils.PrefUtils;
 import com.afollestad.inquiry.annotations.Column;
 
 import java.io.File;
+import java.util.List;
+
+import rx.Single;
+import rx.functions.Func1;
 
 //TODO: Don't repeat everything in PhotoEntry? Superclass problem with Inquiry
 public class MediaFolderEntry extends PhotoEntry {
@@ -157,9 +164,15 @@ public class MediaFolderEntry extends PhotoEntry {
 
     @Override
     public void delete(final Activity context) {
-        //TODO
-        /*for(File file: new File(data()).listFiles()){
-            file.delete();
-        }*/
+        List<MediaEntry> mediaEntries = App.getCurrentAccount(context).flatMap(new Func1<Account, Single<List<MediaEntry>>>() {
+            @Override
+            public Single<List<MediaEntry>> call(Account account) {
+                //noinspection ResourceType
+                return account.getEntries(data(), false, PrefUtils.getFilterMode(context), -1);
+            }
+        }).toBlocking().value();
+        for (MediaEntry entry : mediaEntries) {
+            entry.delete(context);
+        }
     }
 }

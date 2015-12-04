@@ -877,7 +877,10 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
                     .onPositive(new MaterialDialog.SingleButtonCallback() {
                         @Override
                         public void onClick(@NonNull MaterialDialog materialDialog, @NonNull DialogAction dialogAction) {
-                            CurrentMediaEntriesSingleton.getInstance().remove(mAdapter.getEntries().get(mCurrentPosition));
+                            MediaEntry entry = mAdapter.getEntries().get(mCurrentPosition);
+                            entry.delete(ViewerActivity.this);
+
+                            CurrentMediaEntriesSingleton.getInstance().remove(entry);
 
                             mAdapter.updateEntries();
                             if (mAdapter.getEntries().size() == 0) {

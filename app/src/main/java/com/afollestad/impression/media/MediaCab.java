@@ -15,7 +15,6 @@ import android.support.annotation.WorkerThread;
 import android.support.v4.widget.DrawerLayout;
 import android.text.Html;
 import android.util.Log;
-import android.util.Pair;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
@@ -291,68 +290,38 @@ public class MediaCab implements Serializable, MaterialCab.Callback {
     }
 
     private void deleteEntries() {
-        Observable.create(new Observable.OnSubscribe<List<MediaEntry>>() {
+        final MaterialDialog dialog = new MaterialDialog.Builder(mContext)
+                .progress(false, mMediaEntries.size(), true)
+                .cancelable(false)
+                .content(mContext.getString(R.string.deleting))
+                .show();
+
+        Observable.create(new Observable.OnSubscribe<Object>() {
             @Override
-            public void call(Subscriber<? super List<MediaEntry>> subscriber) {
-                final List<MediaEntry> toDelete = new ArrayList<>();
-                for (final MediaEntry e : mMediaEntries) {
-                    if (e.isFolder()) {
-                        List<MediaEntry> mediaEntries = App.getCurrentAccount(mContext).flatMap(new Func1<Account, Single<List<MediaEntry>>>() {
-                            @Override
-                            public Single<List<MediaEntry>> call(Account account) {
-                                //noinspection ResourceType
-                                return account.getEntries(e.data(),
-                                        PrefUtils.isExplorerMode(mContext),
-                                        PrefUtils.getFilterMode(mContext),
-                                        -1);
-                            }
-                        }).toBlocking().value();
-                        toDelete.addAll(mediaEntries);
-                    } else {
-                        toDelete.add(e);
+            public void call(Subscriber<? super Object> subscriber) {
+                for (MediaEntry p : mMediaEntries) {
+                    if (!dialog.isShowing()) {
+                        break;
                     }
+                    p.delete(mContext);
+                    dialog.incrementProgress(1);
                 }
-                if (toDelete.size() == 0) {
-                    finish();
-                    subscriber.onCompleted();
-                }
-                subscriber.onNext(toDelete);
+
                 subscriber.onCompleted();
             }
         }).subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .map(new Func1<List<MediaEntry>, Pair<List<MediaEntry>, ProgressDialog>>() {
-                    @Override
-                    public Pair<List<MediaEntry>, ProgressDialog> call(List<MediaEntry> toDeleteEntries) {
-                        final ProgressDialog dialog = new ProgressDialog(mContext);
-                        dialog.setMessage(mContext.getString(R.string.deleting));
-                        dialog.setIndeterminate(false);
-                        dialog.setMax(toDeleteEntries.size());
-                        dialog.setCancelable(true);
-                        dialog.show();
-
-                        return new Pair<>(toDeleteEntries, dialog);
-                    }
-                })
-                .observeOn(Schedulers.io())
-                .map(new Func1<Pair<List<MediaEntry>, ProgressDialog>, Pair<List<MediaEntry>, ProgressDialog>>() {
-                    @Override
-                    public Pair<List<MediaEntry>, ProgressDialog> call(Pair<List<MediaEntry>, ProgressDialog> mediaEntriesAndDialog) {
-                        for (MediaEntry p : mediaEntriesAndDialog.first) {
-                            if (!mediaEntriesAndDialog.second.isShowing()) {
-                                break;
-                            }
-                            p.delete(mContext);
-                            mediaEntriesAndDialog.second.setProgress(mediaEntriesAndDialog.second.getProgress() + 1);
-                        }
-                        return mediaEntriesAndDialog;
-                    }
-                })
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Subscriber<Pair<List<MediaEntry>, ProgressDialog>>() {
+                .subscribe(new Subscriber<Object>() {
                     @Override
                     public void onCompleted() {
+                        dialog.dismiss();
 
+                        CurrentMediaEntriesSingleton.getInstance().removeAll(mMediaEntries);
+
+                        mFragment.getPresenter().updateAdapterEntries();
+                        mContext.reloadNavDrawerAlbums();
+
+                        finish();
                     }
 
                     @Override
@@ -361,13 +330,8 @@ public class MediaCab implements Serializable, MaterialCab.Callback {
                     }
 
                     @Override
-                    public void onNext(Pair<List<MediaEntry>, ProgressDialog> mediaEntryIdsAndDialog) {
-                        mediaEntryIdsAndDialog.second.dismiss();
-                        finish();
-                        CurrentMediaEntriesSingleton.getInstance().removeAll(mediaEntryIdsAndDialog.first);
+                    public void onNext(Object done) {
 
-                        mFragment.getPresenter().updateAdapterEntries();
-                        mContext.reloadNavDrawerAlbums();
                     }
                 });
     }
