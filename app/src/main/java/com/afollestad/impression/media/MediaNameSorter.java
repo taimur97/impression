@@ -3,6 +3,7 @@ package com.afollestad.impression.media;
 import android.content.Context;
 
 import com.afollestad.impression.api.MediaEntry;
+import com.afollestad.impression.utils.AlphanumComparator;
 
 import java.util.Comparator;
 
@@ -27,9 +28,9 @@ public class MediaNameSorter implements Comparator<MediaEntry> {
             left = "";
         }
         if (desc) {
-            return right.compareTo(left);
+            return AlphanumComparator.compare(right, left);
         } else {
-            return left.compareTo(right);
+            return AlphanumComparator.compare(left, right);
         }
     }
 }
