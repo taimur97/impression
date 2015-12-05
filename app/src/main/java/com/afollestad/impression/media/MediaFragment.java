@@ -43,6 +43,7 @@ public class MediaFragment extends RxFragment implements MediaView {
     private SwipeRefreshLayout mSwipeRefreshLayout;
     private MediaAdapter mAdapter;
     private MediaPresenter mPresenter;
+    private boolean mLastDarkTheme;
     private View mEmptyView;
     //private View mProgress;
 
@@ -345,13 +346,13 @@ public class MediaFragment extends RxFragment implements MediaView {
                 break;
         }
         menu.findItem(R.id.sortCurrentDir).setChecked(sortRememberDir);
+
     }
 
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         super.onCreateOptionsMenu(menu, inflater);
         inflater.inflate(R.menu.fragment, menu);
-
         if (getActivity() != null) {
             boolean isMain = mPresenter.getPath() == null || mPresenter.getPath().equals(MediaFolderEntry.OVERVIEW_PATH);
             boolean isAlbumSelect = ((MainActivity) getActivity()).isSelectAlbumMode();
