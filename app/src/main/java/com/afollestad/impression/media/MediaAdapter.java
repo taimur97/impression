@@ -154,6 +154,8 @@ public class MediaAdapter extends RecyclerView.Adapter<MediaAdapter.ViewHolder> 
     public void updateTheme() {
         mDefaultImageBackground = Utils.resolveColor(mContext, R.attr.default_image_background);
         mEmptyImageBackground = Utils.resolveColor(mContext, R.attr.empty_image_background);
+
+        //TODO: Use selective updating since by using stable IDs this doesn't actually do anything
         notifyDataSetChanged();
     }
 

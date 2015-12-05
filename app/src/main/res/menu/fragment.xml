@@ -37,7 +37,7 @@
 
     <item
         android:id="@+id/sort"
-        android:icon="@drawable/ic_sort_black_24dp"
+        android:icon="@drawable/ic_sort_white_24dp"
         android:title="@string/sort"
         app:showAsAction="never">
         <menu>
@@ -64,7 +64,7 @@
 
     <item
         android:id="@+id/gridSize"
-        android:icon="@drawable/ic_grid_on_black_24dp"
+        android:icon="@drawable/ic_grid_on_white_24dp"
         android:title="@string/grid_size"
         app:showAsAction="never">
         <menu>

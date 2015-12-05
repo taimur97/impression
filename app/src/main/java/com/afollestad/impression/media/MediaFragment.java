@@ -43,9 +43,7 @@ public class MediaFragment extends RxFragment implements MediaView {
     private SwipeRefreshLayout mSwipeRefreshLayout;
     private MediaAdapter mAdapter;
     private MediaPresenter mPresenter;
-    private boolean mLastDarkTheme;
     private View mEmptyView;
-    //private View mProgress;
 
 
     RecyclerView getRecyclerView() {

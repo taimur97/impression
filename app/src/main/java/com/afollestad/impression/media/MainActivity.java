@@ -10,6 +10,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.graphics.PorterDuff;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
@@ -22,6 +23,7 @@ import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.view.menu.BaseMenuPresenter;
 import android.support.v7.view.menu.ListMenuItemView;
+import android.support.v7.view.menu.MenuItemImpl;
 import android.support.v7.view.menu.MenuPopupHelper;
 import android.support.v7.widget.ActionMenuView;
 import android.support.v7.widget.RecyclerView;
@@ -685,6 +687,22 @@ public class MainActivity extends ThemedActivity
                 Field field = menu.getClass().getDeclaredField("mOptionalIconsVisible");
                 field.setAccessible(true);
                 field.setBoolean(menu, true);
+
+                final boolean darkMode = isDarkTheme();
+                final int textColorPrimary = Utils.resolveColor(this, android.R.attr.textColorSecondary);
+
+                mToolbar.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        for (int i = 0; i < menu.size(); i++) {
+                            MenuItemImpl item = (MenuItemImpl) menu.getItem(i);
+                            int color = darkMode || item.isActionButton() ? Color.WHITE : textColorPrimary;
+                            if (item.getIcon() != null) {
+                                item.getIcon().setColorFilter(color, PorterDuff.Mode.SRC_IN);
+                            }
+                        }
+                    }
+                });
             } catch (Exception e) {
                 e.printStackTrace();
             }
