@@ -1,6 +1,7 @@
 package com.afollestad.impression.media;
 
 import android.app.Activity;
+import android.app.Fragment;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
@@ -27,17 +28,13 @@ import com.afollestad.impression.api.MediaFolderEntry;
 import com.afollestad.impression.base.ThemedActivity;
 import com.afollestad.impression.utils.PrefUtils;
 import com.afollestad.impression.widget.breadcrumbs.Crumb;
-import com.trello.rxlifecycle.components.RxFragment;
 
 import java.io.File;
 import java.util.List;
 
 import static android.app.Activity.RESULT_OK;
 
-/**
- * @author Aidan Follestad (afollestad)
- */
-public class MediaFragment extends RxFragment implements MediaView {
+public class MediaFragment extends Fragment implements MediaView {
 
     private RecyclerView mRecyclerView;
     private SwipeRefreshLayout mSwipeRefreshLayout;
@@ -350,7 +347,7 @@ public class MediaFragment extends RxFragment implements MediaView {
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         super.onCreateOptionsMenu(menu, inflater);
-        inflater.inflate(R.menu.fragment, menu);
+        inflater.inflate(R.menu.menu_media, menu);
         if (getActivity() != null) {
             boolean isMain = mPresenter.getPath() == null || mPresenter.getPath().equals(MediaFolderEntry.OVERVIEW_PATH);
             boolean isAlbumSelect = ((MainActivity) getActivity()).isSelectAlbumMode();

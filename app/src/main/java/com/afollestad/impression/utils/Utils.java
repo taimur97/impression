@@ -7,6 +7,7 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
+import android.util.DisplayMetrics;
 import android.view.WindowManager;
 import android.webkit.MimeTypeMap;
 
@@ -179,5 +180,25 @@ public abstract class Utils {
             }
             sb.append(", ");
         }
+    }
+
+    public static int getNavDrawerWidth(Context context) {
+        int navDrawerMargin = context.getResources().getDimensionPixelSize(R.dimen.nav_drawer_margin);
+        DisplayMetrics displayMetrics = context.getResources().getDisplayMetrics();
+        int navDrawerWidthLimit = context.getResources().getDimensionPixelSize(R.dimen.nav_drawer_width_limit);
+        int navDrawerWidth = displayMetrics.widthPixels - navDrawerMargin;
+        if (navDrawerWidth > navDrawerWidthLimit) {
+            navDrawerWidth = navDrawerWidthLimit;
+        }
+        return navDrawerWidth;
+    }
+
+    public static int getStatusBarHeight(Context context) {
+        int result = 0;
+        int resourceId = context.getResources().getIdentifier("status_bar_height", "dimen", "android");
+        if (resourceId > 0) {
+            result = context.getResources().getDimensionPixelSize(resourceId);
+        }
+        return result;
     }
 }

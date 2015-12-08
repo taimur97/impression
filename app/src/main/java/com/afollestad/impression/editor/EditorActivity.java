@@ -211,7 +211,7 @@ public class EditorActivity extends AppCompatActivity implements GLSurfaceView.R
             @Override
             public void onClick(View v) {
                 PopupMenu menu = new PopupMenu(EditorActivity.this, v);
-                menu.inflate(R.menu.filters);
+                menu.inflate(R.menu.menu_editor_filters);
                 menu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
                     @Override
                     public boolean onMenuItemClick(MenuItem item) {
@@ -232,7 +232,7 @@ public class EditorActivity extends AppCompatActivity implements GLSurfaceView.R
             @Override
             public void onClick(View v) {
                 IconizedMenu menu = new IconizedMenu(EditorActivity.this, v);
-                menu.inflate(R.menu.rotation_popup);
+                menu.inflate(R.menu.menu_editor_rotation);
                 menu.setOnMenuItemClickListener(new IconizedMenu.OnMenuItemClickListener() {
                     @Override
                     public boolean onMenuItemClick(MenuItem item) {
@@ -270,7 +270,7 @@ public class EditorActivity extends AppCompatActivity implements GLSurfaceView.R
             @Override
             public void onClick(View v) {
                 IconizedMenu menu = new IconizedMenu(EditorActivity.this, v);
-                menu.inflate(R.menu.flip_popup);
+                menu.inflate(R.menu.menu_editor_flip);
                 menu.setOnMenuItemClickListener(new IconizedMenu.OnMenuItemClickListener() {
                     @Override
                     public boolean onMenuItemClick(MenuItem item) {
@@ -407,7 +407,7 @@ public class EditorActivity extends AppCompatActivity implements GLSurfaceView.R
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.editor, menu);
+        getMenuInflater().inflate(R.menu.menu_editor, menu);
         return super.onCreateOptionsMenu(menu);
     }
 

@@ -28,7 +28,6 @@ import android.support.v7.view.menu.MenuPopupHelper;
 import android.support.v7.widget.ActionMenuView;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
-import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.Menu;
@@ -306,7 +305,7 @@ public class MainActivity extends ThemedActivity
             switchAlbum(null);
             NavDrawerFragment nav = (NavDrawerFragment) getFragmentManager().findFragmentByTag(NAV_DRAWER_FRAGMENT);
             if (nav != null) {
-                nav.reloadAccounts();
+                nav.reload();
             }
         }
     }
@@ -349,15 +348,8 @@ public class MainActivity extends ThemedActivity
             mDrawerLayout.setStatusBarBackgroundColor(primaryColorDark());
 
             FrameLayout navDrawerFrame = (FrameLayout) findViewById(R.id.nav_drawer_frame);
-            int navDrawerMargin = getResources().getDimensionPixelSize(R.dimen.nav_drawer_margin);
-            DisplayMetrics displayMetrics = getResources().getDisplayMetrics();
-            int navDrawerWidthLimit = getResources().getDimensionPixelSize(R.dimen.nav_drawer_width_limit);
-            int navDrawerWidth = displayMetrics.widthPixels - navDrawerMargin;
-            if (navDrawerWidth > navDrawerWidthLimit) {
-                navDrawerWidth = navDrawerWidthLimit;
-            }
-            navDrawerFrame.setLayoutParams(new DrawerLayout.LayoutParams(navDrawerWidth, DrawerLayout.LayoutParams.MATCH_PARENT, Gravity.START));
-            navDrawerFrame.setBackgroundColor(primaryColorDark());
+            navDrawerFrame.setLayoutParams(new DrawerLayout.LayoutParams(Utils.getNavDrawerWidth(this),
+                    DrawerLayout.LayoutParams.MATCH_PARENT, Gravity.START));
 
             if (getIntent().getAction() != null &&
                     (getIntent().getAction().equals(Intent.ACTION_GET_CONTENT) ||
@@ -666,11 +658,7 @@ public class MainActivity extends ThemedActivity
     public void reloadNavDrawerAlbums() {
         NavDrawerFragment nav = (NavDrawerFragment) getFragmentManager().findFragmentByTag(NAV_DRAWER_FRAGMENT);
         if (nav != null) {
-            if (nav.mCurrentAccount == null) {
-                nav.reloadAccounts();
-            } else {
-                nav.getMediaFolders(nav.mCurrentAccount);
-            }
+            nav.reloadAlbums();
         }
     }
 

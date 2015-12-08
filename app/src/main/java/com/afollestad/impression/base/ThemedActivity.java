@@ -4,17 +4,18 @@ import android.annotation.TargetApi;
 import android.app.ActivityManager;
 import android.content.res.ColorStateList;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.support.annotation.ColorInt;
+import android.support.annotation.FloatRange;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.view.MenuItem;
 
 import com.afollestad.impression.R;
 import com.afollestad.impression.utils.PrefUtils;
-import com.afollestad.impression.widget.CircleView;
 import com.afollestad.materialdialogs.internal.ThemeSingleton;
 
 /**
@@ -26,6 +27,22 @@ public abstract class ThemedActivity extends AppCompatActivity {
     private int mLastPrimaryColor;
     private int mLastAccentColor;
     private boolean mLastColoredNav;
+
+    @ColorInt
+    public static int shiftColor(@ColorInt int color, @FloatRange(from = 0.0f, to = 2.0f) float by) {
+        if (by == 1f) {
+            return color;
+        }
+        float[] hsv = new float[3];
+        Color.colorToHSV(color, hsv);
+        hsv[2] *= by; // value component
+        return Color.HSVToColor(hsv);
+    }
+
+    @ColorInt
+    public static int shiftColorDown(@ColorInt int color) {
+        return shiftColor(color, 0.9f);
+    }
 
     protected int darkTheme() {
         return R.style.AppTheme_Dark;
@@ -62,7 +79,7 @@ public abstract class ThemedActivity extends AppCompatActivity {
     }
 
     public int primaryColorDark() {
-        return CircleView.shiftColorDown(primaryColor());
+        return shiftColorDown(primaryColor());
     }
 
     public int accentColor() {

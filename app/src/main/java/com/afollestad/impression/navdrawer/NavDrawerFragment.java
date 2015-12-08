@@ -3,24 +3,16 @@ package com.afollestad.impression.navdrawer;
 import android.Manifest;
 import android.app.Fragment;
 import android.content.pm.PackageManager;
-import android.graphics.PorterDuff;
-import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.Html;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.ViewStub;
-import android.widget.ImageButton;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
-import android.widget.RelativeLayout;
-import android.widget.TextView;
-import android.widget.Toast;
 
 import com.afollestad.impression.R;
 import com.afollestad.impression.accounts.base.Account;
@@ -30,7 +22,6 @@ import com.afollestad.impression.media.MainActivity;
 import com.afollestad.impression.media.MediaAdapter;
 import com.afollestad.impression.providers.AccountProvider;
 import com.afollestad.impression.providers.ExcludedFolderProvider;
-import com.afollestad.impression.providers.IncludedFolderProvider;
 import com.afollestad.impression.utils.PrefUtils;
 import com.afollestad.impression.utils.Utils;
 import com.afollestad.materialdialogs.MaterialDialog;
@@ -44,29 +35,26 @@ import rx.SingleSubscriber;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
 
-/**
- * @author Aidan Follestad (afollestad)
- */
 public class NavDrawerFragment extends Fragment implements NavDrawerAdapter.Callback {
 
-    private static final String STATE_SELECTED_POSITION = "selected_navigation_drawer_position";
-    public Account mCurrentAccount;
-    private int mCurrentSelectedPosition;
+    private RecyclerView mRecyclerView;
+
+    //private Account mCurrentAccount;
+
     private NavDrawerAdapter mAdapter;
-    private LinearLayout mAccountsFrame;
-    private List<Account> mAccounts;
-    private int mSelectedColor;
-    private int mRegularColor;
+    //private LinearLayout mAccountsFrame;
+
+    //private List<Account> mAccounts;
+
+    /*private int mSelectedColor;
+    private int mRegularColor;*/
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if (savedInstanceState != null) {
-            mCurrentSelectedPosition = savedInstanceState.getInt(STATE_SELECTED_POSITION);
-        }
 
-        mSelectedColor = Utils.resolveColor(getActivity(), R.attr.colorAccent);
-        mRegularColor = Utils.resolveColor(getActivity(), android.R.attr.textColorPrimary);
+        /*mSelectedColor = Utils.resolveColor(getActivity(), R.attr.colorAccent);
+        mRegularColor = Utils.resolveColor(getActivity(), android.R.attr.textColorPrimary);*/
     }
 
     public void notifyClosed() {
@@ -80,7 +68,15 @@ public class NavDrawerFragment extends Fragment implements NavDrawerAdapter.Call
         }
     }
 
-    private void invalidateAccountViews(View itemView, int currentIndex, int selectedIndex) {
+    public void reloadAlbums() {
+        if (mAdapter.getCurrentAccount() == null) {
+            reload();
+        } else {
+            loadMediaFolders(mAdapter.getCurrentAccount());
+        }
+    }
+
+    /*private void invalidateAccountViews(View itemView, int currentIndex, int selectedIndex) {
         if (itemView == null) {
             for (int i = 0; i < mAccountsFrame.getChildCount() - 1; i++) {
                 invalidateAccountViews(mAccountsFrame.getChildAt(i), i, selectedIndex);
@@ -109,10 +105,10 @@ public class NavDrawerFragment extends Fragment implements NavDrawerAdapter.Call
             title.setText(acc.name());
             title.setTextColor(activated ? mSelectedColor : mRegularColor);
         }
-    }
+    }*/
 
-    private View getAccountView(int index, int selectedIndex, ViewGroup container) {
-        RelativeLayout view = (RelativeLayout) getActivity().getLayoutInflater().inflate(R.layout.list_item_account, container, false);
+    /*private View getAccountView(int index, int selectedIndex, ViewGroup container) {
+        RelativeLayout view = (RelativeLayout) getActivity().getLayoutInflater().inflate(R.layout.list_item_drawer_account, container, false);
         view.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -125,9 +121,9 @@ public class NavDrawerFragment extends Fragment implements NavDrawerAdapter.Call
         });
         invalidateAccountViews(view, index, selectedIndex);
         return view;
-    }
+    }*/
 
-    private void showAccountAddDialog() {
+    /*private void showAccountAddDialog() {
         if (getActivity() == null) {
             return;
         }
@@ -141,9 +137,9 @@ public class NavDrawerFragment extends Fragment implements NavDrawerAdapter.Call
                         Toast.makeText(getActivity(), "Not implemented", Toast.LENGTH_SHORT).show();
                     }
                 }).build().show();
-    }
+    }*/
 
-    private void setupHeader(View view) {
+    /*private void setupHeader(View view) {
         View addAccountFrame = ((ViewStub) view.findViewById(R.id.addAccountStub)).inflate();
         ((ImageView) addAccountFrame.findViewById(R.id.icon)).getDrawable().mutate().setColorFilter(mRegularColor, PorterDuff.Mode.SRC_ATOP);
 
@@ -182,18 +178,29 @@ public class NavDrawerFragment extends Fragment implements NavDrawerAdapter.Call
                 }
             }
         });
-    }
+    }*/
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_navdrawer, container, false);
-        RecyclerView mRecyclerView = (RecyclerView) view.findViewById(R.id.list);
-        RecyclerView.LayoutManager mLayoutManager = new LinearLayoutManager(getActivity());
-        mRecyclerView.setLayoutManager(mLayoutManager);
+
+        mRecyclerView = (RecyclerView) view.findViewById(R.id.list);
+
+        RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(getActivity());
+        mRecyclerView.setLayoutManager(layoutManager);
+        DefaultItemAnimator animator = new DefaultItemAnimator() {
+            @Override
+            public boolean canReuseUpdatedViewHolder(RecyclerView.ViewHolder viewHolder) {
+                return true;
+            }
+        };
+        animator.setSupportsChangeAnimations(false);
+        mRecyclerView.setItemAnimator(animator);
+
         mAdapter = new NavDrawerAdapter(getActivity(), this);
         mRecyclerView.setAdapter(mAdapter);
-        mAdapter.setItemChecked(mCurrentSelectedPosition);
-        setupHeader(view);
+
+        /*setupHeader(view);*/
         return view;
     }
 
@@ -201,34 +208,37 @@ public class NavDrawerFragment extends Fragment implements NavDrawerAdapter.Call
     public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         final ThemedActivity act = (ThemedActivity) getActivity();
-        view.findViewById(R.id.headerFrame).setBackgroundColor(act.primaryColor());
 
         if (ContextCompat.checkSelfPermission(act, Manifest.permission.WRITE_EXTERNAL_STORAGE) !=
                 PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(act, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 69);
             return;
         }
-        reloadAccounts();
+        reload();
     }
 
-    public void reloadAccounts() {
+    public void reload() {
         if (getActivity() == null) {
             return;
         }
-        mAccounts = new ArrayList<>();
-        View addAccountFrame = mAccountsFrame.findViewById(R.id.addAccountFrame);
-        mAccountsFrame.removeAllViews();
-        mAccountsFrame.addView(addAccountFrame);
-        int mCurrent = PrefUtils.getActiveAccountId(getActivity());
 
-        if (mCurrent == -1) {
+        final List<Account> allAccounts = new ArrayList<>();
+
+        /*View addAccountFrame = mAccountsFrame.findViewById(R.id.addAccountFrame);
+        mAccountsFrame.removeAllViews();
+        mAccountsFrame.addView(addAccountFrame);*/
+        int currentAccountId = PrefUtils.getActiveAccountId(getActivity());
+
+        if (currentAccountId == -1) {
             Account acc = AccountProvider.add(getActivity(), null, Account.TYPE_LOCAL);
-            mAccounts.add(acc);
+            allAccounts.add(acc);
             PrefUtils.setActiveAccountId(getActivity(), acc.id());
-            mCurrent = acc.id();
+            currentAccountId = acc.id();
         }
 
-        final int fCurrent = mCurrent;
+        mAdapter.setCurrentAccountId(currentAccountId);
+
+        final int fCurrentAccountId = currentAccountId;
         Account.getAll(getActivity())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new Action1<Account[]>() {
@@ -237,38 +247,40 @@ public class NavDrawerFragment extends Fragment implements NavDrawerAdapter.Call
                         if (accounts == null || !isAdded()) {
                             return;
                         }
-                        for (int i = 0; i < accounts.length; i++) {
-                            Account a = accounts[i];
-                            mAccounts.add(a);
-                            boolean selected = a.id() == fCurrent;
-                            mAccountsFrame.addView(getAccountView(i, selected ? i : -1, mAccountsFrame), i);
+                        for (Account a : accounts) {
+                            allAccounts.add(a);
+                            boolean selected = a.id() == fCurrentAccountId;
+                            //mAccountsFrame.addView(getAccountView(i, selected ? i : -1, mAccountsFrame), i);
                             if (selected) {
-                                getMediaFolders(a);
+                                loadMediaFolders(a);
                             }
                         }
-                        mAccountsFrame.requestLayout();
-                        mAccountsFrame.invalidate();
+                        mAdapter.setAccounts(allAccounts);
+
+                        /*mAccountsFrame.requestLayout();
+                        mAccountsFrame.invalidate();*/
                     }
                 });
     }
 
-    public void getMediaFolders(Account account) {
-        if (account != null) {
+    public void loadMediaFolders(final Account account) {
+        /*if (account != null) {
             mCurrentAccount = account;
-        }
+        }*/
         mAdapter.clear();
-        mAdapter.add(new NavDrawerAdapter.Entry(MediaFolderEntry.OVERVIEW_PATH, false, false));
+        mAdapter.add(new NavDrawerAdapter.Entry
+                (MediaFolderEntry.OVERVIEW_PATH, NavDrawerAdapter.OVERVIEW_ID, false, false));
 
-        mCurrentAccount.getMediaFolders(MediaAdapter.SORT_NAME_DESC, MediaAdapter.FILTER_ALL)
+        account.getMediaFolders(MediaAdapter.SORT_NAME_DESC, MediaAdapter.FILTER_ALL)
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new SingleSubscriber<Set<MediaFolderEntry>>() {
                     @Override
                     public void onSuccess(Set<MediaFolderEntry> folderEntries) {
                         for (MediaFolderEntry f : folderEntries) {
-                            mAdapter.add(new NavDrawerAdapter.Entry(f.data(), false, false));
+                            mAdapter.add(new NavDrawerAdapter.Entry(f.data(), f.id(), false, false));
                         }
-                        if (mCurrentAccount.supportsIncludedFolders()) {
-                            getIncludedFolders();
+                        if (account.supportsIncludedFolders()) {
+                            loadIncludedFolders();
                         } else {
                             mAdapter.notifyDataSetChangedAndSort();
                         }
@@ -284,7 +296,7 @@ public class NavDrawerFragment extends Fragment implements NavDrawerAdapter.Call
                 });
     }
 
-    private void getIncludedFolders() {
+    private void loadIncludedFolders() {
         //TODO
         /*mCurrentAccount.getIncludedFolders(preAlbums, new Account.AlbumCallback() {
             @Override
@@ -314,7 +326,7 @@ public class NavDrawerFragment extends Fragment implements NavDrawerAdapter.Call
                     .chooseButton(R.string.choose)
                     .show();
         } else if (longClick) {
-            if (entry.isIncluded()) {
+            /*if (entry.isIncluded()) {
                 new MaterialDialog.Builder(getActivity())
                         .content(Html.fromHtml(getString(R.string.confirm_folder_remove, entry.getPath())))
                         .positiveText(R.string.yes)
@@ -322,16 +334,16 @@ public class NavDrawerFragment extends Fragment implements NavDrawerAdapter.Call
                         .callback(new MaterialDialog.ButtonCallback() {
                             @Override
                             public void onPositive(MaterialDialog materialDialog) {
-                                IncludedFolderProvider.remove(getActivity(), entry.getPath());
+                                IncludedFolderProvider.removeMediaEntry(getActivity(), entry.getPath());
                                 getMediaFolders(mCurrentAccount); // reload albums
 
                                 if (getActivity() == null) {
                                     return;
                                 }
                                 MainActivity act = (MainActivity) getActivity();
-                                /*act.notifyFoldersChanged();*/
+                                *//*act.notifyFoldersChanged();*//*
 
-                                if (index == mCurrentSelectedPosition) {
+                                if (entry.getId() == mAdapter.getSelectedId()) {
                                     if (mCurrentSelectedPosition > mAdapter.getItemCount() - 1) {
                                         mCurrentSelectedPosition = mAdapter.getItemCount() - 1;
                                     }
@@ -340,45 +352,41 @@ public class NavDrawerFragment extends Fragment implements NavDrawerAdapter.Call
                                     }
                                     NavDrawerAdapter.Entry newPath = mAdapter.get(mCurrentSelectedPosition);
                                     act.navDrawerSwitchAlbum(newPath.getPath());
-                                    mAdapter.setItemChecked(mCurrentSelectedPosition);
+                                    mAdapter.setCheckedItemId(mCurrentSelectedPosition);
                                 }
                             }
                         }).show();
-            } else {
-                new MaterialDialog.Builder(getActivity())
-                        .content(Html.fromHtml(getString(R.string.confirm_exclude_album, entry.getPath())))
-                        .positiveText(R.string.yes)
-                        .negativeText(R.string.no)
-                        .callback(new MaterialDialog.ButtonCallback() {
-                            @Override
-                            public void onPositive(MaterialDialog materialDialog) {
-                                ExcludedFolderProvider.add(getActivity(), entry.getPath());
-                                mAdapter.remove(index);
-                                mAdapter.notifyDataSetChanged();
-                                if (getActivity() == null) {
-                                    return;
-                                }
-                                MainActivity act = (MainActivity) getActivity();
+            } else {*/
+            new MaterialDialog.Builder(getActivity())
+                    .content(Html.fromHtml(getString(R.string.confirm_exclude_album, entry.getPath())))
+                    .positiveText(R.string.yes)
+                    .negativeText(R.string.no)
+                    .callback(new MaterialDialog.ButtonCallback() {
+                        @Override
+                        public void onPositive(MaterialDialog materialDialog) {
+
+                            ExcludedFolderProvider.add(getActivity(), entry.getPath());
+                            mAdapter.removeMediaEntry(index);
+
+                            if (getActivity() == null) {
+                                return;
+                            }
+                            MainActivity act = (MainActivity) getActivity();
                                 /*act.notifyFoldersChanged();*/
 
-                                if (index == mCurrentSelectedPosition) {
-                                    if (mCurrentSelectedPosition > mAdapter.getItemCount() - 1) {
-                                        mCurrentSelectedPosition--;
-                                    }
-                                    if (mAdapter.get(mCurrentSelectedPosition).isAdd()) {
-                                        mCurrentSelectedPosition--;
-                                    }
-                                    NavDrawerAdapter.Entry newPath = mAdapter.get(mCurrentSelectedPosition);
-                                    act.navDrawerSwitchAlbum(newPath.getPath());
-                                    mAdapter.setItemChecked(mCurrentSelectedPosition);
-                                }
-                            }
-                        }).show();
-            }
+                            NavDrawerAdapter.Entry newPath = mAdapter.getSelectedEntry();
+                            act.navDrawerSwitchAlbum(newPath.getPath());
+                        }
+                    }).show();
+            /*}*/
         } else {
-            mCurrentSelectedPosition = index;
-            mAdapter.setItemChecked(index);
             ((MainActivity) getActivity()).navDrawerSwitchAlbum(entry.getPath());
         }
+    }
+
+    @Override
+    public void onAccountSelected(Account account) {
+
+
     }
 }

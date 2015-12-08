@@ -67,7 +67,7 @@ public class ExcludedFolderActivity extends ThemedActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.excluded_folders, menu);
+        getMenuInflater().inflate(R.menu.menu_excluded_folders, menu);
         return super.onCreateOptionsMenu(menu);
     }
 

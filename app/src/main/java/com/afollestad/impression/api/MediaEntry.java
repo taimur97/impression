@@ -7,11 +7,6 @@ import java.io.Serializable;
 
 public interface MediaEntry extends Serializable {
 
-    /*int realIndex();
-
-    void setRealIndex(int index);*/
-
-    //TODO: What uses this?
     long id();
 
     String data();
@@ -41,10 +36,6 @@ public interface MediaEntry extends Serializable {
     boolean isVideo();
 
     boolean isFolder();
-
-    //boolean isExplorerFolder();
-
-    /*boolean isFolder();*/
 
     void delete(Activity context);
 }

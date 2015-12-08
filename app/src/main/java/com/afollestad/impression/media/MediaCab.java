@@ -97,7 +97,7 @@ public class MediaCab implements Serializable, MaterialCab.Callback {
         mContext.setMediaCab(this);
         if (mCab == null) {
             mCab = new MaterialCab(mContext, R.id.cab_stub)
-                    .setMenu(R.menu.cab)
+                    .setMenu(R.menu.menu_media_cab)
                     .setBackgroundColor(mContext.primaryColor())
                     .setCloseDrawableRes(R.drawable.ic_action_discard)
                     .start(this);

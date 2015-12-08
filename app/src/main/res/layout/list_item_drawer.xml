@@ -3,7 +3,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    tools:layout_width="320dp">
 
     <View
         android:layout_width="match_parent"
@@ -16,38 +17,38 @@
         android:id="@+id/viewFrame"
         android:layout_width="match_parent"
         android:layout_height="48dp"
-        android:background="?list_selector"
-        android:paddingLeft="16dp"
-        android:paddingRight="16dp">
-
-        <!--suppress AndroidDomInspection -->
-        <TextView
-
-            android:id="@+id/title"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-
-            android:layout_centerVertical="true"
-            android:layout_toLeftOf="@id/icon"
-            android:layout_toStartOf="@id/icon"
-            android:fontFamily="@string/font_fontFamily_medium"
-            android:singleLine="true"
-            android:textSize="@dimen/nav_drawer_textsize"
-            android:textStyle="@integer/font_textStyle_medium"
-            tools:ignore="UnusedAttribute"
-            tools:text="Content" />
+        android:background="?list_selector">
 
         <ImageView
             android:id="@+id/icon"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:layout_alignParentEnd="true"
-            android:layout_alignParentRight="true"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
             android:layout_centerVertical="true"
             android:layout_marginLeft="16dp"
             android:layout_marginStart="16dp"
             android:src="@drawable/ic_add_black"
-            tools:ignore="ContentDescription" />
+            tools:ignore="ContentDescription"
+            tools:tint="?android:textColorSecondary"
+            tools:tintMode="src_in" />
+
+        <!--suppress AndroidDomInspection -->
+        <TextView
+            android:id="@+id/title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:layout_marginEnd="16dp"
+            android:layout_marginLeft="16dp"
+            android:layout_marginRight="16dp"
+            android:layout_marginStart="16dp"
+            android:layout_toEndOf="@id/icon"
+            android:layout_toRightOf="@id/icon"
+            android:fontFamily="@string/font_fontFamily_medium"
+            android:singleLine="true"
+            android:textSize="14sp"
+            android:textStyle="@integer/font_textStyle_medium"
+            tools:ignore="UnusedAttribute"
+            tools:text="Content" />
 
     </RelativeLayout>
 

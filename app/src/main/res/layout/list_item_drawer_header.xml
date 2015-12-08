@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/viewFrame"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
+    tools:layout_height="189dp"
+    tools:layout_width="320dp">
+
+    <ImageView
+        android:id="@+id/accountHeaderImage"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:adjustViewBounds="true"
+        android:contentDescription="@null"
+        android:src="@drawable/banner"
+        android:tint="#4000" />
+
+    <View
+        android:id="@+id/divider"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_below="@id/accountHeaderImage"
+        android:background="?themed_divider" />
+
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="8dp"
+        android:layout_below="@id/divider" />
+
+    <!--1dp margin on the bottom for divider-->
+
+    <ImageButton
+        android:id="@+id/dropdown"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
+        android:layout_above="@id/divider"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentRight="true"
+        android:background="?selectableItemBackground"
+        android:src="@drawable/ic_downarrow"
+        android:tint="?android:textColorSecondary"
+        tools:ignore="ContentDescription" />
+
+    <LinearLayout
+        android:id="@+id/titleFrame"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:layout_above="@id/divider"
+        android:layout_marginBottom="8dp"
+        android:layout_marginLeft="16dp"
+        android:layout_marginStart="16dp"
+        android:layout_toLeftOf="@id/dropdown"
+        android:layout_toStartOf="@id/dropdown"
+        android:gravity="center_vertical"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fontFamily="@string/font_fontFamily_medium"
+            android:gravity="center_vertical"
+            android:text="@string/local"
+            android:textColor="#fff"
+            android:textSize="14sp"
+            android:textStyle="@integer/font_textStyle_medium" />
+
+        <TextView
+            android:id="@+id/subtitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:text="@string/device_folders"
+            android:textColor="#fff"
+            android:textSize="14sp"
+            tools:text="Device Folders"
+            tools:visibility="visible" />
+
+    </LinearLayout>
+
+
+</RelativeLayout>

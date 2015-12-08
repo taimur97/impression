@@ -380,13 +380,7 @@ public class ViewerActivity extends ThemedActivity implements SlideshowInitDialo
     }
 
     private int getStatusBarHeight() {
-        if (mStatusBarHeight == 0) {
-            int resourceId = getResources().getIdentifier("status_bar_height", "dimen", "android");
-            if (resourceId > 0) {
-                mStatusBarHeight = getResources().getDimensionPixelSize(resourceId);
-            }
-        }
-        return mStatusBarHeight;
+        return mStatusBarHeight = Utils.getStatusBarHeight(this);
     }
 
     @Override

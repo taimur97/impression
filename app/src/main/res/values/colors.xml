@@ -13,9 +13,7 @@
     <color name="viewer_lightmode_icons">#222222</color>
     <color name="editor_option_background">#E5E5E5</color>
 
-    <color name="dark_theme_gray">#1F1F1F</color>
-    <color name="dark_theme_gray_lighter">#292929</color>
-    <color name="nav_drawer_dark">#424242</color>
+    <color name="dark_theme_gray">#1F1F1F</color>>
 
     <color name="crumb_active">#fff</color>
     <color name="crumb_inactive">#73ffffff</color>
