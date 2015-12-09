@@ -301,8 +301,8 @@ public class MediaPresenter extends MvpPresenter<MediaView> {
     }
 
     public void onRefresh() {
+        getView().saveScrollPositionInto(findCrumbForCurrentPath((MainActivity) getView().getContextCompat()));
         reload();
-        getView().scrollToTop();
     }
 
     public final void reload() {
