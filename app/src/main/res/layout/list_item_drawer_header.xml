@@ -9,13 +9,14 @@
     tools:layout_height="189dp"
     tools:layout_width="320dp">
 
+    <!-- TODO: Programmatically set header image -->
     <ImageView
         android:id="@+id/accountHeaderImage"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:adjustViewBounds="true"
         android:contentDescription="@null"
-        android:src="@drawable/banner"
+        android:src="@color/material_indigo_500"
         android:tint="#4000" />
 
     <View

@@ -5,7 +5,9 @@ import android.content.Context;
 
 import com.afollestad.impression.accounts.base.Account;
 import com.afollestad.impression.utils.PrefUtils;
+import com.crashlytics.android.Crashlytics;
 
+import io.fabric.sdk.android.Fabric;
 import rx.Observable;
 import rx.Single;
 import rx.Subscriber;
@@ -43,6 +45,9 @@ public class App extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
+        if (!BuildConfig.DEBUG) {
+            Fabric.with(this, new Crashlytics());
+        }
         //LeakCanary.install(this);
     }
 }
