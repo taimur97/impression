@@ -82,11 +82,14 @@
     <string name="filtering_photos">Filter: Photos</string>
     <string name="filtering_videos">Filter: Videos</string>
     <string name="explorer_mode">Explorer Mode</string>
+
     <string name="local">Local</string>
+    <string name="google_photos">Google Photos (Picasa)</string>
     <string name="google_drive">Google Drive</string>
     <string name="dropbox">Dropbox</string>
     <string name="add_account">Add an account…</string>
     <string name="accounts">Accounts</string>
+
     <string name="view_mode">View Mode</string>
     <string name="folder">Folder</string>
     <string name="error">Error</string>
@@ -175,6 +178,7 @@
     <string name="internal_storage">Internal Storage</string>
 
     <string-array name="account_options">
+        <item>@string/google_photos</item>
         <item>@string/google_drive</item>
         <item>@string/dropbox</item>
     </string-array>

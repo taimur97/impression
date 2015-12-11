@@ -1,6 +1,7 @@
 package com.afollestad.impression.navdrawer;
 
 import android.content.Context;
+import android.os.Bundle;
 import android.os.Environment;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -26,10 +27,21 @@ public class NavDrawerAdapter extends RecyclerView.Adapter<NavDrawerAdapter.View
 
     public static final long OVERVIEW_ID = -1;
     public static final long HEADER_ID = -2;
-    private static final String STATE_SELECTED_POSITION = "selected_navigation_drawer_position";
+    public static final long ADD_ACCOUNT_ID = -3;
+    public static final long SETTINGS_ID = -4;
+    public static final long ABOUT_ID = -5;
+
+    public static final long[] FOOTER_ITEM_IDS = {SETTINGS_ID, ABOUT_ID};
+    public static final int[] FOOTER_ITEM_STRINGS = {R.string.settings, R.string.about};
+    public static final int[] FOOTER_ITEM_ICONS = {R.drawable.ic_settings_white, R.drawable.ic_info_white};
+
+
+    private static final String STATE_SELECTED_ID = "selected_navigation_drawer_id";
+
     private static final int VIEW_TYPE_MEDIA_FOLDERS = 42;
     private static final int VIEW_TYPE_ACCOUNTS = 23;
     private static final int VIEW_TYPE_HEADER = 13;
+
     private static final int PAYLOAD_UPDATE_ACTIVATED = 23;
     private static final int PAYLOAD_UPDATE_ACCOUNTS = 12;
 
@@ -54,21 +66,17 @@ public class NavDrawerAdapter extends RecyclerView.Adapter<NavDrawerAdapter.View
         setHasStableIds(true);
     }
 
+    public void saveInstanceState(Bundle out) {
+        out.putLong(STATE_SELECTED_ID, mCheckedId);
+    }
+
+    public void restoreInstanceState(Bundle in) {
+        setCheckedItemId(in.getLong(STATE_SELECTED_ID));
+    }
+
     public void clear() {
         mEntries.clear();
     }
-
-    /*public void setItemChecked(String path) {
-        if (path == null)
-            path = MediaFolderEntry.OVERVIEW_PATH;
-        for (int i = 0; i < mEntries.size(); i++) {
-            String entryPath = mEntries.get(i).getPath();
-            if (entryPath.equals(path)) {
-                setItemChecked(i);
-                break;
-            }
-        }
-    }*/
 
     public void setCheckedItemId(long id) {
         for (int i = 0, entriesSize = mEntries.size(); i < entriesSize; i++) {
@@ -183,15 +191,15 @@ public class NavDrawerAdapter extends RecyclerView.Adapter<NavDrawerAdapter.View
     @Override
     public void onBindViewHolder(ViewHolder holder, int position, List<Object> payloads) {
         if (payloads.contains(PAYLOAD_UPDATE_ACTIVATED)) {
-            updateActivation(holder, position);
+            updateFolderEntryActivation(holder, position - 1);
         } else {
             super.onBindViewHolder(holder, position, payloads);
         }
 
     }
 
-    private void updateActivation(ViewHolder holder, int position) {
-        holder.viewFrame.setActivated(mCheckedId == mEntries.get(position - 1).getId());
+    private void updateFolderEntryActivation(ViewHolder holder, int entryPosition) {
+        holder.viewFrame.setActivated(mCheckedId == mEntries.get(entryPosition).getId());
         if (holder.viewFrame.isActivated()) {
             holder.textView.setTextColor(((ThemedActivity) mContext).accentColor());
         } else {
@@ -201,59 +209,49 @@ public class NavDrawerAdapter extends RecyclerView.Adapter<NavDrawerAdapter.View
 
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
-        if (holder.isHeader) {
-            /*ViewGroup.LayoutParams params  = holder.headerImage.getLayoutParams();
-            int headerImageHeight = Utils.getNavDrawerWidth(mContext) * 9 / 16;
-            int headerImageAppliedHeight= headerImageHeight;
-            if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.LOLLIPOP){
-                int statusBarHeight = Utils.getStatusBarHeight(mContext);
-                headerImageAppliedHeight-=statusBarHeight;
-            }
-            params.height = headerImageAppliedHeight;
-            holder.headerImage.setLayoutParams(params);
-
-            ViewGroup.LayoutParams viewFrame  = holder.viewFrame.getLayoutParams();
-            params.height = headerImageHeight + mContext.getResources().getDimensionPixelSize(R.dimen.nav_drawer_header_image_bottom_margin);
-            holder.viewFrame.setLayoutParams(viewFrame);*/
+        if (holder.isViewTypeHeader) {
 
 
-        } else if (holder.isAccount) {
-            Account account = mAccounts.get(position - 1);
-            holder.textView.setText(account.name());
-            holder.icon.setVisibility(View.GONE);
-            holder.divider.setVisibility(View.GONE);
-        } else {
+        } else if (holder.isViewTypeAccount) {
+            position = position - 1;
 
-            Entry entry = mEntries.get(position - 1);
-            /*if (entry.isAdd()) {
-                holder.textView.setText(R.string.include_folder);
-                holder.divider.setVisibility(position > 0 && !mEntries.get(position - 1)
-                        .isIncluded() ? View.VISIBLE : View.GONE);
-                holder.icon.setVisibility(View.VISIBLE);
-                holder.icon.getDrawable().mutate().setColorFilter(
-                        Utils.resolveColor(mContext, android.R.attr.textColorPrimary), PorterDuff.Mode.SRC_ATOP);
-            } else if (entry.getPath().equals(MediaFolderEntry.OVERVIEW_PATH)) {
-                holder.textView.setText(R.string.overview);
-                holder.divider.setVisibility(View.GONE);
+            if (position < mAccounts.size()) {
+                Account account = mAccounts.get(position);
+                holder.textView.setText(account.name());
                 holder.icon.setVisibility(View.GONE);
-            } else {*/
-            holder.icon.setVisibility(View.GONE);
-            /*if (entry.isIncluded()) {
-                holder.divider.setVisibility(position > 0 && !mEntries.get(position - 1)
-                        .isIncluded() ? View.VISIBLE : View.GONE);
-            } else {*/
-            holder.divider.setVisibility(View.GONE);
-            /*}*/
-            holder.textView.setText(entry.getName(mContext));
-            //}
-            updateActivation(holder, position);
+                holder.divider.setVisibility(View.GONE);
+            } else {
+                holder.textView.setText(R.string.add_account);
+                holder.icon.setImageResource(R.drawable.ic_add_white);
+                holder.icon.setVisibility(View.VISIBLE);
+                holder.divider.setVisibility(View.VISIBLE);
+            }
+        } else {
+            position = position - 1;
+
+            if (position < mEntries.size()) {
+                Entry entry = mEntries.get(position);
+
+                holder.icon.setVisibility(View.GONE);
+
+                holder.divider.setVisibility(View.GONE);
+                holder.textView.setText(entry.getName(mContext));
+
+                updateFolderEntryActivation(holder, position);
+            } else {
+                int footerPosition = position - mEntries.size();
+                holder.textView.setText(FOOTER_ITEM_STRINGS[(footerPosition)]);
+                holder.icon.setImageResource(FOOTER_ITEM_ICONS[(footerPosition)]);
+                holder.icon.setVisibility(View.VISIBLE);
+                holder.divider.setVisibility(footerPosition == 0 ? View.VISIBLE : View.GONE);
+            }
         }
     }
 
     @Override
     public int getItemCount() {
-        //+1 for the header
-        return (mShowingAccounts ? mAccounts.size() : mEntries.size()) + 1;
+        //+1 for the header, +1 in accounts for add account, +2 for settings/about
+        return 1 + (mShowingAccounts ? mAccounts.size() + 1 : mEntries.size() + FOOTER_ITEM_IDS.length);
     }
 
     public void notifyDataSetChangedAndSort() {
@@ -263,28 +261,43 @@ public class NavDrawerAdapter extends RecyclerView.Adapter<NavDrawerAdapter.View
 
     @Override
     public long getItemId(int position) {
-        if (position == 0) return HEADER_ID;
-        return mShowingAccounts ? mAccounts.get(position - 1).id() : mEntries.get(position - 1).getId();
+        if (position == 0) {
+            return HEADER_ID;
+        } else if (mShowingAccounts) {
+            position = position - 1;
+            if (position < mAccounts.size()) {
+                return mAccounts.get(position).id();
+            } else {
+                return ADD_ACCOUNT_ID;
+            }
+        } else {
+            position = position - 1;
+            if (position < mEntries.size()) {
+                return mEntries.get(position).getId();
+            } else {
+                return FOOTER_ITEM_IDS[position - mEntries.size()];
+            }
+        }
     }
 
     public interface Callback {
         void onEntrySelected(int index, Entry entry, boolean longClick);
 
         void onAccountSelected(Account account);
+
+        void onAddAccountPressed();
+
+        void onSpecialItemPressed(long id);
     }
 
     public static class Entry {
 
         private final long mId;
         private final String mPath;
-       /* private boolean mIsAddIncludedFolderEntry;
-        private boolean mIsIncludedFolder;*/
 
-        public Entry(String path, long id, boolean add, boolean included) {
+        public Entry(String path, long id) {
             mPath = path;
             mId = id;
-            /*mIsAddIncludedFolderEntry = add;
-            mIsIncludedFolder = included;*/
         }
 
         public String getName(Context context) {
@@ -303,28 +316,13 @@ public class NavDrawerAdapter extends RecyclerView.Adapter<NavDrawerAdapter.View
             return mPath;
         }
 
-        public boolean isAdd() {
-            /*return mIsAddIncludedFolderEntry;*/
-            return false;
-        }
-
-        public boolean isIncluded() {
-            /*return mIsIncludedFolder;*/
-            return false;
-        }
-
-        public void copy(Entry other) {
-            /*this.mIsAddIncludedFolderEntry = other.isAdd();
-            this.mIsIncludedFolder = other.isIncluded();*/
-        }
-
         @Override
         public boolean equals(Object o) {
             if (!(o instanceof Entry)) {
                 return false;
             }
             Entry oe = (Entry) o;
-            return oe.mPath.equals(mPath) /*&& oe.mIsAddIncludedFolderEntry == mIsAddIncludedFolderEntry && oe.mIsIncludedFolder == mIsIncludedFolder*/;
+            return oe.mPath.equals(mPath);
         }
 
         public long getId() {
@@ -335,18 +333,10 @@ public class NavDrawerAdapter extends RecyclerView.Adapter<NavDrawerAdapter.View
     private class NavDrawerSorter implements Comparator<Entry> {
         @Override
         public int compare(Entry lhs, Entry rhs) {
-            if (lhs.isAdd()) {
-                return 1;
-            } else if (rhs.isAdd()) {
-                return -1;
-            } else if (lhs.getPath().equals(MediaFolderEntry.OVERVIEW_PATH)) {
+            if (lhs.getPath().equals(MediaFolderEntry.OVERVIEW_PATH)) {
                 return -1;
             } else if (rhs.getPath().equals(MediaFolderEntry.OVERVIEW_PATH)) {
                 return 1;
-            } else if (lhs.isIncluded() && !rhs.isIncluded()) {
-                return 1;
-            } else if (!lhs.isIncluded() && rhs.isIncluded()) {
-                return -1;
             } else {
                 return lhs.getName(mContext).compareTo(rhs.getName(mContext));
             }
@@ -355,14 +345,14 @@ public class NavDrawerAdapter extends RecyclerView.Adapter<NavDrawerAdapter.View
 
     protected class ViewHolder extends RecyclerView.ViewHolder {
 
-        final boolean isHeader;
-        final boolean isAccount;
+        final boolean isViewTypeHeader;
+        final boolean isViewTypeAccount;
 
         final View viewFrame;
 
         final ImageView headerImage;
         final TextView headerSubtitle;
-        final ImageButton dropdown;
+        final ImageButton dropdownButton;
 
         final View divider;
         final ImageView icon;
@@ -377,52 +367,56 @@ public class NavDrawerAdapter extends RecyclerView.Adapter<NavDrawerAdapter.View
                 divider = null;
                 icon = null;
                 headerSubtitle = (TextView) v.findViewById(R.id.subtitle);
-                isHeader = true;
-                isAccount = false;
-                dropdown = (ImageButton) v.findViewById(R.id.dropdown);
+                isViewTypeHeader = true;
+                isViewTypeAccount = false;
+                dropdownButton = (ImageButton) v.findViewById(R.id.dropdown);
             } else {
                 headerImage = null;
                 divider = ((ViewGroup) v).getChildAt(0);
                 icon = (ImageView) v.findViewById(R.id.icon);
                 headerSubtitle = null;
-                isHeader = false;
-                isAccount = viewType == VIEW_TYPE_ACCOUNTS;
-                dropdown = null;
+                isViewTypeHeader = false;
+                isViewTypeAccount = viewType == VIEW_TYPE_ACCOUNTS;
+                dropdownButton = null;
             }
             textView = (TextView) v.findViewById(R.id.title);
 
 
             if (viewType == VIEW_TYPE_MEDIA_FOLDERS) {
-                v.setOnClickListener(new View.OnClickListener() {
+                viewFrame.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-
                         int index = getAdapterPosition();
+                        if (index == RecyclerView.NO_POSITION) {
+                            return;
+                        }
+
                         index = index - 1;
 
-                        Entry entry = mEntries.get(index);
-                        setCheckedItemId(entry.getId());
+                        if (index < mEntries.size()) {
+                            Entry entry = mEntries.get(index);
+                            setCheckedItemId(entry.getId());
 
-
-                        if (mCallback != null) {
                             mCallback.onEntrySelected(index, entry, false);
+                        } else {
+                            mCallback.onSpecialItemPressed(getItemId());
                         }
                     }
                 });
 
-                v.setOnLongClickListener(new View.OnLongClickListener() {
+                viewFrame.setOnLongClickListener(new View.OnLongClickListener() {
                     @Override
                     public boolean onLongClick(View v) {
                         int index = getAdapterPosition();
+                        if (index == RecyclerView.NO_POSITION) {
+                            return false;
+                        }
+
                         index = index - 1;
 
-                        if (mCallback != null && index > 0) {
+                        if (index < mEntries.size() && mCallback != null) {
                             Entry entry = mEntries.get(index);
 
-
-                            if (entry.isAdd()) {
-                                return false;
-                            }
                             mCallback.onEntrySelected(index, entry, true);
                             return true;
                         }
@@ -430,14 +424,24 @@ public class NavDrawerAdapter extends RecyclerView.Adapter<NavDrawerAdapter.View
                     }
                 });
             } else if (viewType == VIEW_TYPE_ACCOUNTS) {
-                v.setOnClickListener(new View.OnClickListener() {
+                viewFrame.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
+                        int index = getAdapterPosition();
+                        if (getAdapterPosition() == RecyclerView.NO_POSITION) {
+                            return;
+                        }
+                        index = index - 1;
 
+                        if (index < mAccounts.size()) {
+                            mCallback.onAccountSelected(mAccounts.get(index));
+                        } else {
+                            mCallback.onAddAccountPressed();
+                        }
                     }
                 });
             } else if (viewType == VIEW_TYPE_HEADER) {
-                dropdown.setOnClickListener(new View.OnClickListener() {
+                dropdownButton.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
                         setShowingAccounts(!mShowingAccounts);

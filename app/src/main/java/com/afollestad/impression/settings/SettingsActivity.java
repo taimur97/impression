@@ -2,7 +2,6 @@ package com.afollestad.impression.settings;
 
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
-import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Build;
@@ -12,19 +11,16 @@ import android.preference.PreferenceFragment;
 import android.support.annotation.ColorInt;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.Toolbar;
-import android.text.Html;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ListView;
 
-import com.afollestad.impression.BuildConfig;
 import com.afollestad.impression.R;
 import com.afollestad.impression.base.ThemedActivity;
 import com.afollestad.impression.excludedfolder.ExcludedFolderActivity;
 import com.afollestad.impression.utils.PrefUtils;
 import com.afollestad.impression.utils.Utils;
 import com.afollestad.impression.widget.ImpressionPreference;
-import com.afollestad.materialdialogs.MaterialDialog;
 import com.afollestad.materialdialogs.color.ColorChooserDialog;
 
 /**
@@ -103,21 +99,6 @@ public class SettingsActivity extends ThemedActivity implements ColorChooserDial
         public void onCreate(Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
             addPreferencesFromResource(R.xml.settings);
-
-            findPreference(PrefUtils.OPEN_ABOUT).setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
-                @Override
-                public boolean onPreferenceClick(Preference preference) {
-                    Activity act = getActivity();
-                    new MaterialDialog.Builder(act)
-                            .title(getString(R.string.about_dialog_title, BuildConfig.VERSION_NAME))
-                            .positiveText(R.string.dismiss)
-                            .content(Html.fromHtml(getString(R.string.about_body)))
-                            .iconRes(R.drawable.ic_launcher)
-                            .linkColor(((SettingsActivity) getActivity()).accentColor())
-                            .show();
-                    return true;
-                }
-            });
 
             findPreference(PrefUtils.OPEN_EXCLUDED_FOLDERS).setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
                 @Override

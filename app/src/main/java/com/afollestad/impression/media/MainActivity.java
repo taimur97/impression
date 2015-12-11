@@ -28,6 +28,7 @@ import android.support.v7.view.menu.MenuPopupHelper;
 import android.support.v7.widget.ActionMenuView;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.text.Html;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.Menu;
@@ -78,7 +79,7 @@ public class MainActivity extends ThemedActivity
 
     public static final String NAV_DRAWER_FRAGMENT = "NAV_DRAWER";
 
-    private static final int SETTINGS_REQUEST = 9000;
+    public static final int REQUEST_SETTINGS = 9000;
 
     private static final String TAG = "MainActivity";
 
@@ -303,10 +304,7 @@ public class MainActivity extends ThemedActivity
                     }).show();
         } else {
             switchAlbum(null);
-            NavDrawerFragment nav = (NavDrawerFragment) getFragmentManager().findFragmentByTag(NAV_DRAWER_FRAGMENT);
-            if (nav != null) {
-                nav.reload();
-            }
+            reloadNavDrawerAlbums();
         }
     }
 
@@ -536,20 +534,10 @@ public class MainActivity extends ThemedActivity
     }
 
     @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.main, menu);
-        menu.findItem(R.id.settings).setVisible(!mPickMode && mSelectAlbumMode == SelectAlbumMode.NONE);
-        return super.onCreateOptionsMenu(menu);
-    }
-
-    @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         invalidateMenuTint();
 
-        if (item.getItemId() == R.id.settings) {
-            startActivityForResult(new Intent(this, SettingsActivity.class), SETTINGS_REQUEST);
-            return true;
-        } else if (item.getItemId() == android.R.id.home) {
+        if (item.getItemId() == android.R.id.home) {
             if (isSelectAlbumMode()) {
                 finish();
                 return true;
@@ -562,10 +550,31 @@ public class MainActivity extends ThemedActivity
                 mAnimatedDrawerToggle.onOptionsItemSelected(item) || super.onOptionsItemSelected(item));
     }
 
+    public void openSettings() {
+        mDrawerLayout.closeDrawer(GravityCompat.START);
+        mDrawerLayout.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                startActivityForResult(new Intent(MainActivity.this, SettingsActivity.class), REQUEST_SETTINGS);
+            }
+        }, 300);
+
+    }
+
+    public void showAboutDialog() {
+        new MaterialDialog.Builder(this)
+                .title(getString(R.string.about_dialog_title, BuildConfig.VERSION_NAME))
+                .positiveText(R.string.dismiss)
+                .content(Html.fromHtml(getString(R.string.about_body)))
+                .iconRes(R.drawable.ic_launcher)
+                .linkColor(accentColor())
+                .show();
+    }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == SETTINGS_REQUEST && resultCode == Activity.RESULT_OK) {
+        if (requestCode == REQUEST_SETTINGS && resultCode == Activity.RESULT_OK) {
             MediaFragment content = findMediaFragment();
             if (content != null) {
                 content.getPresenter().reload();

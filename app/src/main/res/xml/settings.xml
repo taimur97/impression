@@ -2,17 +2,6 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
 
     <com.afollestad.impression.widget.ImpressionPreferenceCategoryNoDivider
-        android:key="info_category"
-        android:title="@string/info">
-
-        <com.afollestad.impression.widget.ImpressionPreference
-            android:key="about"
-            android:summary="@string/about_desc"
-            android:title="@string/about" />
-
-    </com.afollestad.impression.widget.ImpressionPreferenceCategoryNoDivider>
-
-    <com.afollestad.impression.widget.ImpressionPreferenceCategory
         android:key="behavior_category"
         android:title="@string/behavior">
 
@@ -34,7 +23,7 @@
             android:title="@string/overview_display"
             android:widgetLayout="@layout/preference_dynamiccheckbox" />
 
-    </com.afollestad.impression.widget.ImpressionPreferenceCategory>
+    </com.afollestad.impression.widget.ImpressionPreferenceCategoryNoDivider>
 
     <com.afollestad.impression.widget.ImpressionPreferenceCategory
         android:key="theme_category"

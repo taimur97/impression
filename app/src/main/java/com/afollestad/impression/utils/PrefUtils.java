@@ -13,7 +13,6 @@ import com.afollestad.impression.media.MediaTakenSorter;
 import java.util.Comparator;
 
 public abstract class PrefUtils {
-    public static final String OPEN_ABOUT = "about";
     public static final String OPEN_EXCLUDED_FOLDERS = "excluded_folders";
 
     public static final String DARK_THEME = "dark_theme";

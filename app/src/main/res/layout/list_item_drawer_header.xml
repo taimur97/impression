@@ -16,7 +16,7 @@
         android:layout_height="wrap_content"
         android:adjustViewBounds="true"
         android:contentDescription="@null"
-        android:src="@color/material_indigo_500"
+        android:src="@drawable/temp_header"
         android:tint="#4000" />
 
     <View
