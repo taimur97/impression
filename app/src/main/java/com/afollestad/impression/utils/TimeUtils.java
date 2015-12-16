@@ -37,12 +37,21 @@ public class TimeUtils {
         String dayStr = getNumberWithSuffix(date.get(Calendar.DAY_OF_MONTH));
 
         String timeStr = "";
-        if (hourInt == 0) timeStr += "12";
-        else timeStr += "" + hourInt;
-        if (minuteInt < 10) timeStr += ":0" + minuteInt;
-        else timeStr += ":" + minuteInt;
-        if (date.get(Calendar.AM_PM) == Calendar.AM) timeStr += "AM";
-        else timeStr += "PM";
+        if (hourInt == 0) {
+            timeStr += "12";
+        } else {
+            timeStr += "" + hourInt;
+        }
+        if (minuteInt < 10) {
+            timeStr += ":0" + minuteInt;
+        } else {
+            timeStr += ":" + minuteInt;
+        }
+        if (date.get(Calendar.AM_PM) == Calendar.AM) {
+            timeStr += "AM";
+        } else {
+            timeStr += "PM";
+        }
 
         if (now.get(Calendar.YEAR) == date.get(Calendar.YEAR)) {
             // Same year
@@ -71,12 +80,21 @@ public class TimeUtils {
         String dayStr = getNumberWithSuffix(date.get(Calendar.DAY_OF_MONTH));
 
         String timeStr = "";
-        if (hourInt == 0) timeStr += "12";
-        else timeStr += "" + hourInt;
-        if (minuteInt < 10) timeStr += ":0" + minuteInt;
-        else timeStr += ":" + minuteInt;
-        if (date.get(Calendar.AM_PM) == Calendar.AM) timeStr += "AM";
-        else timeStr += "PM";
+        if (hourInt == 0) {
+            timeStr += "12";
+        } else {
+            timeStr += "" + hourInt;
+        }
+        if (minuteInt < 10) {
+            timeStr += ":0" + minuteInt;
+        } else {
+            timeStr += ":" + minuteInt;
+        }
+        if (date.get(Calendar.AM_PM) == Calendar.AM) {
+            timeStr += "AM";
+        } else {
+            timeStr += "PM";
+        }
 
         if (now.get(Calendar.YEAR) == date.get(Calendar.YEAR)) {
             // Same year
@@ -88,14 +106,18 @@ public class TimeUtils {
                 } else {
                     // Same year, same month, different day
                     String toReturn = "";
-                    if (includeTime) toReturn = timeStr + " ";
+                    if (includeTime) {
+                        toReturn = timeStr + " ";
+                    }
                     toReturn += convertMonth(date.get(Calendar.MONTH), shortMonth) + " " + dayStr;
                     return toReturn;
                 }
             } else {
                 // Different month, same year
                 String toReturn = "";
-                if (includeTime) toReturn = timeStr + " ";
+                if (includeTime) {
+                    toReturn = timeStr + " ";
+                }
                 toReturn += convertMonth(date.get(Calendar.MONTH), shortMonth) + " " + dayStr;
                 return toReturn;
             }
@@ -103,7 +125,9 @@ public class TimeUtils {
             // Different year
             String year = Integer.toString(date.get(Calendar.YEAR));
             String toReturn = "";
-            if (includeTime) toReturn = timeStr + " ";
+            if (includeTime) {
+                toReturn = timeStr + " ";
+            }
             toReturn += convertMonth(date.get(Calendar.MONTH), shortMonth) + " " + dayStr + ", " + year;
             return toReturn;
         }
@@ -144,12 +168,21 @@ public class TimeUtils {
         int hourInt = time.get(Calendar.HOUR);
         int minuteInt = time.get(Calendar.MINUTE);
         String timeStr = "";
-        if (hourInt == 0) timeStr += "12";
-        else timeStr += "" + hourInt;
-        if (minuteInt < 10) timeStr += ":0" + minuteInt;
-        else timeStr += ":" + minuteInt;
-        if (time.get(Calendar.AM_PM) == Calendar.AM) timeStr += "AM";
-        else timeStr += "PM";
+        if (hourInt == 0) {
+            timeStr += "12";
+        } else {
+            timeStr += "" + hourInt;
+        }
+        if (minuteInt < 10) {
+            timeStr += ":0" + minuteInt;
+        } else {
+            timeStr += ":" + minuteInt;
+        }
+        if (time.get(Calendar.AM_PM) == Calendar.AM) {
+            timeStr += "AM";
+        } else {
+            timeStr += "PM";
+        }
         return timeStr;
     }
 
@@ -185,14 +218,19 @@ public class TimeUtils {
                     return hours + "h";
                 }
             } else {
-                if (days == 7) return "1w";
-                else if (days > 7) {
+                if (days == 7) {
+                    return "1w";
+                } else if (days > 7) {
                     long weeks = days / 7;
                     days = days % 7;
                     String str = weeks + "w";
-                    if (days > 0) str += days + "d";
+                    if (days > 0) {
+                        str += days + "d";
+                    }
                     return str;
-                } else return days + "d";
+                } else {
+                    return days + "d";
+                }
             }
         } else {
             return years + "y";
@@ -239,7 +277,9 @@ public class TimeUtils {
                 monthStr = "December";
                 break;
         }
-        if (useShort) monthStr = monthStr.substring(0, 3);
+        if (useShort) {
+            monthStr = monthStr.substring(0, 3);
+        }
         return monthStr;
     }
 

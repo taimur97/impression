@@ -13,7 +13,7 @@
     android:paddingTop="@dimen/grid_spacing"
     tools:ignore="RtlSymmetry">
 
-    <com.afollestad.impression.widget.ImpressionImageView
+    <com.afollestad.impression.widget.ImpressionThumbnailImageView
         android:id="@+id/image"
         android:layout_width="match_parent"
         android:layout_height="match_parent"

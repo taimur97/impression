@@ -24,12 +24,31 @@
 
     <string name="about">About</string>
     <string name="about_body"><![CDATA[
-        <b>Impression</b>, a beautiful gallery replacement designed by <b>Aidan Follestad</b>.<br/>
+        <b>Impression</b>, a beautiful gallery designed by:<br/><br/>
+
+        <b>Aidan Follestad</b><br/>
         <a href=\'http://aidanfollestad.com\'>Website</a>&nbsp;&nbsp;
         <a href=\'https://twitter.com/afollestad\'>Twitter</a>&nbsp;&nbsp;
         <a href=\'https://google.com/+AidanFollestad\'>Google+</a>&nbsp;&nbsp;
         <a href=\'https://github.com/afollestad\'>GitHub</a>&nbsp;&nbsp;
         <a href=\'https://www.linkedin.com/in/afollestad\'>LinkedIn</a><br/><br/>
+
+        <b>Daniel Ciao</b><br/>
+        <a href=\'http://pluscubed.com\'>Website</a>&nbsp;&nbsp;
+        <a href=\'https://twitter.com/plusCubed\'>Twitter</a>&nbsp;&nbsp;
+        <a href=\'https://google.com/+DanielCiao\'>Google+</a>&nbsp;&nbsp;
+        <a href=\'https://github.com/pluscubed\'>GitHub</a>&nbsp;&nbsp;
+        <a href=\'https://www.linkedin.com/in/dciao\'>LinkedIn</a><br/><br/>
+
+        <b>Marlon Jones</b><br/>
+        <a href=\'https://twitter.com/VirusThePanda\'>Twitter</a>&nbsp;&nbsp;
+        <a href=\'https://www.google.com/+MarlonJones\'>Google+</a>&nbsp;&nbsp;
+        <a href=\'https://github.com/VirusThePanda\'>GitHub</a>&nbsp;&nbsp;
+        <a href=\'https://www.linkedin.com/in/marlon-jones-11281510b\'>LinkedIn</a><br/><br/>
+
+        <a href=\'https://github.com/afollestad/impression\'>GitHub</a> - source, issues, feature requests<br/>
+        <a href=\'https://plus.google.com/communities/103090123257670799691\'>G+ community</a> - discussions, updates<br/><br/>
+
         Launcher icon and Google Play feature graphic designed by <a href=\'https://plus.google.com/112332148992467376978\'>Александр Карпилович</a>.
     ]]></string>
     <string name="dismiss">Dismiss</string>
@@ -63,11 +82,14 @@
     <string name="filtering_photos">Filter: Photos</string>
     <string name="filtering_videos">Filter: Videos</string>
     <string name="explorer_mode">Explorer Mode</string>
+
     <string name="local">Local</string>
+    <string name="google_photos">Google Photos (Picasa)</string>
     <string name="google_drive">Google Drive</string>
     <string name="dropbox">Dropbox</string>
     <string name="add_account">Add an account…</string>
     <string name="accounts">Accounts</string>
+
     <string name="view_mode">View Mode</string>
     <string name="folder">Folder</string>
     <string name="error">Error</string>
@@ -112,24 +134,24 @@
     <string name="overview_display">Overview All Media Mode</string>
     <string name="overview_mode_desc">Display a continuous list of all media rather than albums</string>
     <string name="settings">Settings</string>
-    <string name="name_asc">Name ascend</string>
-    <string name="modified_desc">Date descend</string>
-    <string name="modified_asc">Date ascend</string>
-    <string name="name_desc">Name descend</string>
-    <string name="excluded_folders">Excluded Albums</string>
-    <string name="excluded_folders_desc">Edit the albums that will not be shown in the application.</string>
+    <string name="name_asc">Name: A-to-Z</string>
+    <string name="modified_desc">Date: New-to-Old</string>
+    <string name="modified_asc">Date: Old-to-New</string>
+    <string name="name_desc">Name: Z-to-A</string>
+    <string name="excluded_folders">Excluded Folders</string>
+    <string name="excluded_folders_desc">Edit the folders that will not be shown in the application.</string>
     <string name="draw">Draw</string>
     <string name="copy_to">Copy To…</string>
     <string name="move_to">Move To…</string>
     <string name="dark_mode">Dark Mode</string>
     <string name="dark_mode_desc">Apply a dark background to the app</string>
-    <string name="no_excluded_folders">No albums have been excluded yet!</string>
+    <string name="no_excluded_folders">No folders have been excluded.</string>
     <string name="add">Add</string>
     <string name="go_up">Go up…</string>
     <string name="copying">Copying…</string>
     <string name="moving">Moving…</string>
     <string name="include_subfolders">Include Subfolders</string>
-    <string name="include_subfolders_desc">Exclude subfolders of exluded albums</string>
+    <string name="include_subfolders_desc">Exclude subfolders of excluded folders</string>
     <string name="include_subfolders_included_desc">Display subfolders inside of included folders</string>
     <string name="choose_album">Choose an album…</string>
     <string name="invalid_file_path_error">This file does not exist or Impression does not have permission to access it.</string>
@@ -156,6 +178,7 @@
     <string name="internal_storage">Internal Storage</string>
 
     <string-array name="account_options">
+        <item>@string/google_photos</item>
         <item>@string/google_drive</item>
         <item>@string/dropbox</item>
     </string-array>
@@ -178,13 +201,17 @@
     <string name="x_albums">%1$d albums</string>
 
     <string name="behavior">Behavior</string>
-    <string name="toolbar_stats">Toolbar Album Stats</string>
-    <string name="toolbar_stats_desc">Display the number of photos and videos in an album in the toolbar</string>
+    <string name="toolbar_stats">Toolbar Folder Stats</string>
+    <string name="toolbar_stats_desc">Display the number of photos and videos in a folder in the toolbar</string>
     <string name="empty">empty</string>
     <string name="share_using">Share using…</string>
     <string name="permission_needed">Permission Needed</string>
     <string name="permission_needed_desc">Permission to access your phone\'s storage is needed in order to view and save images! Impression will now close.</string>
     <string name="back">Back</string>
     <string name="done">Done</string>
+
+    <string name="only_available_api21">This feature is only available on Android 5.0 and above</string>
+    <string name="video">VIDEO</string>
+    <string name="device_folders">Device Folders</string>
 
 </resources>

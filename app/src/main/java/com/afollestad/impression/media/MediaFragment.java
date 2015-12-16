@@ -1,18 +1,17 @@
 package com.afollestad.impression.media;
 
-import android.Manifest;
 import android.app.Activity;
 import android.app.Fragment;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
-import android.support.v4.content.ContextCompat;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -23,32 +22,26 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import com.afollestad.impression.App;
 import com.afollestad.impression.R;
-import com.afollestad.impression.accounts.base.Account;
-import com.afollestad.impression.api.AlbumEntry;
-import com.afollestad.impression.api.base.MediaEntry;
-import com.afollestad.impression.cab.MediaCab;
-import com.afollestad.impression.providers.SortMemoryProvider;
+import com.afollestad.impression.api.MediaEntry;
+import com.afollestad.impression.api.MediaFolderEntry;
+import com.afollestad.impression.base.ThemedActivity;
 import com.afollestad.impression.utils.PrefUtils;
-import com.afollestad.impression.utils.Utils;
 import com.afollestad.impression.widget.breadcrumbs.Crumb;
 
 import java.io.File;
+import java.util.List;
 
 import static android.app.Activity.RESULT_OK;
 
-/**
- * @author Aidan Follestad (afollestad)
- */
 public class MediaFragment extends Fragment implements MediaView {
 
-    protected MediaAdapter.SortMode sortCache;
-    protected Crumb crumb;
     private RecyclerView mRecyclerView;
+    private SwipeRefreshLayout mSwipeRefreshLayout;
     private MediaAdapter mAdapter;
     private MediaPresenter mPresenter;
-    private boolean mSortRememberDir = false;
+    private View mEmptyView;
+
 
     RecyclerView getRecyclerView() {
         return mRecyclerView;
@@ -63,25 +56,24 @@ public class MediaFragment extends Fragment implements MediaView {
         }
     }
 
-    final void setListShown(boolean shown) {
+    public final void setListShown(boolean shown) {
         View v = getView();
-        if (v == null || getActivity() == null) return;
+        if (v == null || getActivity() == null) {
+            return;
+        }
         if (shown) {
-            v.findViewById(R.id.list).setVisibility(mAdapter.getItemCount() > 0 ? View.VISIBLE : View.GONE);
-            v.findViewById(R.id.empty).setVisibility(mAdapter.getItemCount() == 0 ? View.VISIBLE : View.GONE);
-            v.findViewById(R.id.progress).setVisibility(View.GONE);
-            mAdapter.notifyDataSetChanged();
+            mEmptyView.setVisibility(mAdapter.getItemCount() == 0 ? View.VISIBLE : View.GONE);
+            mSwipeRefreshLayout.setRefreshing(false);
         } else {
-            v.findViewById(R.id.list).setVisibility(View.GONE);
             v.findViewById(R.id.empty).setVisibility(View.GONE);
-            v.findViewById(R.id.progress).setVisibility(View.VISIBLE);
+            mSwipeRefreshLayout.setRefreshing(true);
         }
     }
 
     @Override
     public void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
         mPresenter.onSaveInstanceState(outState);
+        super.onSaveInstanceState(outState);
     }
 
     @Nullable
@@ -97,8 +89,18 @@ public class MediaFragment extends Fragment implements MediaView {
         ((TextView) view.findViewById(R.id.empty)).setText(mPresenter.getEmptyText());
         mRecyclerView = (RecyclerView) view.findViewById(R.id.list);
         mRecyclerView.setScrollBarStyle(View.SCROLLBARS_INSIDE_OVERLAY);
+        mEmptyView = view.findViewById(R.id.empty);
 
-        mPresenter.onViewCreated();
+        mSwipeRefreshLayout = (SwipeRefreshLayout) view.findViewById(R.id.swipe_refresh_layout);
+        mSwipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                mPresenter.onRefresh();
+            }
+        });
+        mSwipeRefreshLayout.setColorSchemeColors(((ThemedActivity) getActivity()).accentColor());
+
+        mPresenter.onViewCreated(savedInstanceState);
     }
 
     @Override
@@ -108,9 +110,20 @@ public class MediaFragment extends Fragment implements MediaView {
         mAdapter = adapter;
         mRecyclerView.setAdapter(mAdapter);
 
+        mRecyclerView.setItemAnimator(new DefaultItemAnimator() {
+            @Override
+            public boolean canReuseUpdatedViewHolder(RecyclerView.ViewHolder viewHolder) {
+                return true;
+            }
+        });
+
         if (gridMode) {
             mPresenter.setGridModeOn(true);
         }
+    }
+
+    public void scrollToTop() {
+        mRecyclerView.scrollToPosition(0);
     }
 
     public void updateGridModeOn(boolean gridMode) {
@@ -142,57 +155,38 @@ public class MediaFragment extends Fragment implements MediaView {
         }
     }
 
-    public void saveScrollPosition() {
-        if (crumb == null)
+    @Override
+    public void saveScrollPositionInto(Crumb crumb) {
+        if (crumb == null) {
             return;
+        }
         crumb.setScrollPosition(((GridLayoutManager) mRecyclerView.getLayoutManager()).findFirstVisibleItemPosition());
         final View firstChild = mRecyclerView.getChildAt(0);
-        if (firstChild != null)
+        if (firstChild != null) {
             crumb.setScrollOffset((int) firstChild.getY());
+        }
     }
 
-    private void restoreScrollPosition() {
-        if (crumb == null)
+    @Override
+    public void restoreScrollPositionFrom(Crumb crumb) {
+        if (crumb == null) {
             return;
+        }
         final int scrollY = crumb.getScrollPosition();
         if (scrollY > -1 && scrollY < getAdapter().getItemCount()) {
             ((GridLayoutManager) mRecyclerView.getLayoutManager()).scrollToPositionWithOffset(scrollY, crumb.getScrollOffset());
         }
     }
 
-    protected final void setFilterMode(MediaAdapter.FileFilterMode mode) {
-        PreferenceManager.getDefaultSharedPreferences(getActivity()).edit()
-                .putInt("filter_mode", mode.value()).commit();
-        reload();
-        getActivity().invalidateOptionsMenu();
-    }
-
-    protected final void setSortMode(MediaAdapter.SortMode mode, String rememberPath) {
-        sortCache = mode;
-        SortMemoryProvider.save(getActivity(), rememberPath, mode);
-        mAdapter.setSortMode(mode);
-        reload();
+    private void setFilterMode(@MediaAdapter.FileFilterMode int mode) {
+        PrefUtils.setFilterMode(getActivity(), mode);
+        getPresenter().reload();
         getActivity().invalidateOptionsMenu();
     }
 
 
-    private void getAllEntries(final Account.EntriesCallback callback) {
-        if (getActivity() == null) return;
-        App.getCurrentAccount(getActivity(), new Account.AccountCallback() {
-            @Override
-            public void onAccount(Account acc) {
-                if (!isAdded()) return;
-                if (acc != null) {
-                    acc.getEntries(mPresenter.getAlbumPath(), PrefUtils.getOverviewMode(getActivity()),
-                            PrefUtils.isExplorerMode(getActivity()), PrefUtils.getFilterMode(getActivity()),
-                            SortMemoryProvider.getSortMode(getActivity(), mPresenter.getAlbumPath()), callback);
-                }
-            }
-        });
-    }
-
-    private void invalidateEmptyText() {
-        MediaAdapter.FileFilterMode mode = PrefUtils.getFilterMode(getActivity());
+    public void invalidateEmptyText() {
+        @MediaAdapter.FileFilterMode int mode = PrefUtils.getFilterMode(getActivity());
         View v = getView();
         if (v != null) {
             TextView empty = (TextView) v.findViewById(R.id.empty);
@@ -201,10 +195,10 @@ public class MediaFragment extends Fragment implements MediaView {
                     default:
                         empty.setText(R.string.no_photosorvideos);
                         break;
-                    case PHOTOS:
+                    case MediaAdapter.FILTER_PHOTOS:
                         empty.setText(R.string.no_photos);
                         break;
-                    case VIDEOS:
+                    case MediaAdapter.FILTER_VIDEOS:
                         empty.setText(R.string.no_videos);
                         break;
                 }
@@ -212,46 +206,14 @@ public class MediaFragment extends Fragment implements MediaView {
         }
     }
 
-    public final void reload() {
-        final Activity act = getActivity();
-        if (act == null || ContextCompat.checkSelfPermission(act, Manifest.permission.WRITE_EXTERNAL_STORAGE) !=
-                PackageManager.PERMISSION_GRANTED) {
-            return;
-        }
 
-        saveScrollPosition();
-        invalidateEmptyText();
-        setListShown(false);
-
-        if (getAdapter() != null)
-            getAdapter().clear();
-        getAllEntries(new Account.EntriesCallback() {
-            @Override
-            public void onEntries(MediaEntry[] entries) {
-                if (!isAdded())
-                    return;
-                else if (getAdapter() != null)
-                    getAdapter().addAll(entries);
-                setListShown(true);
-                restoreScrollPosition();
-                invalidateSubtitle(entries);
-            }
-
-            @Override
-            public void onError(Exception e) {
-                if (getActivity() == null) return;
-                Utils.showErrorDialog(getActivity(), e);
-            }
-        });
-    }
-
-    private void invalidateSubtitle(MediaEntry[] entries) {
+    public void invalidateSubtitle(List<MediaEntry> entries) {
         AppCompatActivity act = (AppCompatActivity) getActivity();
         if (act != null) {
             final boolean toolbarStats = PreferenceManager.getDefaultSharedPreferences(act)
                     .getBoolean("toolbar_album_stats", true);
             if (toolbarStats) {
-                if (entries == null || entries.length == 0) {
+                if (entries == null || entries.size() == 0) {
                     act.getSupportActionBar().setSubtitle(getString(R.string.empty));
                     return;
                 }
@@ -261,10 +223,15 @@ public class MediaFragment extends Fragment implements MediaView {
                 int videoCount = 0;
                 int photoCount = 0;
                 for (MediaEntry e : entries) {
-                    if (e.isFolder()) folderCount++;
-                    else if (e.isAlbum()) albumCount++;
-                    else if (e.isVideo()) videoCount++;
-                    else photoCount++;
+                    if (e.isFolder()) {
+                        folderCount++;
+                    }
+                    //else if (e.isAlbum()) albumCount++;
+                    else if (e.isVideo()) {
+                        videoCount++;
+                    } else {
+                        photoCount++;
+                    }
                 }
                 final StringBuilder sb = new StringBuilder();
                 if (albumCount > 1) {
@@ -273,24 +240,36 @@ public class MediaFragment extends Fragment implements MediaView {
                     sb.append(getString(R.string.one_album));
                 }
                 if (folderCount > 1) {
-                    if (sb.length() > 0) sb.append(", ");
+                    if (sb.length() > 0) {
+                        sb.append(", ");
+                    }
                     sb.append(getString(R.string.x_folders, folderCount));
                 } else if (folderCount == 1) {
-                    if (sb.length() > 0) sb.append(", ");
+                    if (sb.length() > 0) {
+                        sb.append(", ");
+                    }
                     sb.append(getString(R.string.one_folder));
                 }
                 if (photoCount > 1) {
-                    if (sb.length() > 0) sb.append(", ");
+                    if (sb.length() > 0) {
+                        sb.append(", ");
+                    }
                     sb.append(getString(R.string.x_photos, photoCount));
                 } else if (photoCount == 1) {
-                    if (sb.length() > 0) sb.append(", ");
+                    if (sb.length() > 0) {
+                        sb.append(", ");
+                    }
                     sb.append(getString(R.string.one_photo));
                 }
                 if (videoCount > 1) {
-                    if (sb.length() > 0) sb.append(", ");
+                    if (sb.length() > 0) {
+                        sb.append(", ");
+                    }
                     sb.append(getString(R.string.x_videos, videoCount));
                 } else if (videoCount == 1) {
-                    if (sb.length() > 0) sb.append(", ");
+                    if (sb.length() > 0) {
+                        sb.append(", ");
+                    }
                     sb.append(getString(R.string.one_video));
                 }
                 act.getSupportActionBar().setSubtitle(sb.toString());
@@ -303,8 +282,8 @@ public class MediaFragment extends Fragment implements MediaView {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        if (getAdapter() != null)
-            getAdapter().changeContent(null, null, true, false);
+        mPresenter.onDestroy();
+        mPresenter.detachView();
     }
 
     public MediaPresenter getPresenter() {
@@ -327,8 +306,10 @@ public class MediaFragment extends Fragment implements MediaView {
         mPresenter.onResume();
     }
 
-    public void setCrumb(Crumb crumb) {
-        this.crumb = crumb;
+    @Override
+    public void onPause() {
+        super.onPause();
+        mPresenter.onPause();
     }
 
     @Override
@@ -344,46 +325,50 @@ public class MediaFragment extends Fragment implements MediaView {
         ((MainActivity) getActivity()).setStatus(status);
     }
 
+    public void onCreateSortMenuSelection(Menu menu, @MediaAdapter.SortMode int sortMode, boolean sortRememberDir) {
+        switch (sortMode) {
+            default:
+                menu.findItem(R.id.sortNameAsc).setChecked(true);
+                break;
+            case MediaAdapter.SORT_NAME_DESC:
+                menu.findItem(R.id.sortNameDesc).setChecked(true);
+                break;
+            case MediaAdapter.SORT_TAKEN_DATE_ASC:
+                menu.findItem(R.id.sortModifiedAsc).setChecked(true);
+                break;
+            case MediaAdapter.SORT_TAKEN_DATE_DESC:
+                menu.findItem(R.id.sortModifiedDesc).setChecked(true);
+                break;
+        }
+        menu.findItem(R.id.sortCurrentDir).setChecked(sortRememberDir);
+
+    }
+
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         super.onCreateOptionsMenu(menu, inflater);
-        inflater.inflate(R.menu.fragment, menu);
-
+        inflater.inflate(R.menu.menu_media, menu);
         if (getActivity() != null) {
-            boolean isMain = mPresenter.getAlbumPath() == null || mPresenter.getAlbumPath().equals(AlbumEntry.ALBUM_OVERVIEW_PATH);
+            boolean isMain = mPresenter.getPath() == null || mPresenter.getPath().equals(MediaFolderEntry.OVERVIEW_PATH);
             boolean isAlbumSelect = ((MainActivity) getActivity()).isSelectAlbumMode();
             menu.findItem(R.id.choose).setVisible(!isMain && isAlbumSelect);
             menu.findItem(R.id.viewMode).setVisible(!isAlbumSelect);
             menu.findItem(R.id.filter).setVisible(!isAlbumSelect);
 
-            sortCache = SortMemoryProvider.getSortMode(getActivity(), mPresenter.getAlbumPath());
-            switch (sortCache) {
-                default:
-                    menu.findItem(R.id.sortNameAsc).setChecked(true);
-                    break;
-                case NAME_DESC:
-                    menu.findItem(R.id.sortNameDesc).setChecked(true);
-                    break;
-                case MODIFIED_DATE_ASC:
-                    menu.findItem(R.id.sortModifiedAsc).setChecked(true);
-                    break;
-                case MODIFIED_DATE_DESC:
-                    menu.findItem(R.id.sortModifiedDesc).setChecked(true);
-                    break;
-            }
-            menu.findItem(R.id.sortCurrentDir).setChecked(mSortRememberDir);
+            //TODO: Transfer menu control to presenter
+            mPresenter.onCreateOptionsMenu(menu);
 
-            MediaAdapter.FileFilterMode filterMode = PrefUtils.getFilterMode(getActivity());
+            @MediaAdapter.FileFilterMode int filterMode = PrefUtils.getFilterMode(getActivity());
             switch (filterMode) {
                 default:
                     setStatus(null);
                     menu.findItem(R.id.filterAll).setChecked(true);
                     break;
-                case PHOTOS:
+                case MediaAdapter.FILTER_PHOTOS:
                     setStatus(getString(R.string.filtering_photos));
                     menu.findItem(R.id.filterPhotos).setChecked(true);
                     break;
-                case VIDEOS:
+                case MediaAdapter.FILTER_VIDEOS:
                     setStatus(getString(R.string.filtering_videos));
                     menu.findItem(R.id.filterVideos).setChecked(true);
                     break;
@@ -423,46 +408,30 @@ public class MediaFragment extends Fragment implements MediaView {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.choose:
-                getActivity().setResult(RESULT_OK, new Intent().setData(Uri.fromFile(new File(mPresenter.getAlbumPath()))));
+                getActivity().setResult(RESULT_OK, new Intent().setData(Uri.fromFile(new File(mPresenter.getPath()))));
                 getActivity().finish();
                 return true;
             case R.id.viewMode:
                 mPresenter.setGridModeOn(!PrefUtils.isGridMode(getActivity()));
                 return true;
             case R.id.viewExplorer:
-                mPresenter.onOptionsItemSelected(item.getItemId());
+                mPresenter.onOptionsItemSelected(item);
                 return true;
             case R.id.filterAll:
-                setFilterMode(MediaAdapter.FileFilterMode.ALL);
+                setFilterMode(MediaAdapter.FILTER_ALL);
                 return true;
             case R.id.filterPhotos:
-                setFilterMode(MediaAdapter.FileFilterMode.PHOTOS);
+                setFilterMode(MediaAdapter.FILTER_PHOTOS);
                 return true;
             case R.id.filterVideos:
-                setFilterMode(MediaAdapter.FileFilterMode.VIDEOS);
-                return true;
-            case R.id.sortNameAsc:
-                setSortMode(MediaAdapter.SortMode.NAME_ASC, mPresenter.getAlbumPath());
-                return true;
-            case R.id.sortNameDesc:
-                setSortMode(MediaAdapter.SortMode.NAME_DESC, mSortRememberDir ? mPresenter.getAlbumPath() : null);
-                return true;
-            case R.id.sortModifiedAsc:
-                setSortMode(MediaAdapter.SortMode.MODIFIED_DATE_ASC, mSortRememberDir ? mPresenter.getAlbumPath() : null);
-                return true;
-            case R.id.sortModifiedDesc:
-                setSortMode(MediaAdapter.SortMode.MODIFIED_DATE_DESC, mSortRememberDir ? mPresenter.getAlbumPath() : null);
+                setFilterMode(MediaAdapter.FILTER_VIDEOS);
                 return true;
             case R.id.sortCurrentDir:
-                item.setChecked(!item.isChecked());
-                if (item.isChecked()) {
-                    mSortRememberDir = true;
-                    setSortMode(sortCache, mPresenter.getAlbumPath());
-                } else {
-                    mSortRememberDir = false;
-                    SortMemoryProvider.forget(getActivity(), mPresenter.getAlbumPath());
-                    setSortMode(SortMemoryProvider.getSortMode(getActivity(), null), null);
-                }
+            case R.id.sortNameAsc:
+            case R.id.sortNameDesc:
+            case R.id.sortModifiedAsc:
+            case R.id.sortModifiedDesc:
+                mPresenter.onOptionsItemSelected(item);
                 return true;
             case R.id.gridSizeOne:
                 item.setChecked(!item.isChecked());

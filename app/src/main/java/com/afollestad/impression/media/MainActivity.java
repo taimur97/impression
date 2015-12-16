@@ -9,6 +9,8 @@ import android.app.SharedElementCallback;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
+import android.graphics.PorterDuff;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
@@ -21,17 +23,12 @@ import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.view.menu.BaseMenuPresenter;
 import android.support.v7.view.menu.ListMenuItemView;
+import android.support.v7.view.menu.MenuItemImpl;
 import android.support.v7.view.menu.MenuPopupHelper;
 import android.support.v7.widget.ActionMenuView;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
-import android.transition.ArcMotion;
-import android.transition.ChangeBounds;
-import android.transition.ChangeClipBounds;
-import android.transition.ChangeImageTransform;
-import android.transition.ChangeTransform;
-import android.transition.TransitionSet;
-import android.util.DisplayMetrics;
+import android.text.Html;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.Menu;
@@ -47,17 +44,17 @@ import android.widget.TextView;
 
 import com.afollestad.impression.BuildConfig;
 import com.afollestad.impression.R;
-import com.afollestad.impression.api.AlbumEntry;
-import com.afollestad.impression.cab.MediaCab;
-import com.afollestad.impression.fragments.NavDrawerFragment;
+import com.afollestad.impression.api.MediaFolderEntry;
+import com.afollestad.impression.base.ThemedActivity;
+import com.afollestad.impression.navdrawer.NavDrawerFragment;
 import com.afollestad.impression.providers.IncludedFolderProvider;
 import com.afollestad.impression.providers.SortMemoryProvider;
-import com.afollestad.impression.ui.SettingsActivity;
-import com.afollestad.impression.ui.base.ThemedActivity;
+import com.afollestad.impression.settings.SettingsActivity;
 import com.afollestad.impression.utils.PrefUtils;
 import com.afollestad.impression.utils.Utils;
 import com.afollestad.impression.widget.breadcrumbs.BreadCrumbLayout;
 import com.afollestad.impression.widget.breadcrumbs.Crumb;
+import com.afollestad.inquiry.Inquiry;
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.afollestad.materialdialogs.folderselector.FolderChooserDialog;
 import com.afollestad.materialdialogs.internal.MDTintHelper;
@@ -76,12 +73,13 @@ public class MainActivity extends ThemedActivity
 
     public static final String EXTRA_CURRENT_ITEM_POSITION = "com.afollestad.impression.extra_current_item_position";
     public static final String EXTRA_OLD_ITEM_POSITION = "com.afollestad.impression.extra_old_item_position";
+    //public static final String EXTRA_REMOVED_ITEMS = "com.afollestad.impression.removed_items";
 
     public static final String ACTION_SELECT_ALBUM = BuildConfig.APPLICATION_ID + ".SELECT_FOLDER";
 
     public static final String NAV_DRAWER_FRAGMENT = "NAV_DRAWER";
 
-    private static final int SETTINGS_REQUEST = 9000;
+    public static final int REQUEST_SETTINGS = 9000;
 
     private static final String TAG = "MainActivity";
 
@@ -134,7 +132,7 @@ public class MainActivity extends ThemedActivity
         mMediaCab = mediaCab;
     }
 
-    public BreadCrumbLayout getCrumbs() {
+    public BreadCrumbLayout getBreadCrumbLayout() {
         return mBreadCrumbLayout;
     }
 
@@ -153,8 +151,9 @@ public class MainActivity extends ThemedActivity
 
     public void animateDrawerArrow(boolean close) {
         float currentOffset;
-        if (mAnimatedDrawerToggle == null || (currentOffset = mAnimatedDrawerToggle.getOffset()) == (close ? 0 : 1))
+        if (mAnimatedDrawerToggle == null || (currentOffset = mAnimatedDrawerToggle.getOffset()) == (close ? 0 : 1)) {
             return;
+        }
         ValueAnimator anim;
         if (close) {
             anim = ValueAnimator.ofFloat(currentOffset, 0f);
@@ -185,7 +184,9 @@ public class MainActivity extends ThemedActivity
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     private void setupSharedElementCallback() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) return;
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+            return;
+        }
         final SharedElementCallback mCallback = new SharedElementCallback() {
             @Override
             public void onMapSharedElements(List<String> names, Map<String, View> sharedElements) {
@@ -211,30 +212,33 @@ public class MainActivity extends ThemedActivity
                     }
                 }
 
-                //Somehow this works (setting status bar color in both MediaFragment and here)
-                //to avoid image glitching through on when ViewActivity is first created.
-                getWindow().setStatusBarColor(primaryColorDark());
+                if (!mIsReenteringFromViewer) {
+                    getWindow().setStatusBarColor(primaryColorDark());
+                }
 
                 View decor = getWindow().getDecorView();
                 View navigationBar = decor.findViewById(android.R.id.navigationBarBackground);
                 View statusBar = decor.findViewById(android.R.id.statusBarBackground);
 
                 if (navigationBar != null && !sharedElements.containsKey(Window.NAVIGATION_BAR_BACKGROUND_TRANSITION_NAME)) {
-                    if (!names.contains(Window.NAVIGATION_BAR_BACKGROUND_TRANSITION_NAME))
+                    if (!names.contains(Window.NAVIGATION_BAR_BACKGROUND_TRANSITION_NAME)) {
                         names.add(Window.NAVIGATION_BAR_BACKGROUND_TRANSITION_NAME);
+                    }
                     sharedElements.put(Window.NAVIGATION_BAR_BACKGROUND_TRANSITION_NAME, navigationBar);
                 }
 
                 View toolbarFrame = findViewById(R.id.toolbar_frame);
                 if (toolbarFrame != null && !sharedElements.containsKey(toolbarFrame.getTransitionName())) {
-                    if (!names.contains(toolbarFrame.getTransitionName()))
+                    if (!names.contains(toolbarFrame.getTransitionName())) {
                         names.add(toolbarFrame.getTransitionName());
+                    }
                     sharedElements.put(toolbarFrame.getTransitionName(), toolbarFrame);
                 }
 
                 if (statusBar != null && !sharedElements.containsKey(Window.STATUS_BAR_BACKGROUND_TRANSITION_NAME)) {
-                    if (!names.contains(Window.STATUS_BAR_BACKGROUND_TRANSITION_NAME))
+                    if (!names.contains(Window.STATUS_BAR_BACKGROUND_TRANSITION_NAME)) {
                         names.add(Window.STATUS_BAR_BACKGROUND_TRANSITION_NAME);
+                    }
                     sharedElements.put(Window.STATUS_BAR_BACKGROUND_TRANSITION_NAME, statusBar);
                 }
 
@@ -261,8 +265,8 @@ public class MainActivity extends ThemedActivity
                         statusBar.post(new Runnable() {
                             @Override
                             public void run() {
-                                getWindow().setStatusBarColor(ContextCompat.getColor(
-                                        MainActivity.this, android.R.color.transparent));
+                                //For DrawerLayout transparency
+                                getWindow().setStatusBarColor(Color.TRANSPARENT);
                             }
                         });
                     }
@@ -271,37 +275,16 @@ public class MainActivity extends ThemedActivity
 
             private void logSharedElementsInfo(List<String> names, List<View> sharedElements) {
                 logSharedElementTransition("=== names: " + names.toString(), mIsReenteringFromViewer);
+                logSharedElementTransition("=== infos:", mIsReenteringFromViewer);
                 for (View view : sharedElements) {
                     int[] loc = new int[2];
                     //noinspection ResourceType
                     view.getLocationInWindow(loc);
-                    Log.i(TAG, "=== " + view.getTransitionName() + ": " + "(" + loc[0] + ", " + loc[1] + ")");
+                    logSharedElementTransition("====== " + view.getTransitionName() + ": " + "(" + loc[0] + ", " + loc[1] + ")", mIsReenteringFromViewer);
                 }
             }
         };
         setExitSharedElementCallback(mCallback);
-    }
-
-    private void setTransition() {
-        if(Build.VERSION.SDK_INT<Build.VERSION_CODES.LOLLIPOP){
-            return;
-        }
-
-        final TransitionSet transition = new TransitionSet();
-
-        transition.addTransition(new ChangeBounds());
-        transition.addTransition(new ChangeTransform());
-        transition.addTransition(new ChangeClipBounds());
-        transition.addTransition(new ChangeImageTransform());
-
-        transition.setDuration(150);
-        transition.setInterpolator(new FastOutSlowInInterpolator());
-        final ArcMotion pathMotion = new ArcMotion();
-        pathMotion.setMaximumAngle(50);
-        transition.setPathMotion(pathMotion);
-
-        getWindow().setSharedElementExitTransition(transition);
-        getWindow().setSharedElementReenterTransition(transition);
     }
 
     @Override
@@ -321,8 +304,7 @@ public class MainActivity extends ThemedActivity
                     }).show();
         } else {
             switchAlbum(null);
-            NavDrawerFragment nav = (NavDrawerFragment) getFragmentManager().findFragmentByTag(NAV_DRAWER_FRAGMENT);
-            if (nav != null) nav.reloadAccounts();
+            reloadNavDrawerAlbums();
         }
     }
 
@@ -331,8 +313,9 @@ public class MainActivity extends ThemedActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        Inquiry.init(this);
+
         setupSharedElementCallback();
-        setTransition();
 
         mToolbar = (Toolbar) findViewById(R.id.toolbar);
         mToolbar.setSubtitleTextAppearance(this, R.style.ToolbarSubtitleStyle);
@@ -355,22 +338,16 @@ public class MainActivity extends ThemedActivity
                 public void onDrawerClosed(View drawerView) {
                     super.onDrawerClosed(drawerView);
                     Fragment nav = getFragmentManager().findFragmentByTag(NAV_DRAWER_FRAGMENT);
-                    if (nav != null)
+                    if (nav != null) {
                         ((NavDrawerFragment) nav).notifyClosed();
+                    }
                 }
             });
             mDrawerLayout.setStatusBarBackgroundColor(primaryColorDark());
 
             FrameLayout navDrawerFrame = (FrameLayout) findViewById(R.id.nav_drawer_frame);
-            int navDrawerMargin = getResources().getDimensionPixelSize(R.dimen.nav_drawer_margin);
-            DisplayMetrics displayMetrics = getResources().getDisplayMetrics();
-            int navDrawerWidthLimit = getResources().getDimensionPixelSize(R.dimen.nav_drawer_width_limit);
-            int navDrawerWidth = displayMetrics.widthPixels - navDrawerMargin;
-            if (navDrawerWidth > navDrawerWidthLimit) {
-                navDrawerWidth = navDrawerWidthLimit;
-            }
-            navDrawerFrame.setLayoutParams(new DrawerLayout.LayoutParams(navDrawerWidth, DrawerLayout.LayoutParams.MATCH_PARENT, Gravity.START));
-            navDrawerFrame.setBackgroundColor(primaryColorDark());
+            navDrawerFrame.setLayoutParams(new DrawerLayout.LayoutParams(Utils.getNavDrawerWidth(this),
+                    DrawerLayout.LayoutParams.MATCH_PARENT, Gravity.START));
 
             if (getIntent().getAction() != null &&
                     (getIntent().getAction().equals(Intent.ACTION_GET_CONTENT) ||
@@ -395,8 +372,9 @@ public class MainActivity extends ThemedActivity
                     onBackPressed();
                 } else {
                     String activeFile = null;
-                    if (mBreadCrumbLayout.getActiveIndex() > -1)
+                    if (mBreadCrumbLayout.getActiveIndex() > -1) {
                         activeFile = mBreadCrumbLayout.getCrumb(mBreadCrumbLayout.getActiveIndex()).getPath();
+                    }
                     if (crumb.getPath() != null && activeFile != null &&
                             crumb.getPath().equals(activeFile)) {
                         Fragment frag = getFragmentManager().findFragmentById(R.id.content_frame);
@@ -413,7 +391,9 @@ public class MainActivity extends ThemedActivity
             switchAlbum(null);
         } else {
             if (!isSelectAlbumMode()) {
-                if (mTitle != null) getSupportActionBar().setTitle(mTitle);
+                if (mTitle != null) {
+                    getSupportActionBar().setTitle(mTitle);
+                }
                 mMediaCab = MediaCab.restoreState(savedInstanceState, this);
             }
         }
@@ -421,6 +401,11 @@ public class MainActivity extends ThemedActivity
         SortMemoryProvider.cleanup(this);
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        Inquiry.deinit();
+    }
 
     @Override
     protected void onResume() {
@@ -436,8 +421,9 @@ public class MainActivity extends ThemedActivity
     @Override
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        if (mMediaCab != null)
+        if (mMediaCab != null) {
             mMediaCab.saveState(outState);
+        }
     }
 
     @Override
@@ -497,25 +483,35 @@ public class MainActivity extends ThemedActivity
         super.onActivityReenter(resultCode, data);
         mIsReenteringFromViewer = true;
         mTmpState = new Bundle(data.getExtras());
-        int oldPosition = mTmpState.getInt(EXTRA_OLD_ITEM_POSITION);
-        int currentPosition = mTmpState.getInt(EXTRA_CURRENT_ITEM_POSITION);
+        final int oldPosition = mTmpState.getInt(EXTRA_OLD_ITEM_POSITION);
+        final int currentPosition = mTmpState.getInt(EXTRA_CURRENT_ITEM_POSITION);
+
+        findMediaFragment().getPresenter().updateAdapterEntries();
 
         final RecyclerView recyclerView = findMediaFragment().getRecyclerView();
         if (recyclerView != null) {
-            if (oldPosition != currentPosition) {
-                recyclerView.scrollToPosition(currentPosition);
-            }
-
             postponeEnterTransition();
-            recyclerView.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
-                @Override
-                public boolean onPreDraw() {
-                    recyclerView.getViewTreeObserver().removeOnPreDrawListener(this);
 
-                    startPostponedEnterTransition();
-                    return true;
+            recyclerView.post(new Runnable() {
+                @Override
+                public void run() {
+                    if (oldPosition != currentPosition) {
+                        recyclerView.scrollToPosition(currentPosition);
+                    }
+
+
+                    recyclerView.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
+                        @Override
+                        public boolean onPreDraw() {
+                            recyclerView.getViewTreeObserver().removeOnPreDrawListener(this);
+
+                            startPostponedEnterTransition();
+                            return true;
+                        }
+                    });
                 }
             });
+
         }
     }
 
@@ -538,25 +534,15 @@ public class MainActivity extends ThemedActivity
     }
 
     @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.main, menu);
-        menu.findItem(R.id.settings).setVisible(!mPickMode && mSelectAlbumMode == SelectAlbumMode.NONE);
-        return super.onCreateOptionsMenu(menu);
-    }
-
-    @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         invalidateMenuTint();
 
-        if (item.getItemId() == R.id.settings) {
-            startActivityForResult(new Intent(this, SettingsActivity.class), SETTINGS_REQUEST);
-            return true;
-        } else if (item.getItemId() == android.R.id.home) {
-            if (mAnimatedDrawerToggle.getOffset() == 1) {
-                onBackPressed();
-                return true;
-            } else if (isSelectAlbumMode()) {
+        if (item.getItemId() == android.R.id.home) {
+            if (isSelectAlbumMode()) {
                 finish();
+                return true;
+            } else if (mAnimatedDrawerToggle.getOffset() == 1) {
+                onBackPressed();
                 return true;
             }
         }
@@ -564,12 +550,35 @@ public class MainActivity extends ThemedActivity
                 mAnimatedDrawerToggle.onOptionsItemSelected(item) || super.onOptionsItemSelected(item));
     }
 
+    public void openSettings() {
+        mDrawerLayout.closeDrawer(GravityCompat.START);
+        mDrawerLayout.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                startActivityForResult(new Intent(MainActivity.this, SettingsActivity.class), REQUEST_SETTINGS);
+            }
+        }, 300);
+
+    }
+
+    public void showAboutDialog() {
+        new MaterialDialog.Builder(this)
+                .title(getString(R.string.about_dialog_title, BuildConfig.VERSION_NAME))
+                .positiveText(R.string.dismiss)
+                .content(Html.fromHtml(getString(R.string.about_body)))
+                .iconRes(R.drawable.ic_launcher)
+                .linkColor(accentColor())
+                .show();
+    }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == SETTINGS_REQUEST && resultCode == Activity.RESULT_OK) {
+        if (requestCode == REQUEST_SETTINGS && resultCode == Activity.RESULT_OK) {
             MediaFragment content = findMediaFragment();
-            if (content != null) content.reload();
+            if (content != null) {
+                content.getPresenter().reload();
+            }
             reloadNavDrawerAlbums();
         }
     }
@@ -581,10 +590,14 @@ public class MainActivity extends ThemedActivity
     public boolean navDrawerSwitchAlbum(String path) {
         mDrawerLayout.closeDrawers();
 
+        if (path.equals(MediaFolderEntry.OVERVIEW_PATH) && PrefUtils.isExplorerMode(this)) {
+            path = Environment.getExternalStorageDirectory().getAbsolutePath();
+        }
+
         mBreadCrumbLayout.setTopPath(path);
 
         MediaFragment frag = findMediaFragment();
-        if (!path.equals(frag.getPresenter().getAlbumPath())) {
+        if (!path.equals(frag.getPresenter().getPath())) {
             mBreadCrumbLayout.clearHistory();
             Crumb crumb = new Crumb(this, path);
             switchAlbum(crumb, true, true);
@@ -604,7 +617,7 @@ public class MainActivity extends ThemedActivity
             // Initial directory
             path = PrefUtils.isExplorerMode(this) ?
                     Environment.getExternalStorageDirectory().getAbsolutePath() :
-                    AlbumEntry.ALBUM_OVERVIEW_PATH;
+                    MediaFolderEntry.OVERVIEW_PATH;
             mBreadCrumbLayout.setTopPath(path);
         }
 
@@ -619,8 +632,9 @@ public class MainActivity extends ThemedActivity
             String path = crumb.getPath();
             while (path != null) {
                 mBreadCrumbLayout.addHistory(new Crumb(this, path));
-                if (mBreadCrumbLayout.isTopPath(path))
+                if (mBreadCrumbLayout.isTopPath(path)) {
                     break;
+                }
                 path = new File(path).getParent();
             }
             mBreadCrumbLayout.reverseHistory();
@@ -637,7 +651,7 @@ public class MainActivity extends ThemedActivity
             getFragmentManager().beginTransaction().replace(R.id.content_frame, frag).commit();
         } else {
             MediaPresenter presenter = frag.getPresenter();
-            String albumPath = presenter.getAlbumPath();
+            String albumPath = presenter.getPath();
             if (!albumPath.equals(to)) {
                 presenter.setPath(to);
             }
@@ -653,16 +667,43 @@ public class MainActivity extends ThemedActivity
     public void reloadNavDrawerAlbums() {
         NavDrawerFragment nav = (NavDrawerFragment) getFragmentManager().findFragmentByTag(NAV_DRAWER_FRAGMENT);
         if (nav != null) {
-            if (nav.mCurrentAccount == null)
-                nav.reloadAccounts();
-            else nav.getAlbums(nav.mCurrentAccount);
+            nav.reloadAlbums();
         }
     }
 
     @Override
     public boolean onPrepareOptionsMenu(final Menu menu) {
         invalidateMenuTint();
+        invalidateMenuIcons(menu);
         return super.onPrepareOptionsMenu(menu);
+    }
+
+    public void invalidateMenuIcons(final Menu menu) {
+        if (menu != null && menu.getClass().getSimpleName().equals("MenuBuilder")) {
+            try {
+                Field field = menu.getClass().getDeclaredField("mOptionalIconsVisible");
+                field.setAccessible(true);
+                field.setBoolean(menu, true);
+
+                final boolean darkMode = isDarkTheme();
+                final int textColorPrimary = Utils.resolveColor(this, android.R.attr.textColorSecondary);
+
+                mToolbar.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        for (int i = 0; i < menu.size(); i++) {
+                            MenuItemImpl item = (MenuItemImpl) menu.getItem(i);
+                            int color = darkMode || item.isActionButton() ? Color.WHITE : textColorPrimary;
+                            if (item.getIcon() != null) {
+                                item.getIcon().setColorFilter(color, PorterDuff.Mode.SRC_IN);
+                            }
+                        }
+                    }
+                });
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     private void invalidateMenuTint() {
@@ -710,7 +751,9 @@ public class MainActivity extends ThemedActivity
 
                         for (int i = 0; i < listView.getChildCount(); i++) {
                             View v = listView.getChildAt(i);
-                            if (!(v instanceof ListMenuItemView)) continue;
+                            if (!(v instanceof ListMenuItemView)) {
+                                continue;
+                            }
                             ListMenuItemView iv = (ListMenuItemView) v;
 
                             CheckBox check = (CheckBox) checkboxField.get(iv);

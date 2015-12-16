@@ -1,11 +1,19 @@
 # Impression
+
+[![Build Status](https://travis-ci.org/afollestad/impression.svg)](https://travis-ci.org/afollestad/impression)
+
+![Showcase](https://raw.githubusercontent.com/afollestad/impression/master/art/showcase.png)
+
 A material design gallery app for Android 4.1+
 
 Developed by Aidan Follestad, Daniel Ciao, and Marlon Jones.
 
-Project in progress of revival. "Watch" the repo for updates.
+[G+ Community](https://plus.google.com/communities/103090123257670799691): Discussions and announcements  
+[Releases Page](https://github.com/afollestad/impression/releases): Direct APK Downloads  
+[Issues Page](https://github.com/afollestad/impression/issues): Bugs and feature requests
 
 ##License
+
 ```
 Impression: A material design gallery app for Android 4.1+
 Copyright (C) 2015  Aidan Follestad, Daniel Ciao, and Marlon Jones
@@ -23,4 +31,3 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ```
-[Quick rundown of GPLv3](http://choosealicense.com/licenses/gpl-3.0/) - our intention is to encourage open source and sharing of derivative works.

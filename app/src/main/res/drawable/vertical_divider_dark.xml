@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?><!--TODO: Get rid of this-->
 <shape xmlns:android="http://schemas.android.com/apk/res/android">
     <size android:width="1px" />
     <solid android:color="@color/dark_vanilla_gray" />

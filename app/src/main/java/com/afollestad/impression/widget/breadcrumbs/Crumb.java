@@ -61,10 +61,11 @@ public class Crumb implements Parcelable {
     }
 
     public String getTitle() {
-        if (mPath.equals("/"))
+        if (mPath.equals("/")) {
             return mContext.getString(R.string.root);
-        else if (mPath.equals(Environment.getExternalStorageDirectory().getAbsolutePath()))
+        } else if (mPath.equals(Environment.getExternalStorageDirectory().getAbsolutePath())) {
             return mContext.getString(R.string.internal_storage);
+        }
         return new java.io.File(mPath).getName();
     }
 

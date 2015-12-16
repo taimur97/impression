@@ -2,7 +2,7 @@
 
     <dimen name="nav_drawer_width_limit">320dp</dimen>
     <dimen name="nav_drawer_margin">56dp</dimen>
-    <dimen name="nav_drawer_textsize">14sp</dimen>
+    <dimen name="nav_drawer_header_image_bottom_margin">9dp</dimen>
 
     <dimen name="grid_folder_image_padding">16dp</dimen>
 

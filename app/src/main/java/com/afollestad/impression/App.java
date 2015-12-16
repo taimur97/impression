@@ -1,42 +1,53 @@
 package com.afollestad.impression;
 
-import android.app.Activity;
 import android.app.Application;
+import android.content.Context;
 
 import com.afollestad.impression.accounts.base.Account;
+import com.afollestad.impression.utils.PrefUtils;
+import com.crashlytics.android.Crashlytics;
+
+import io.fabric.sdk.android.Fabric;
+import rx.Observable;
+import rx.Single;
+import rx.Subscriber;
+import rx.functions.Func1;
 
 public class App extends Application {
 
-    private Account mCurrentAccount;
+    private static Account currentAccount;
 
-    public static void getCurrentAccount(Activity context, Account.AccountCallback callback) {
-        ((App) context.getApplication()).getCurrentAccount(callback);
-    }
-
-    private void getCurrentAccount(final Account.AccountCallback callback) {
-        final int current = Account.getActive(App.this);
-        if (mCurrentAccount != null && mCurrentAccount.id() == current) {
-            callback.onAccount(mCurrentAccount);
-            return;
-        }
-
-        Account.getAll(this, new Account.AccountsCallback() {
+    public static Single<Account> getCurrentAccount(Context context) {
+        final int activeId = PrefUtils.getActiveAccountId(context);
+        return Observable.create(new Observable.OnSubscribe<Account[]>() {
             @Override
-            public void onAccounts(Account[] accounts) {
-                for (Account a : accounts) {
-                    if (a.id() == current) {
-                        mCurrentAccount = a;
-                        break;
-                    }
+            public void call(Subscriber<? super Account[]> subscriber) {
+                if (currentAccount != null && currentAccount.id() == activeId) {
+                    subscriber.onNext(new Account[]{currentAccount});
                 }
-                callback.onAccount(mCurrentAccount);
+                subscriber.onCompleted();
             }
-        });
+        }).switchIfEmpty(Account.getAll(context).toObservable())
+                .map(new Func1<Account[], Account>() {
+                    @Override
+                    public Account call(Account[] accounts) {
+                        for (Account a : accounts) {
+                            if (a.id() == activeId) {
+                                currentAccount = a;
+                                break;
+                            }
+                        }
+                        return currentAccount;
+                    }
+                }).toSingle();
     }
 
     @Override
     public void onCreate() {
         super.onCreate();
+        if (!BuildConfig.DEBUG) {
+            Fabric.with(this, new Crashlytics());
+        }
         //LeakCanary.install(this);
     }
 }

@@ -5,11 +5,14 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
-import android.preference.PreferenceManager;
+import android.support.annotation.Nullable;
+import android.support.annotation.WorkerThread;
 
 import com.afollestad.impression.BuildConfig;
+import com.afollestad.impression.api.MediaFolderEntry;
 import com.afollestad.impression.media.MediaAdapter;
 import com.afollestad.impression.providers.base.ProviderBase;
+import com.afollestad.impression.utils.PrefUtils;
 
 import java.io.File;
 
@@ -33,9 +36,13 @@ public class SortMemoryProvider extends ProviderBase {
                 final Cursor cursor = r.query(CONTENT_URI, null, null, null, null);
                 if (cursor != null) {
                     while (cursor.moveToNext()) {
-                        final File fi = new File(cursor.getString(1));
-                        if (!fi.exists())
-                            r.delete(CONTENT_URI, "path = ?", new String[]{cursor.getString(1)});
+                        String path = cursor.getString(1);
+                        if (!path.equals(MediaFolderEntry.OVERVIEW_PATH)) {
+                            final File fi = new File(path);
+                            if (!fi.exists()) {
+                                r.delete(CONTENT_URI, "path = ?", new String[]{path});
+                            }
+                        }
                     }
                     cursor.close();
                 }
@@ -43,11 +50,12 @@ public class SortMemoryProvider extends ProviderBase {
         }).start();
     }
 
-    public static void save(Context context, String path, MediaAdapter.SortMode mode) {
-        if (context == null) return;
+    public static void save(Context context, @Nullable String path, @MediaAdapter.SortMode int mode) {
+        if (context == null) {
+            return;
+        }
         if (path == null) {
-            PreferenceManager.getDefaultSharedPreferences(context).edit()
-                    .putInt("sort_mode", mode.value()).commit();
+            PrefUtils.setSortMode(context, mode);
         } else {
             final ContentResolver r = context.getContentResolver();
             final Cursor cursor = r.query(CONTENT_URI,
@@ -55,7 +63,7 @@ public class SortMemoryProvider extends ProviderBase {
             boolean found = false;
             final ContentValues values = new ContentValues(2);
             values.put("path", path);
-            values.put("mode", mode.value());
+            values.put("mode", mode);
             if (cursor != null) {
                 if (cursor.moveToFirst()) {
                     found = true;
@@ -63,37 +71,54 @@ public class SortMemoryProvider extends ProviderBase {
                 }
                 cursor.close();
             }
-            if (!found)
+            if (!found) {
                 r.insert(CONTENT_URI, values);
+            }
         }
     }
 
-    public static MediaAdapter.SortMode getSortMode(Context context, String path) {
+    @MediaAdapter.SortMode
+    public static int getSortMode(Context context, @Nullable String path) {
         if (context == null) {
-            return MediaAdapter.SortMode.valueOf(MediaAdapter.SortMode.DEFAULT);
+            return MediaAdapter.SORT_TAKEN_DATE_DESC;
         } else if (path == null) {
-            final int mode = PreferenceManager.getDefaultSharedPreferences(context)
-                    .getInt("sort_mode", MediaAdapter.SortMode.DEFAULT);
-            return MediaAdapter.SortMode.valueOf(mode);
+            //noinspection ResourceType
+            return PrefUtils.getSortMode(context);
         }
 
         Cursor cursor = context.getContentResolver().query(CONTENT_URI,
                 null, "path = ?", new String[]{path}, null);
         int mode = -1;
         if (cursor != null) {
-            if (cursor.moveToFirst())
+            if (cursor.moveToFirst()) {
                 mode = cursor.getInt(2);
+            }
             cursor.close();
         }
         if (mode == -1) {
-            mode = PreferenceManager.getDefaultSharedPreferences(context)
-                    .getInt("sort_mode", MediaAdapter.SortMode.DEFAULT);
+            mode = PrefUtils.getSortMode(context);
         }
-        return MediaAdapter.SortMode.valueOf(mode);
+        //noinspection ResourceType
+        return mode;
+    }
+
+    @WorkerThread
+    public static boolean contains(Context context, String path) {
+        Cursor cursor = context.getContentResolver().query(CONTENT_URI,
+                null, "path = ?", new String[]{path}, null);
+        if (cursor != null) {
+            if (cursor.getCount() > 0) {
+                return true;
+            }
+            cursor.close();
+        }
+        return false;
     }
 
     public static void forget(Context context, String path) {
-        if (context == null) return;
+        if (context == null) {
+            return;
+        }
         context.getContentResolver().delete(CONTENT_URI, "path = ?", new String[]{path});
     }
 }

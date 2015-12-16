@@ -1,54 +1,51 @@
 package com.afollestad.impression.api;
 
-import android.app.Activity;
-import android.database.Cursor;
+import android.content.Context;
 import android.provider.MediaStore;
-import android.widget.Toast;
 
-import com.afollestad.impression.api.base.MediaEntry;
-import com.afollestad.impression.media.MediaAdapter;
-import com.afollestad.impression.utils.Utils;
-
-import java.io.File;
+import com.afollestad.inquiry.annotations.Column;
 
 /**
  * @author Aidan Follestad (afollestad)
  */
-public class VideoEntry implements MediaEntry<VideoEntry> {
+//TODO
+public class VideoEntry extends PhotoEntry {
 
-    public String originalUri;
-    private long _id;
-    private String _data;
-    private String title;
-    private long _size;
-    private String _displayName;
-    private String mimeType;
-    private long dateAdded;
-    private long dateTaken;
-    private long dateModified;
-    private String bucketDisplayName;
-    private long bucketId;
-    private int width;
-    private int height;
-    private int mRealIndex;
+    /*public String originalUri;*/
+
+    @Column(name = MediaStore.Video.Media._ID)
+    protected long _id;
+    @Column(name = MediaStore.Video.Media.DATA)
+    protected String _data;
+    @Column(name = MediaStore.Video.Media.SIZE)
+    protected long _size;
+    @Column(name = MediaStore.Video.Media.TITLE)
+    protected String title;
+    @Column(name = MediaStore.Video.Media.DISPLAY_NAME)
+    protected String _displayName;
+    @Column(name = MediaStore.Video.Media.MIME_TYPE)
+    protected String mimeType;
+    @Column(name = MediaStore.Video.Media.DATE_ADDED)
+    protected long dateAdded;
+    @Column(name = MediaStore.Video.Media.DATE_TAKEN)
+    protected long dateTaken;
+    @Column(name = MediaStore.Video.Media.DATE_MODIFIED)
+    protected long dateModified;
+    @Column(name = MediaStore.Video.Media.BUCKET_DISPLAY_NAME)
+    protected String bucketDisplayName;
+    @Column(name = MediaStore.Video.Media.BUCKET_ID)
+    protected String bucketId;
+    @Column(name = MediaStore.Video.Media.WIDTH)
+    protected int width;
+
+    /* private int mRealIndex;*/
+    @Column(name = MediaStore.Video.Media.HEIGHT)
+    protected int height;
 
     public VideoEntry() {
     }
 
-    public static String sort(MediaAdapter.SortMode from) {
-        switch (from) {
-            default:
-                return MediaStore.Video.Media.DISPLAY_NAME + " DESC";
-            case NAME_ASC:
-                return MediaStore.Video.Media.DISPLAY_NAME + " ASC";
-            case MODIFIED_DATE_DESC:
-                return MediaStore.Video.Media.DATE_MODIFIED + " DESC";
-            case MODIFIED_DATE_ASC:
-                return MediaStore.Video.Media.DATE_MODIFIED + " ASC";
-        }
-    }
-
-    @Override
+   /* @Override
     public VideoEntry load(Cursor from) {
         VideoEntry a = new VideoEntry();
         a._id = from.getLong(from.getColumnIndex(MediaStore.Video.Media._ID));
@@ -94,12 +91,17 @@ public class VideoEntry implements MediaEntry<VideoEntry> {
     @Override
     public void setRealIndex(int index) {
         mRealIndex = index;
-    }
+    }*/
 
     @Override
     public long id() {
         return _id;
     }
+/*
+    @Override
+    public String title() {
+        return title;
+    }*/
 
     @Override
     public String data() {
@@ -111,22 +113,7 @@ public class VideoEntry implements MediaEntry<VideoEntry> {
         return _size;
     }
 
-    @Override
-    public String title() {
-        return title;
-    }
-
-    @Override
-    public String displayName() {
-        return _displayName;
-    }
-
-    @Override
-    public String mimeType() {
-        return mimeType;
-    }
-
-    @Override
+/*    @Override
     public long dateAdded() {
         return dateAdded;
     }
@@ -134,6 +121,16 @@ public class VideoEntry implements MediaEntry<VideoEntry> {
     @Override
     public long dateModified() {
         return dateModified;
+    }*/
+
+    @Override
+    public String displayName(Context context) {
+        return _displayName;
+    }
+
+    @Override
+    public String mimeType() {
+        return mimeType;
     }
 
     @Override
@@ -147,7 +144,7 @@ public class VideoEntry implements MediaEntry<VideoEntry> {
     }
 
     @Override
-    public long bucketId() {
+    public String bucketId() {
         return bucketId;
     }
 
@@ -161,17 +158,7 @@ public class VideoEntry implements MediaEntry<VideoEntry> {
         return height;
     }
 
-    @Override
-    public boolean isVideo() {
-        return true;
-    }
-
-    @Override
-    public boolean isFolder() {
-        return false;
-    }
-
-    @Override
+    /*@Override
     public boolean isAlbum() {
         return false;
     }
@@ -213,5 +200,15 @@ public class VideoEntry implements MediaEntry<VideoEntry> {
         videoEntry.width = -1;
         videoEntry.height = -1;
         return videoEntry;
+    }*/
+
+    @Override
+    public boolean isVideo() {
+        return true;
+    }
+
+    @Override
+    public boolean isFolder() {
+        return false;
     }
 }

@@ -5,9 +5,16 @@ import android.content.res.Resources;
 import android.preference.PreferenceManager;
 
 import com.afollestad.impression.R;
+import com.afollestad.impression.api.MediaEntry;
 import com.afollestad.impression.media.MediaAdapter;
+import com.afollestad.impression.media.MediaNameSorter;
+import com.afollestad.impression.media.MediaTakenSorter;
+
+import java.util.Comparator;
 
 public abstract class PrefUtils {
+    public static final String OPEN_EXCLUDED_FOLDERS = "excluded_folders";
+
     public static final String DARK_THEME = "dark_theme";
     public static final String EXPLORER_MODE = "explorer_mode";
     public static final String COLORED_NAVBAR = "colored_navbar";
@@ -15,6 +22,12 @@ public abstract class PrefUtils {
     public static final String GRID_SIZE_PREFIX = "grid_size_";
     public static final String OVERVIEW_MODE = "overview_mode";
     public static final String FILTER_MODE = "filter_mode";
+    public static final String INCLUDE_SUBFOLDERS = "include_subfolders";
+    public static final String ACTIVE_ACCOUNT_ID = "active_account";
+    public static final String SORT_MODE = "sort_mode";
+    public static final String PRIMARY_COLOR_PREFIX = "primary_color";
+    public static final String ACCENT_COLOR_PREFIX = "accent_color";
+    public static final String EXCLUDE_SUBFOLDERS = "exclude_subfolders";
 
     public static boolean isDarkTheme(Context context) {
         return PreferenceManager.getDefaultSharedPreferences(context).getBoolean(DARK_THEME, false);
@@ -37,31 +50,84 @@ public abstract class PrefUtils {
     }
 
     public static void setGridMode(Context context, boolean gridMode) {
-       PreferenceManager.getDefaultSharedPreferences(context).edit().putBoolean(GRID_MODE, gridMode).apply();
+        PreferenceManager.getDefaultSharedPreferences(context).edit().putBoolean(GRID_MODE, gridMode).apply();
     }
 
     public static int getGridColumns(Context context) {
-        if (context == null  || !isGridMode(context)) return 1;
+        if (context == null || !isGridMode(context)) {
+            return 1;
+        }
 
         final Resources r = context.getResources();
         final int defaultGrid = r.getInteger(R.integer.default_grid_width);
         final int orientation = r.getConfiguration().orientation;
-        return PreferenceManager.getDefaultSharedPreferences(context)
-                .getInt("grid_size_" + orientation, defaultGrid);
+        return PreferenceManager.getDefaultSharedPreferences(context).getInt(GRID_SIZE_PREFIX + orientation, defaultGrid);
     }
 
     public static void setGridColumns(Context context, int orientation, int gridSize) {
         PreferenceManager.getDefaultSharedPreferences(context).edit().putInt(GRID_SIZE_PREFIX + orientation, gridSize).apply();
     }
 
-    public static int getOverviewMode(Context context) {
-        if (context == null) return 1;
-        return PreferenceManager.getDefaultSharedPreferences(context).getInt(OVERVIEW_MODE, 1);
+    public static boolean getOverviewAllMediaMode(Context context) {
+        return PreferenceManager.getDefaultSharedPreferences(context).getBoolean(OVERVIEW_MODE, false);
     }
 
-    public static MediaAdapter.FileFilterMode getFilterMode(Context context) {
-        if (context == null) return MediaAdapter.FileFilterMode.ALL;
-        int explorerMode = PreferenceManager.getDefaultSharedPreferences(context).getInt(FILTER_MODE, 0);
-        return MediaAdapter.FileFilterMode.valueOf(explorerMode);
+    public static
+    @MediaAdapter.FileFilterMode
+    int getFilterMode(Context context) {
+        if (context == null) {
+            return MediaAdapter.FILTER_ALL;
+        }
+        //noinspection ResourceType
+        return PreferenceManager.getDefaultSharedPreferences(context).getInt(FILTER_MODE, MediaAdapter.FILTER_ALL);
+    }
+
+    public static void setFilterMode(Context context, @MediaAdapter.FileFilterMode int mode) {
+        PreferenceManager.getDefaultSharedPreferences(context).edit().putInt(FILTER_MODE, mode).apply();
+    }
+
+    public static boolean isSubfoldersIncluded(Context context) {
+        return PreferenceManager.getDefaultSharedPreferences(context).getBoolean(INCLUDE_SUBFOLDERS, true);
+    }
+
+    public static int getActiveAccountId(Context context) {
+        return PreferenceManager.getDefaultSharedPreferences(context).getInt(ACTIVE_ACCOUNT_ID, -1);
+    }
+
+    public static void setActiveAccountId(Context context, int accountId) {
+        PreferenceManager.getDefaultSharedPreferences(context).edit().putInt(ACTIVE_ACCOUNT_ID, accountId).apply();
+    }
+
+    /**
+     * Do not use - use SortMemoryProvider
+     */
+    @MediaAdapter.SortMode
+    public static int getSortMode(Context context) {
+        //noinspection ResourceType
+        return PreferenceManager.getDefaultSharedPreferences(context).getInt(SORT_MODE, MediaAdapter.SORT_TAKEN_DATE_DESC);
+    }
+
+    /**
+     * Do not use - use SortMemoryProvider
+     */
+    public static void setSortMode(Context context, @MediaAdapter.SortMode int mode) {
+        PreferenceManager.getDefaultSharedPreferences(context).edit().putInt(SORT_MODE, mode).apply();
+    }
+
+    public static Comparator<MediaEntry> getSortComparator(Context context, @MediaAdapter.SortMode int mode) {
+        switch (mode) {
+            case MediaAdapter.SORT_TAKEN_DATE_DESC:
+                return new MediaTakenSorter(false);
+            case MediaAdapter.SORT_TAKEN_DATE_ASC:
+                return new MediaTakenSorter(true);
+            case MediaAdapter.SORT_NAME_DESC:
+                return new MediaNameSorter(context, true);
+            default:
+                return new MediaNameSorter(context, false);
+        }
+    }
+
+    public static boolean isExcludeSubfolders(Context context) {
+        return PreferenceManager.getDefaultSharedPreferences(context).getBoolean(EXCLUDE_SUBFOLDERS, true);
     }
 }

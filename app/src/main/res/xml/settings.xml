@@ -2,17 +2,6 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
 
     <com.afollestad.impression.widget.ImpressionPreferenceCategoryNoDivider
-        android:key="info_category"
-        android:title="@string/info">
-
-        <com.afollestad.impression.widget.ImpressionPreference
-            android:key="about"
-            android:summary="@string/about_desc"
-            android:title="@string/about" />
-
-    </com.afollestad.impression.widget.ImpressionPreferenceCategoryNoDivider>
-
-    <com.afollestad.impression.widget.ImpressionPreferenceCategory
         android:key="behavior_category"
         android:title="@string/behavior">
 
@@ -26,14 +15,15 @@
             android:widgetLayout="@layout/preference_dynamiccheckbox" />
 
         <CheckBoxPreference
+            android:enabled="false"
             android:key="overview_mode"
             android:layout="@layout/preference_custom"
             android:persistent="false"
-            android:summary="@string/overview_mode_desc"
+            android:summary="Currently disabled. May come back in future version"
             android:title="@string/overview_display"
             android:widgetLayout="@layout/preference_dynamiccheckbox" />
 
-    </com.afollestad.impression.widget.ImpressionPreferenceCategory>
+    </com.afollestad.impression.widget.ImpressionPreferenceCategoryNoDivider>
 
     <com.afollestad.impression.widget.ImpressionPreferenceCategory
         android:key="theme_category"
@@ -70,11 +60,12 @@
 
     <com.afollestad.impression.widget.ImpressionPreferenceCategory
         android:key="included_folder_category"
-        android:title="@string/included_folders">
+        android:title="Included Folders - Currently disabled">
 
         <CheckBoxPreference
             android:defaultValue="true"
-            android:key="include_subfolders_included"
+            android:enabled="false"
+            android:key="include_subfolders"
             android:layout="@layout/preference_custom"
             android:persistent="true"
             android:summary="@string/include_subfolders_included_desc"
@@ -94,7 +85,7 @@
 
         <CheckBoxPreference
             android:defaultValue="true"
-            android:key="include_subfolders"
+            android:key="exclude_subfolders"
             android:layout="@layout/preference_custom"
             android:persistent="true"
             android:summary="@string/include_subfolders_desc"

@@ -24,9 +24,7 @@ import android.widget.ImageView;
 
 import com.afollestad.impression.BuildConfig;
 import com.afollestad.impression.R;
-import com.afollestad.impression.api.PhotoEntry;
-import com.afollestad.impression.api.VideoEntry;
-import com.afollestad.impression.api.base.MediaEntry;
+import com.afollestad.impression.api.MediaEntry;
 import com.afollestad.impression.utils.Utils;
 import com.afollestad.impression.widget.ImpressionVideoView;
 import com.bumptech.glide.Glide;
@@ -101,7 +99,9 @@ public class ViewerPagerFragment extends Fragment {
     }
 
     public static InputStream openStream(Context context, Uri uri) throws FileNotFoundException {
-        if (uri == null) return null;
+        if (uri == null) {
+            return null;
+        }
         if (uri.getScheme() == null || uri.getScheme().equalsIgnoreCase("file")) {
             return new FileInputStream(uri.getPath());
         } else {
@@ -142,13 +142,6 @@ public class ViewerPagerFragment extends Fragment {
             mThumbImageView = (ImageView) view.findViewById(R.id.thumb);
             mGifImageView = (GifImageView) view.findViewById(R.id.gif);
 
-            mImageView.setOnTouchListener(new View.OnTouchListener() {
-                @Override
-                public boolean onTouch(View v, MotionEvent event) {
-                    return false;
-                }
-            });
-
             final GestureDetector detector = new GestureDetector(getActivity(), new GestureDetector.SimpleOnGestureListener() {
                 @Override
                 public boolean onDown(MotionEvent e) {
@@ -169,8 +162,14 @@ public class ViewerPagerFragment extends Fragment {
             };
 
             mThumbImageView.setOnTouchListener(onTouch);
-            mImageView.setOnTouchListener(onTouch);
             mGifImageView.setOnTouchListener(onTouch);
+
+            mImageView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    invokeToolbar();
+                }
+            });
 
             if (BuildConfig.DEBUG) {
                 mImageView.setDebug(true);
@@ -213,14 +212,15 @@ public class ViewerPagerFragment extends Fragment {
     private Uri getUri() {
         Uri uri = null;
         if (mEntry != null) {
-            if (mEntry instanceof PhotoEntry) {
+            /*if (mEntry instanceof PhotoEntry) {
                 if (((PhotoEntry) mEntry).originalUri != null)
                     uri = Uri.parse(((PhotoEntry) mEntry).originalUri);
             } else if (((VideoEntry) mEntry).originalUri != null) {
                 uri = Uri.parse(((VideoEntry) mEntry).originalUri);
-            }
-            if (uri == null)
+            }*/
+            if (uri == null) {
                 uri = Uri.fromFile(new File(mEntry.data()));
+            }
         } else {
             uri = Uri.fromFile(new File(mMediaPath));
         }
@@ -231,7 +231,9 @@ public class ViewerPagerFragment extends Fragment {
     public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         if (mIsVideo) {
-            if ((mEntry == null || mEntry.data() == null) && mMediaPath == null) return;
+            if ((mEntry == null || mEntry.data() == null) && mMediaPath == null) {
+                return;
+            }
             mVideoView.setVideoURI(getUri());
             View playFrame = view.findViewById(R.id.playFrame);
             View seekFrame = view.findViewById(R.id.seekerFrame);
@@ -370,8 +372,9 @@ public class ViewerPagerFragment extends Fragment {
                 @Override
                 public void onTransitionEnd(Transition transition) {
                     ViewerActivity act = (ViewerActivity) getActivity();
-                    if (act == null)
+                    if (act == null) {
                         return;
+                    }
                     act.getWindow().getSharedElementEnterTransition().removeListener(this);
                     act.setFinishedTransition(true);
 
@@ -392,6 +395,10 @@ public class ViewerPagerFragment extends Fragment {
             mGifImageView.postDelayed(new Runnable() {
                 @Override
                 public void run() {
+                    if (!mIsActive) {
+                        return;
+                    }
+
                     mGifImageView.setImageURI(getUri());
                     mGifImageView.setVisibility(View.VISIBLE);
 
@@ -487,8 +494,9 @@ public class ViewerPagerFragment extends Fragment {
             @Override
             public void onImageLoaded() {
                 final ViewerActivity activity = (ViewerActivity) getActivity();
-                if (activity != null)
+                if (activity != null) {
                     activity.invalidateTransition();
+                }
             }
 
             @Override
@@ -512,6 +520,10 @@ public class ViewerPagerFragment extends Fragment {
 
     public void finish() {
         recycleFullImageShowThumbnail();
+        if (getActivity() != null) {
+            ViewerActivity act = (ViewerActivity) getActivity();
+            act.uiTapped(false, null);
+        }
     }
 
     private void loadVideo() {
@@ -522,9 +534,9 @@ public class ViewerPagerFragment extends Fragment {
         }
 
         ViewerActivity act = (ViewerActivity) getActivity();
-        if (act == null)
+        if (act == null) {
             return;
-        else if (!act.isFinishedTransition() && mIsActive && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+        } else if (!act.isFinishedTransition() && mIsActive && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             // If the activity transition didn't finish yet, wait for it to do so
             // So that the photo view attacher attaches correctly.
             act.getWindow().getSharedElementEnterTransition().addListener(new Transition.TransitionListener() {
@@ -548,12 +560,14 @@ public class ViewerPagerFragment extends Fragment {
                 @Override
                 public void onTransitionEnd(Transition transition) {
                     ViewerActivity act = (ViewerActivity) getActivity();
-                    if (act == null)
+                    if (act == null) {
                         return;
+                    }
                     act.getWindow().getEnterTransition().removeListener(this);
                     act.setFinishedTransition(true);
-                    if (isAdded())
+                    if (isAdded()) {
                         loadVideo();
+                    }
                 }
             });
             return;
@@ -570,8 +584,7 @@ public class ViewerPagerFragment extends Fragment {
     public void invokeToolbar(ViewerActivity.ToolbarFadeListener callback) {
         if (getActivity() != null) {
             ViewerActivity act = (ViewerActivity) getActivity();
-            act.invokeUi(true, callback);
-            act.systemUIFocusChange();
+            act.uiTapped(true, callback);
         }
     }
 

@@ -10,7 +10,7 @@
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="?actionBarSize"
-        android:background="@drawable/transparent"
+        android:background="@android:color/transparent"
         android:elevation="@dimen/toolbar_elevation"
         android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
         app:contentInsetStart="@dimen/toolbar_inset"
@@ -33,7 +33,7 @@
             android:layout_above="@+id/editControls"
             android:layout_centerInParent="true" />
 
-        <!--<com.afollestad.impression.ui.editor.cropwindow.CropOverlayView-->
+        <!--<com.afollestad.impression.editor.cropwindow.CropOverlayView-->
         <!--android:id="@+id/cropView"-->
         <!--android:layout_width="wrap_content"-->
         <!--android:layout_height="wrap_content"-->

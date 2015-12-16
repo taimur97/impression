@@ -1,55 +1,51 @@
 package com.afollestad.impression.api;
 
 import android.app.Activity;
-import android.database.Cursor;
-import android.graphics.BitmapFactory;
+import android.content.Context;
 import android.provider.MediaStore;
 import android.widget.Toast;
 
-import com.afollestad.impression.api.base.MediaEntry;
-import com.afollestad.impression.media.MediaAdapter;
-import com.afollestad.impression.utils.Utils;
+import com.afollestad.inquiry.annotations.Column;
 
 import java.io.File;
 
-/**
- * @author Aidan Follestad (afollestad)
- */
-public class PhotoEntry implements MediaEntry<PhotoEntry> {
+public class PhotoEntry implements MediaEntry {
 
-    public String originalUri;
-    private long _id;
-    private String _data;
-    private long _size;
-    private String title;
-    private String _displayName;
-    private String mimeType;
-    private long dateAdded;
-    private long dateTaken;
-    private long dateModified;
-    private String bucketDisplayName;
-    private long bucketId;
-    private int width;
-    private int height;
-    private int mRealIndex;
+    /*public String originalUri;*/
+
+    @Column(name = MediaStore.Images.Media._ID)
+    protected long _id;
+    @Column(name = MediaStore.Images.Media.DATA)
+    protected String _data;
+    @Column(name = MediaStore.Images.Media.SIZE)
+    protected long _size;
+    @Column(name = MediaStore.Images.Media.TITLE)
+    protected String title;
+    @Column(name = MediaStore.Images.Media.DISPLAY_NAME)
+    protected String _displayName;
+    @Column(name = MediaStore.Images.Media.MIME_TYPE)
+    protected String mimeType;
+    @Column(name = MediaStore.Images.Media.DATE_ADDED)
+    protected long dateAdded;
+    @Column(name = MediaStore.Images.Media.DATE_TAKEN)
+    protected long dateTaken;
+    @Column(name = MediaStore.Images.Media.DATE_MODIFIED)
+    protected long dateModified;
+    @Column(name = MediaStore.Images.Media.BUCKET_DISPLAY_NAME)
+    protected String bucketDisplayName;
+    @Column(name = MediaStore.Images.Media.BUCKET_ID)
+    protected String bucketId;
+    @Column(name = MediaStore.Images.Media.WIDTH)
+    protected int width;
+
+    /*private int mRealIndex;*/
+    @Column(name = MediaStore.Images.Media.HEIGHT)
+    protected int height;
 
     public PhotoEntry() {
     }
 
-    public static String sort(MediaAdapter.SortMode from) {
-        switch (from) {
-            default:
-                return MediaStore.Images.Media.DISPLAY_NAME + " DESC";
-            case NAME_ASC:
-                return MediaStore.Images.Media.DISPLAY_NAME + " ASC";
-            case MODIFIED_DATE_DESC:
-                return MediaStore.Images.Media.DATE_MODIFIED + " DESC";
-            case MODIFIED_DATE_ASC:
-                return MediaStore.Images.Media.DATE_MODIFIED + " ASC";
-        }
-    }
-
-    @Override
+    /*@Override
     public PhotoEntry load(Cursor from) {
         PhotoEntry a = new PhotoEntry();
         a._id = from.getLong(from.getColumnIndex(MediaStore.Images.Media._ID));
@@ -66,9 +62,9 @@ public class PhotoEntry implements MediaEntry<PhotoEntry> {
         a.width = from.getInt(from.getColumnIndex(MediaStore.Images.Media.WIDTH));
         a.height = from.getInt(from.getColumnIndex(MediaStore.Images.Media.HEIGHT));
         return a;
-    }
+    }*/
 
-    @Override
+   /* @Override
     public String[] projection() {
         return new String[]{
                 MediaStore.Images.Media._ID,
@@ -85,9 +81,9 @@ public class PhotoEntry implements MediaEntry<PhotoEntry> {
                 MediaStore.Images.Media.WIDTH,
                 MediaStore.Images.Media.HEIGHT
         };
-    }
+    }*/
 
-    @Override
+    /*@Override
     public int realIndex() {
         return mRealIndex;
     }
@@ -95,12 +91,17 @@ public class PhotoEntry implements MediaEntry<PhotoEntry> {
     @Override
     public void setRealIndex(int index) {
         mRealIndex = index;
-    }
+    }*/
 
     @Override
     public long id() {
         return _id;
     }
+
+    /*@Override
+    public String title() {
+        return title;
+    }*/
 
     @Override
     public String data() {
@@ -113,12 +114,7 @@ public class PhotoEntry implements MediaEntry<PhotoEntry> {
     }
 
     @Override
-    public String title() {
-        return title;
-    }
-
-    @Override
-    public String displayName() {
+    public String displayName(Context context) {
         return _displayName;
     }
 
@@ -127,7 +123,7 @@ public class PhotoEntry implements MediaEntry<PhotoEntry> {
         return mimeType;
     }
 
-    @Override
+    /*@Override
     public long dateAdded() {
         return dateAdded;
     }
@@ -136,7 +132,7 @@ public class PhotoEntry implements MediaEntry<PhotoEntry> {
     public long dateModified() {
         return dateModified;
     }
-
+*/
     @Override
     public long dateTaken() {
         return dateTaken;
@@ -148,7 +144,7 @@ public class PhotoEntry implements MediaEntry<PhotoEntry> {
     }
 
     @Override
-    public long bucketId() {
+    public String bucketId() {
         return bucketId;
     }
 
@@ -163,24 +159,9 @@ public class PhotoEntry implements MediaEntry<PhotoEntry> {
     }
 
     @Override
-    public boolean isVideo() {
-        return false;
-    }
-
-    @Override
-    public boolean isFolder() {
-        return false;
-    }
-
-    @Override
-    public boolean isAlbum() {
-        return false;
-    }
-
-    @Override
     public void delete(final Activity context) {
         try {
-            final File currentFile = new File(_data);
+            final File currentFile = new File(data());
             context.getContentResolver().delete(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
                     MediaStore.Images.Media.DATA + " = ?",
                     new String[]{currentFile.getAbsolutePath()});
@@ -197,7 +178,7 @@ public class PhotoEntry implements MediaEntry<PhotoEntry> {
         }
     }
 
-    @Override
+   /* @Override
     public PhotoEntry load(File from) {
         PhotoEntry photoEntry = new PhotoEntry();
         photoEntry._id = -1;
@@ -217,5 +198,15 @@ public class PhotoEntry implements MediaEntry<PhotoEntry> {
         photoEntry.width = options.outWidth;
         photoEntry.height = options.outHeight;
         return photoEntry;
+    }*/
+
+    @Override
+    public boolean isVideo() {
+        return false;
+    }
+
+    @Override
+    public boolean isFolder() {
+        return false;
     }
 }

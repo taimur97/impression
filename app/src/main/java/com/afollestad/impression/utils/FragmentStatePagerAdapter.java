@@ -108,7 +108,9 @@ public abstract class FragmentStatePagerAdapter extends PagerAdapter {
         }
 
         Fragment fragment = getItem(position);
-        if (DEBUG) Log.v(TAG, "Adding item #" + position + ": f=" + fragment);
+        if (DEBUG) {
+            Log.v(TAG, "Adding item #" + position + ": f=" + fragment);
+        }
         if (mSavedState.size() > position) {
             Fragment.SavedState fss = mSavedState.get(position);
             if (fss != null) {
@@ -134,8 +136,10 @@ public abstract class FragmentStatePagerAdapter extends PagerAdapter {
         if (mCurTransaction == null) {
             mCurTransaction = mFragmentManager.beginTransaction();
         }
-        if (DEBUG) Log.v(TAG, "Removing item #" + position + ": f=" + object
-                + " v=" + ((Fragment) object).getView());
+        if (DEBUG) {
+            Log.v(TAG, "Removing item #" + position + ": f=" + object
+                    + " v=" + ((Fragment) object).getView());
+        }
         while (mSavedState.size() <= position) {
             mSavedState.add(null);
         }

@@ -5,11 +5,11 @@ import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Environment;
-import android.preference.PreferenceManager;
 import android.support.annotation.WorkerThread;
 
 import com.afollestad.impression.BuildConfig;
 import com.afollestad.impression.providers.base.ProviderBase;
+import com.afollestad.impression.utils.PrefUtils;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -39,7 +39,7 @@ public class ExcludedFolderProvider extends ProviderBase {
     public static boolean contains(Context context, String path) {
         String selection;
         String[] args;
-        if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean("include_subfolders", true)) {
+        if (PrefUtils.isExcludeSubfolders(context)) {
             StringBuilder selectionBuilder = new StringBuilder();
             List<String> argsAry = new ArrayList<>();
             File pathFi = new File(path);
@@ -47,9 +47,11 @@ public class ExcludedFolderProvider extends ProviderBase {
             argsAry.add(pathFi.getAbsolutePath());
             while (true) {
                 pathFi = pathFi.getParentFile();
-                if (pathFi == null) break;
-                else if (pathFi.getAbsolutePath().equalsIgnoreCase(Environment.getExternalStorageDirectory().getAbsolutePath()))
+                if (pathFi == null) {
                     break;
+                } else if (pathFi.getAbsolutePath().equalsIgnoreCase(Environment.getExternalStorageDirectory().getAbsolutePath())) {
+                    break;
+                }
                 selectionBuilder.append(" OR path = ?");
                 argsAry.add(pathFi.getAbsolutePath());
             }
