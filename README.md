@@ -1,5 +1,7 @@
 # Impression
 
+[![Build Status](https://travis-ci.org/afollestad/impression.svg)](https://travis-ci.org/afollestad/impression)
+
 ![Showcase](https://raw.githubusercontent.com/afollestad/impression/master/art/showcase.png)
 
 A material design gallery app for Android 4.1+
